@@ -755,10 +755,10 @@
   const PHONE = '5493454329909';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
-  // Inyecta transformaciones de Cloudinary en la URL: vuelve transparente el fondo blanco-tela y entrega WebP
+  // Inyecta transformaciones de Cloudinary: saca el blanco-tela y entrega PNG sin pérdida (preserva colores)
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:30,f_webp/');
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:30,f_png/');
   };
 
   function renderDisponibles(items){

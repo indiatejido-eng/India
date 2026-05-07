@@ -759,7 +759,7 @@
   // Funciona con cualquier fondo (verde, blanco, azul) mientras sea uniforme. Tolerancia 25 + PNG sin pérdida.
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25,f_png/');
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:60,f_png/');
   };
 
   function renderDisponibles(items){

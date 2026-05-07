@@ -184,7 +184,7 @@
     max-width: 100%;
     max-height: 70vh;
     width: auto; height: auto;
-    mix-blend-mode: darken;
+    filter: drop-shadow(0 25px 35px rgba(60,40,20,0.18));
     transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
   }
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
@@ -258,7 +258,7 @@
     position: relative; z-index: 1;
     max-height: 100%; max-width: 100%;
     width: auto; height: auto; object-fit: contain;
-    mix-blend-mode: darken;
+    filter: drop-shadow(0 20px 28px rgba(60,40,20,0.18));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
@@ -755,6 +755,11 @@
   const PHONE = '5493454329909';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
+  // Inyecta transformaciones de Cloudinary en la URL: vuelve transparente el fondo blanco-tela y entrega WebP
+  const fotoUrl = (url) => {
+    if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:30,f_webp/');
+  };
 
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');
@@ -762,7 +767,7 @@
 
     // Hero: primera foto disponible (si hay)
     if (items.length > 0 && items[0].foto) {
-      heroImg.src = items[0].foto;
+      heroImg.src = fotoUrl(items[0].foto);
       heroImg.alt = items[0].nombre || 'Chaleco tejido a mano';
       heroImg.style.display = '';
     } else {
@@ -784,7 +789,7 @@
       const msg = `Hola! Me interesa el chaleco N°${num} ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
-          <div class="piece-img"><img src="${it.foto}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy"></div>
           <div class="piece-info">
             <h3>N.º ${num} · <span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
@@ -814,7 +819,7 @@
       const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece">
-          <div class="piece-img"><img src="${it.foto}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}

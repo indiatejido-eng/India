@@ -759,7 +759,7 @@
   // Las fotos deben sacarse contra paño/cartulina verde saturado para que esto funcione bien.
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25:rgb:00FF00,f_png/');
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25:lime,f_png/');
   };
 
   function renderDisponibles(items){

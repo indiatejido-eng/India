@@ -184,7 +184,7 @@
     max-width: 100%;
     max-height: 70vh;
     width: auto; height: auto;
-    filter: drop-shadow(0 25px 35px rgba(60,40,20,0.18));
+    filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.25));
     transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
   }
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
@@ -258,7 +258,7 @@
     position: relative; z-index: 1;
     max-height: 100%; max-width: 100%;
     width: auto; height: auto; object-fit: contain;
-    filter: drop-shadow(0 20px 28px rgba(60,40,20,0.18));
+    filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.25));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
@@ -755,11 +755,20 @@
   const PHONE = '5493454329909';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
-  // Inyecta transformación de Cloudinary: saca el color del píxel de la esquina superior izquierda (auto-detección).
-  // Funciona con cualquier fondo (verde, blanco, azul) mientras sea uniforme. Tolerancia 25 + PNG sin pérdida.
+  // Cloudinary AI background removal: detecta el chaleco como objeto y borra todo lo demás (sombras, color spill, cualquier fondo).
+  // La primera carga puede tardar 3-5s mientras Cloudinary procesa la imagen, después queda cacheada.
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:30,f_png/');
+    return url.replace('/image/upload/', '/image/upload/e_background_removal,f_auto,q_auto/');
+  };
+  // Si Cloudinary devuelve 423 (procesando) reintenta hasta 3 veces con 3s de espera.
+  // Expuesto en window para que el handler inline `onerror="retryImg(this)"` lo encuentre.
+  window.retryImg = (img) => {
+    const r = parseInt(img.dataset.retries || '0', 10);
+    if (r >= 3) return;
+    img.dataset.retries = r + 1;
+    if (!img.dataset.baseSrc) img.dataset.baseSrc = img.src.split('?')[0];
+    setTimeout(() => { img.src = img.dataset.baseSrc + '?retry=' + (r + 1); }, 3000);
   };
 
   function renderDisponibles(items){
@@ -768,6 +777,8 @@
 
     // Hero: primera foto disponible (si hay)
     if (items.length > 0 && items[0].foto) {
+      heroImg.dataset.retries = '0';
+      heroImg.onerror = () => window.retryImg(heroImg);
       heroImg.src = fotoUrl(items[0].foto);
       heroImg.alt = items[0].nombre || 'Chaleco tejido a mano';
       heroImg.style.display = '';
@@ -790,7 +801,7 @@
       const msg = `Hola! Me interesa el chaleco N°${num} ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
-          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3>N.º ${num} · <span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
@@ -820,7 +831,7 @@
       const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece">
-          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}

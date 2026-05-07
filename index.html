@@ -193,15 +193,16 @@
     top: 50%; left: 50%; transform: translate(-50%, -50%);
   }
   @media(max-width: 800px){
-    .hero{ padding: 20px 16px 30px; }
-    .hero-grid{ grid-template-columns: 1fr; gap: 12px; }
+    .hero{ padding: 20px 16px 40px; }
+    .hero-grid{ grid-template-columns: 1fr; gap: 32px; }
     .hero-img{ order: -1; }
-    .hero-img img{ max-height: 60vh; }
+    .hero-img img{ max-height: 48vh; }
     .hero-img::before{ display: none; }
-    .hero h1{ text-align: center; font-size: clamp(56px, 14vw, 84px); margin: 8px 0 4px; }
-    .hero-sub{ text-align: center; font-size: clamp(1.1rem, 5vw, 1.6rem); margin-bottom: 18px; }
-    .hero-lead{ margin-left:auto; margin-right:auto; text-align:center; font-size: 1rem; margin-bottom: 22px; }
-    .hero-text{ display:flex; flex-direction:column; align-items:center; }
+    .hero-text{ display:flex; flex-direction:column; align-items:center; gap: 4px; }
+    .hero-text .label{ margin-bottom: 6px; }
+    .hero h1{ text-align: center; font-size: clamp(56px, 14vw, 84px); margin: 0 0 6px; }
+    .hero-sub{ text-align: center; font-size: clamp(1.1rem, 5vw, 1.6rem); margin-bottom: 26px; }
+    .hero-lead{ margin: 0 auto 30px; text-align:center; font-size: 1rem; max-width: 92%; }
     .hero-cta{ align-self:center; padding: 14px 26px; font-size: 0.95rem; }
   }
 
@@ -627,7 +628,7 @@
       </a>
     </div>
     <div class="hero-img reveal d2">
-      <img id="hero-img" src="" alt="Chaleco de lana tejido a mano" style="display:none">
+      <img id="hero-img" src="https://res.cloudinary.com/dgl2mizsf/image/upload/e_background_removal,f_auto,q_auto/v1778193587/hero-hilos.jpg" alt="Hilos de lana hilados a mano" data-retries="0" onerror="retryImg(this)">
     </div>
   </div>
 </section>
@@ -771,18 +772,6 @@
 
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');
-    const heroImg = document.getElementById('hero-img');
-
-    // Hero: primera foto disponible (si hay)
-    if (items.length > 0 && items[0].foto) {
-      heroImg.dataset.retries = '0';
-      heroImg.onerror = () => window.retryImg(heroImg);
-      heroImg.src = fotoUrl(items[0].foto);
-      heroImg.alt = items[0].nombre || 'Chaleco tejido a mano';
-      heroImg.style.display = '';
-    } else {
-      heroImg.style.display = 'none';
-    }
 
     if (items.length === 0) {
       grid.className = 'grid';

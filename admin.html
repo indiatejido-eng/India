@@ -545,16 +545,18 @@ function suscribir(){
   if (unsubDisp) unsubDisp();
   if (unsubAnt) unsubAnt();
 
-  const qD = query(collection(db, 'chalecos'), where('estado', '==', 'disponible'), orderBy('orden', 'asc'));
+  const qD = query(collection(db, 'chalecos'), where('estado', '==', 'disponible'));
   unsubDisp = onSnapshot(qD, snap => {
-    dataDisp = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    dataDisp = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('disponible', dataDisp);
     $('count-disp').textContent = dataDisp.length;
   });
 
-  const qA = query(collection(db, 'chalecos'), where('estado', '==', 'anterior'), orderBy('orden', 'asc'));
+  const qA = query(collection(db, 'chalecos'), where('estado', '==', 'anterior'));
   unsubAnt = onSnapshot(qA, snap => {
-    dataAnt = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    dataAnt = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('anterior', dataAnt);
     $('count-ant').textContent = dataAnt.length;
   });

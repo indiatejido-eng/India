@@ -755,11 +755,11 @@
   const PHONE = '5493454329909';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
-  // Inyecta transformaciones de Cloudinary: saca el fondo verde chroma-key (#00FF00) y entrega PNG sin pérdida.
-  // Las fotos deben sacarse contra paño/cartulina verde saturado para que esto funcione bien.
+  // Inyecta transformación de Cloudinary: saca el color del píxel de la esquina superior izquierda (auto-detección).
+  // Funciona con cualquier fondo (verde, blanco, azul) mientras sea uniforme. Tolerancia 25 + PNG sin pérdida.
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25:lime,f_png/');
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25,f_png/');
   };
 
   function renderDisponibles(items){

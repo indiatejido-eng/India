@@ -755,10 +755,11 @@
   const PHONE = '5493454329909';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
-  // Inyecta transformaciones de Cloudinary: saca el blanco-tela y entrega PNG sin pérdida (preserva colores)
+  // Inyecta transformaciones de Cloudinary: saca el fondo verde chroma-key (#00FF00) y entrega PNG sin pérdida.
+  // Las fotos deben sacarse contra paño/cartulina verde saturado para que esto funcione bien.
   const fotoUrl = (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_make_transparent:30,f_png/');
+    return url.replace('/image/upload/', '/image/upload/e_make_transparent:25:rgb:00FF00,f_png/');
   };
 
   function renderDisponibles(items){

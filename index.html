@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India · Tejido a mano</title>
+<meta name="description" content="Chalecos tejidos a mano. Cada pieza es única. Hechos a tu medida.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #f3ece0;
+    --bg-soft: #ece2d1;
+    --bg-deep: #e3d6bf;
+    --ink: #221a13;
+    --ink-soft: #4a3a2a;
+    --muted: #8a7558;
+    --line: #c9b896;
+    --accent: #8b6535;
+    --accent-deep: #5e4422;
+    --cream: #faf5ea;
+    --wa: #25d366;
+    --wa-deep: #128c7e;
+    --shadow: 0 30px 60px -30px rgba(60,40,20,0.35);
+    --shadow-soft: 0 18px 40px -20px rgba(60,40,20,0.30);
+  }
+  *{margin:0; padding:0; box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img{display:block; max-width:100%; height:auto}
+  a{color: inherit; text-decoration: none}
+
+  .display{
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 400;
+    font-variation-settings: "SOFT" 50, "opsz" 144;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+  }
+  .label{
+    font-family: 'DM Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .it{ font-style: italic; font-weight: 350; color: var(--accent-deep); }
+
+  /* Grano sutil global */
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.25;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.10  0 0 0 0 0.05  0 0 0 0.18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* NAV */
+  nav{
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(243, 236, 224, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 101, 53, 0.12);
+  }
+  .nav-inner{
+    max-width: 1400px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+  }
+  .brand{ display: flex; align-items: center; gap: 14px; }
+  .brand-logo{ width: 56px; height: auto; object-fit: contain; }
+  .brand-text{
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 1.45rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .brand-tag{
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 0.7rem;
+    text-transform: lowercase;
+    letter-spacing: 0.10em;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .nav-cta{
+    background: var(--wa); color: #fff;
+    padding: 10px 16px; border-radius: 100px;
+    font-size: 0.85rem; font-weight: 500;
+    transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 20px -8px rgba(37, 211, 102, 0.5);
+  }
+  .nav-cta:hover{ background: var(--wa-deep); transform: translateY(-1px); }
+  .nav-cta svg{ width: 16px; height: 16px; fill: currentColor; }
+  @media(max-width: 480px){
+    .brand-logo{ width: 46px; }
+    .brand-text{ font-size: 1.15rem; letter-spacing: 0.16em; }
+    .brand-tag{ font-size: 0.62rem; }
+    .nav-cta{ padding: 9px 14px; font-size: 0.78rem; }
+    .nav-cta span{ display:none; }
+  }
+
+  /* HERO */
+  .hero{
+    padding: 40px 24px 60px;
+    max-width: 1300px; margin: 0 auto;
+    position: relative;
+  }
+  .hero-grid{
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 40px; align-items: center;
+  }
+  .hero h1{
+    font-size: clamp(4.8rem, 16vw, 11rem);
+    font-weight: 350;
+    font-variation-settings: "SOFT" 90, "opsz" 144;
+    margin: 18px 0 8px;
+  }
+  .hero-sub{
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.3rem, 3.5vw, 2.2rem);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent-deep);
+    line-height: 1.1;
+    margin-bottom: 28px;
+  }
+  .hero-lead{
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 460px;
+    margin-bottom: 32px;
+  }
+  .hero-cta{
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--wa); color: #fff;
+    padding: 18px 32px; border-radius: 100px;
+    font-weight: 500; font-size: 1rem;
+    box-shadow: 0 18px 40px -15px rgba(37, 211, 102, 0.55);
+    transition: all 0.3s;
+  }
+  .hero-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); box-shadow: 0 24px 50px -15px rgba(37, 211, 102, 0.65); }
+  .hero-cta svg{ width: 20px; height: 20px; fill: currentColor; }
+  .hero-img{
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero-img img{
+    max-width: 100%;
+    max-height: 70vh;
+    width: auto; height: auto;
+    filter: drop-shadow(0 25px 35px rgba(60,40,20,0.18));
+    transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+  .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
+  /* círculo decorativo detrás */
+  .hero-img::before{
+    content:""; position:absolute;
+    width: 78%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, var(--bg-deep), transparent 70%);
+    z-index: -1;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  @media(max-width: 800px){
+    .hero{ padding: 24px 20px 40px; }
+    .hero-grid{ grid-template-columns: 1fr; gap: 16px; }
+    .hero-img{ order: -1; }
+    .hero-img img{ max-height: 55vh; }
+    .hero h1{ text-align: center; }
+    .hero-sub{ text-align: center; }
+    .hero-lead{ margin-left:auto; margin-right:auto; text-align:center; }
+    .hero-text{ display:flex; flex-direction:column; align-items:center; }
+    .hero-cta{ align-self:center; }
+  }
+
+  /* GALERIA */
+  .gallery{
+    padding: 60px 24px 80px;
+    max-width: 1300px; margin: 0 auto;
+  }
+  .gallery-head{
+    text-align: center;
+    margin-bottom: 60px;
+  }
+  .gallery-head h2{
+    font-size: clamp(2.4rem, 7vw, 4.5rem);
+    margin-top: 14px;
+    font-variation-settings: "SOFT" 70;
+  }
+  .gallery-head p{
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    max-width: 480px;
+    margin: 18px auto 0;
+  }
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 60px 40px;
+  }
+  .piece{
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    gap: 18px;
+  }
+  .piece-img{
+    position: relative;
+    width: 100%;
+    height: 380px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* halo orgánico detrás de la prenda */
+  .piece-img::before{
+    content:""; position:absolute;
+    width: 75%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, var(--bg-deep), transparent 65%);
+    z-index: 0;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    transition: transform 1s cubic-bezier(.2,.8,.2,1);
+  }
+  .piece-img img{
+    position: relative; z-index: 1;
+    max-height: 100%; max-width: 100%;
+    width: auto; height: auto; object-fit: contain;
+    filter: drop-shadow(0 20px 28px rgba(60,40,20,0.18));
+    transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
+  }
+  .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
+  .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
+  .piece-info h3{
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem; font-weight: 400; line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .piece-info .desc{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.95rem; color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .piece-cta{
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ink); color: var(--cream);
+    padding: 12px 22px; border-radius: 100px;
+    font-size: 0.88rem; font-weight: 500;
+    transition: all 0.3s;
+  }
+  .piece-cta:hover{ background: var(--wa); transform: translateY(-2px); }
+  .piece-cta svg{ width: 14px; height: 14px; fill: currentColor; }
+  @media(max-width: 760px){
+    .grid{ grid-template-columns: 1fr; gap: 50px; }
+    .piece-img{ height: 340px; }
+  }
+
+  /* A MEDIDA */
+  .custom{
+    background: var(--ink); color: var(--cream);
+    padding: 100px 24px;
+    position: relative; overflow: hidden;
+  }
+  .custom::before{
+    content: "Hecho a mano";
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: clamp(7rem, 22vw, 22rem);
+    color: rgba(212, 175, 130, 0.06);
+    white-space: nowrap; pointer-events: none;
+    font-weight: 300; letter-spacing: -0.04em;
+  }
+  .custom-inner{
+    max-width: 1100px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .custom .label{ color: rgba(212, 175, 130, 0.7); }
+  .custom h2{
+    font-size: clamp(2.3rem, 6.5vw, 5rem);
+    margin: 16px 0 24px; max-width: 900px;
+    font-variation-settings: "SOFT" 80;
+  }
+  .custom h2 .it{ color: #d4af82; }
+  .custom-lead{
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    max-width: 620px;
+    color: rgba(250,245,234,0.78);
+    line-height: 1.55;
+    margin-bottom: 50px;
+  }
+  .custom-grid{
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 32px; margin-bottom: 50px;
+  }
+  .custom-step{
+    border-top: 1px solid rgba(212, 175, 130, 0.3);
+    padding-top: 22px;
+  }
+  .custom-step .step-num{
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 2rem; color: #d4af82;
+    margin-bottom: 14px; font-weight: 300;
+  }
+  .custom-step h4{
+    font-family: 'Fraunces', serif;
+    font-size: 1.2rem; font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .custom-step p{
+    font-size: 0.95rem; color: rgba(250, 245, 234, 0.7);
+    line-height: 1.55;
+  }
+  .custom-cta{
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--wa); color: #fff;
+    padding: 18px 32px; border-radius: 100px;
+    font-weight: 500; font-size: 1rem;
+    transition: all 0.3s;
+    box-shadow: 0 18px 40px -15px rgba(37, 211, 102, 0.5);
+  }
+  .custom-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); }
+  .custom-cta svg{ width: 20px; height: 20px; fill: currentColor; }
+  @media(max-width: 760px){
+    .custom{ padding: 70px 20px; }
+    .custom-grid{ grid-template-columns: 1fr; gap: 28px; margin-bottom: 36px; }
+  }
+
+  /* CARE */
+  .care{
+    padding: 90px 24px;
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 60px; align-items: center;
+  }
+  .care-img{
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    height: 480px;
+  }
+  .care-img::before{
+    content:""; position:absolute;
+    width: 80%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, var(--bg-deep), transparent 65%);
+    z-index: 0;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .care-img img{
+    position:relative; z-index:1;
+    max-height: 100%; width: auto; max-width: 100%;
+    filter: drop-shadow(0 20px 30px rgba(60,40,20,0.18));
+  }
+  .care-body h2{
+    font-size: clamp(2rem, 4.5vw, 3.4rem);
+    margin: 14px 0 28px;
+    font-variation-settings: "SOFT" 70;
+  }
+  .care-list{ list-style: none; }
+  .care-list li{
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: 50px 1fr;
+    gap: 20px; align-items: start;
+  }
+  .care-list li:last-child{ border-bottom: 1px solid var(--line); }
+  .care-list .ico{
+    font-family: 'Fraunces', serif; font-style: italic;
+    color: var(--accent-deep); font-size: 1.4rem; font-weight: 300;
+  }
+  .care-list .txt strong{
+    font-family: 'Fraunces', serif; font-weight: 400;
+    font-size: 1.05rem;
+    display: block; margin-bottom: 4px;
+  }
+  .care-list .txt span{
+    color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;
+  }
+  @media(max-width: 900px){
+    .care{ grid-template-columns: 1fr; gap: 30px; padding: 60px 20px; }
+    .care-img{ height: 360px; }
+  }
+
+  /* FINAL CTA */
+  .final{
+    background: var(--bg-soft);
+    padding: 110px 24px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .final-logo{
+    width: 100px; height: auto;
+    margin: 0 auto 24px;
+    object-fit: contain;
+    opacity: 0.9;
+    filter: drop-shadow(0 10px 20px rgba(60,40,20,0.15));
+  }
+  .final-inner{
+    max-width: 720px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .final h2{
+    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    margin: 18px 0 22px;
+    font-variation-settings: "SOFT" 90;
+  }
+  .final p{
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem; color: var(--ink-soft);
+    margin-bottom: 36px; max-width: 500px;
+    margin-left: auto; margin-right: auto;
+    line-height: 1.55;
+  }
+  .wa-btn{
+    display: inline-flex; align-items: center; gap: 14px;
+    background: var(--wa); color: #fff;
+    padding: 22px 38px; border-radius: 100px;
+    font-weight: 500; font-size: 1.05rem;
+    box-shadow: 0 20px 40px -15px rgba(37, 211, 102, 0.5);
+    transition: all 0.3s;
+  }
+  .wa-btn:hover{
+    background: var(--wa-deep);
+    transform: translateY(-3px);
+    box-shadow: 0 25px 50px -15px rgba(37, 211, 102, 0.6);
+  }
+  .wa-btn svg{ width: 24px; height: 24px; fill: white; }
+
+  /* FOOTER */
+  footer{
+    background: var(--ink); color: rgba(250, 245, 234, 0.7);
+    padding: 50px 24px 30px;
+  }
+  .foot-inner{
+    max-width: 1200px; margin: 0 auto;
+    display: flex; flex-wrap: wrap;
+    gap: 30px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .foot-brand{
+    display: flex; align-items: center; gap: 14px;
+  }
+  .foot-logo{
+    width: 54px; height: auto;
+    object-fit: contain;
+    opacity: 0.85;
+  }
+  .foot-brand-text{
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem; color: var(--cream);
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .foot-nav{
+    display: flex; gap: 28px; flex-wrap: wrap;
+  }
+  .foot-nav a{ font-size: 0.9rem; transition: color 0.2s; }
+  .foot-nav a:hover{ color: #d4af82; }
+  .foot-bottom{
+    border-top: 1px solid rgba(212, 175, 130, 0.18);
+    padding-top: 22px;
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px;
+    font-size: 0.78rem;
+    color: rgba(250, 245, 234, 0.5);
+  }
+  .foot-bottom em{ font-style: italic; font-family: 'Fraunces', serif; }
+
+  /* WhatsApp flotante */
+  .wa-float{
+    position: fixed; bottom: 18px; right: 18px;
+    width: 58px; height: 58px;
+    background: var(--wa); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 28px rgba(37, 211, 102, 0.45);
+    z-index: 200; transition: transform 0.3s;
+  }
+  .wa-float:hover{ transform: scale(1.1); }
+  .wa-float svg{ width: 30px; height: 30px; fill: white; }
+  /* pulso sutil */
+  .wa-float::after{
+    content:""; position:absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--wa);
+    opacity: 0;
+    animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{ transform: scale(1); opacity: 0.6; }
+    100%{ transform: scale(1.7); opacity: 0; }
+  }
+
+  @keyframes fadeUp{
+    from{ opacity: 0; transform: translateY(20px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .reveal{
+    opacity: 0;
+    animation: fadeUp 1.2s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .d1{ animation-delay: 0.05s; }
+  .d2{ animation-delay: 0.20s; }
+
+  /* dejar espacio bajo el WhatsApp flotante en mobile */
+  @media(max-width: 760px){
+    footer{ padding-bottom: 90px; }
+  }
+
+  /* Estados de carga y galería dinámica */
+  .loading, .empty{
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--muted);
+  }
+  .empty strong{
+    display: block;
+    font-size: 1.3rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  /* Trabajos anteriores: grid más denso, sin botón de consultar */
+  .grid-anteriores{
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 30px !important;
+  }
+  .grid-anteriores .piece-img{ height: 280px; }
+  .grid-anteriores .piece-info h3{ font-size: 1.1rem; }
+  .grid-anteriores .piece-info .desc{ font-size: 0.85rem; margin-bottom: 0; }
+  .grid-anteriores .piece-cta{ display: none; }
+  @media(max-width: 760px){
+    .grid-anteriores{
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 24px !important;
+    }
+    .grid-anteriores .piece-img{ height: 220px; }
+  }
+  @media(max-width: 420px){
+    .grid-anteriores{ grid-template-columns: 1fr !important; }
+    .grid-anteriores .piece-img{ height: 280px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <img src="img/logo-icon.webp" alt="India" class="brand-logo">
+      <div>
+        <span class="brand-text">India</span>
+        <span class="brand-tag">tejido a mano</span>
+      </div>
+    </a>
+    <a href="https://wa.me/5493454329909?text=Hola!%20Vi%20la%20página%20y%20me%20interesa%20un%20chaleco." class="nav-cta" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+      </svg>
+      <span>WhatsApp</span>
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-text reveal d1">
+      <span class="label">Tejido a mano</span>
+      <h1 class="display">India.</h1>
+      <p class="hero-sub">Lana, agujas y <span class="it">tiempo.</span></p>
+      <p class="hero-lead">
+        Chalecos hechos uno por uno. Si te gusta uno, lo reservás. Si querés otro, lo tejo a tu medida.
+      </p>
+      <a href="https://wa.me/5493454329909?text=Hola!%20Vi%20la%20página%20y%20me%20interesa%20un%20chaleco." target="_blank" rel="noopener" class="hero-cta">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+        </svg>
+        Hablar por WhatsApp
+      </a>
+    </div>
+    <div class="hero-img reveal d2">
+      <img id="hero-img" src="" alt="Chaleco de lana tejido a mano" style="display:none">
+    </div>
+  </div>
+</section>
+
+<!-- GALERIA -->
+<section class="gallery" id="chalecos">
+  <div class="gallery-head">
+    <span class="label">Las piezas</span>
+    <h2 class="display">Lo que <span class="it">hay hoy.</span></h2>
+    <p>Estos son los chalecos disponibles. Reservá el tuyo por WhatsApp.</p>
+  </div>
+
+  <div class="grid" id="grid-disponibles">
+    <!-- Los chalecos disponibles se cargan acá automáticamente -->
+    <div class="loading">Cargando chalecos...</div>
+  </div>
+</section>
+
+<!-- TRABAJOS ANTERIORES -->
+<section class="gallery" id="anteriores" style="padding-top: 0;">
+  <div class="gallery-head">
+    <span class="label">Trabajos anteriores</span>
+    <h2 class="display">Otros <span class="it">tejidos.</span></h2>
+    <p>Algunos chalecos que ya hicimos. Para que veas el estilo.</p>
+  </div>
+
+  <div class="grid grid-anteriores" id="grid-anteriores">
+    <!-- Los trabajos anteriores se cargan acá automáticamente -->
+  </div>
+</section>
+
+<!-- A MEDIDA -->
+<section class="custom" id="a-medida">
+  <div class="custom-inner">
+    <span class="label">A medida</span>
+    <h2 class="display">
+      Decinos qué <span class="it">imaginás.</span><br>
+      Lo tejemos para vos.
+    </h2>
+    <p class="custom-lead">
+      ¿Querés un chaleco con trenzas en particular? ¿En tu talle exacto? Lo hacemos. Mandanos tu idea por WhatsApp.
+    </p>
+
+    <div class="custom-grid">
+      <div class="custom-step">
+        <div class="step-num">i</div>
+        <h4>Contanos qué querés</h4>
+        <p>Mandanos por WhatsApp el tipo de trenza, foto de referencia, talle y los colores. Cualquier idea sirve.</p>
+      </div>
+      <div class="custom-step">
+        <div class="step-num">ii</div>
+        <h4>Te pasamos presupuesto</h4>
+        <p>Cuando estás de acuerdo con el precio y los detalles, arrancamos a tejer.</p>
+      </div>
+      <div class="custom-step">
+        <div class="step-num">iii</div>
+        <h4>Recibís tu chaleco</h4>
+        <p>Te avisamos cuando esté listo. Una prenda hecha solo para vos.</p>
+      </div>
+    </div>
+
+    <a href="https://wa.me/5493454329909?text=Hola!%20Quiero%20encargar%20un%20chaleco%20con%20trenzas..." target="_blank" rel="noopener" class="custom-cta">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+      </svg>
+      Pedir el mío a medida
+    </a>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final">
+  <div class="final-inner">
+    <img src="img/logo-icon.webp" alt="India" class="final-logo">
+    <span class="label">Hablemos</span>
+    <h2 class="display">Tu próximo invierno <span class="it">empieza acá.</span></h2>
+    <p>Escribime por WhatsApp. Mostrame qué buscás, contame tu talle, mandame un dibujo. Lo tejo a tu medida.</p>
+    <a href="https://wa.me/5493454329909?text=Hola!%20Vi%20la%20página%20y%20quiero%20info%20de%20los%20chalecos." target="_blank" rel="noopener" class="wa-btn">
+      <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+      </svg>
+      Escribirnos al +54 9 345 432-9909
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-brand">
+      <img src="img/logo-icon.webp" alt="India" class="foot-logo">
+      <span class="foot-brand-text">India</span>
+    </div>
+    <div class="foot-nav">
+      <a href="#chalecos">Chalecos</a>
+      <a href="#a-medida">A medida</a>
+      <a href="https://wa.me/5493454329909" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 India</span>
+    <em>Hecho con lana, agujas y tiempo.</em>
+  </div>
+</footer>
+
+<a href="https://wa.me/5493454329909?text=Hola!%20Vi%20la%20página%20y%20quiero%20info%20de%20los%20chalecos." class="wa-float" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+  </svg>
+</a>
+
+<!-- Firebase + lógica dinámica -->
+<script type="module">
+  import { firebaseConfig } from './firebase-config.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+  import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PHONE = '5493454329909';
+  const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
+
+  function renderDisponibles(items){
+    const grid = document.getElementById('grid-disponibles');
+    const heroImg = document.getElementById('hero-img');
+
+    // Hero: primera foto disponible (si hay)
+    if (items.length > 0 && items[0].foto) {
+      heroImg.src = items[0].foto;
+      heroImg.alt = items[0].nombre || 'Chaleco tejido a mano';
+      heroImg.style.display = '';
+    } else {
+      heroImg.style.display = 'none';
+    }
+
+    if (items.length === 0) {
+      grid.innerHTML = `<div class="empty">
+        <strong>Estamos tejiendo nuevas piezas.</strong>
+        Escribinos por WhatsApp y te avisamos cuando haya nuevos chalecos.
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map((it, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      const nombre = escapeHtml(it.nombre || 'Chaleco tejido a mano');
+      const desc = escapeHtml(it.desc || '');
+      const msg = `Hola! Me interesa el chaleco N°${num} ${it.nombre || ''}.`.trim();
+      return `
+        <article class="piece">
+          <div class="piece-img"><img src="${it.foto}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-info">
+            <h3>N.º ${num} · <span class="it">${nombre}</span></h3>
+            ${desc ? `<div class="desc">${desc}</div>` : ''}
+            <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
+              Consultar
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </a>
+          </div>
+        </article>`;
+    }).join('');
+
+    animatePieces();
+  }
+
+  function renderAnteriores(items){
+    const grid = document.getElementById('grid-anteriores');
+    const section = document.getElementById('anteriores');
+
+    if (items.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+
+    grid.innerHTML = items.map(it => {
+      const nombre = escapeHtml(it.nombre || 'Chaleco');
+      const desc = escapeHtml(it.desc || '');
+      return `
+        <article class="piece">
+          <div class="piece-img"><img src="${it.foto}" alt="${nombre}" loading="lazy"></div>
+          <div class="piece-info">
+            <h3><span class="it">${nombre}</span></h3>
+            ${desc ? `<div class="desc">${desc}</div>` : ''}
+          </div>
+        </article>`;
+    }).join('');
+
+    animatePieces();
+  }
+
+  function animatePieces(){
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          e.target.style.animation = 'fadeUp 1.2s cubic-bezier(.2,.8,.2,1) forwards';
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.piece').forEach(el => {
+      if (!el.style.animation) {
+        el.style.opacity = '0';
+        io.observe(el);
+      }
+    });
+  }
+
+  // Suscribirse a Firestore en tiempo real
+  const qDisp = query(collection(db, 'chalecos'), where('estado', '==', 'disponible'), orderBy('orden', 'asc'));
+  onSnapshot(qDisp, snap => {
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDisponibles(items);
+  }, err => {
+    console.error('Error cargando disponibles:', err);
+    document.getElementById('grid-disponibles').innerHTML = `<div class="empty"><strong>Error al cargar.</strong>Recargá la página.</div>`;
+  });
+
+  const qAnt = query(collection(db, 'chalecos'), where('estado', '==', 'anterior'), orderBy('orden', 'asc'));
+  onSnapshot(qAnt, snap => {
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAnteriores(items);
+  }, err => {
+    console.error('Error cargando anteriores:', err);
+  });
+</script>
+
+<script>
+  // Animaciones de los custom-step (estáticos)
+  const ioStatic = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.style.animation = 'fadeUp 1.2s cubic-bezier(.2,.8,.2,1) forwards';
+        ioStatic.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.custom-step').forEach(el => {
+    el.style.opacity = '0';
+    ioStatic.observe(el);
+  });
+
+  // WhatsApp flotante
+  const waFloat = document.querySelector('.wa-float');
+  if (waFloat) {
+    waFloat.style.opacity = '0';
+    waFloat.style.pointerEvents = 'none';
+    waFloat.style.transform = 'scale(0.6)';
+    waFloat.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(.2,.8,.2,1)';
+    let shown = false;
+    const check = () => {
+      const should = window.scrollY > 600;
+      if (should && !shown) {
+        waFloat.style.opacity = '1';
+        waFloat.style.pointerEvents = 'auto';
+        waFloat.style.transform = 'scale(1)';
+        shown = true;
+      } else if (!should && shown) {
+        waFloat.style.opacity = '0';
+        waFloat.style.pointerEvents = 'none';
+        waFloat.style.transform = 'scale(0.6)';
+        shown = false;
+      }
+    };
+    window.addEventListener('scroll', check, { passive: true });
+    check();
+  }
+</script>
+
+</body>
+</html>

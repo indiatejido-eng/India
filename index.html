@@ -782,7 +782,7 @@
 <script type="module">
   import { firebaseConfig } from './firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-  import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -904,6 +904,23 @@
   ['chalecos', 'anteriores', 'a-medida'].forEach(id => {
     const el = document.getElementById(id);
     if (el) spy.observe(el);
+  });
+
+  // Tracking de visitas y clicks de WhatsApp en doc stats/{visitas,clicks_whatsapp}.
+  // Visita: 1 por dispositivo cada hora (debounce con localStorage para no inflar al recargar).
+  (function trackVisita(){
+    const KEY = 'india_last_visita';
+    const COOLDOWN_MS = 3600000;
+    const last = parseInt(localStorage.getItem(KEY) || '0', 10);
+    if (Date.now() - last < COOLDOWN_MS) return;
+    localStorage.setItem(KEY, Date.now().toString());
+    setDoc(doc(db, 'stats', 'visitas'), { count: increment(1) }, { merge: true }).catch(() => {});
+  })();
+  // Clicks WhatsApp: event delegation captura todos los a[href*=wa.me] (header, hero, CTA, FAB, pieces dinámicos).
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href*="wa.me"]');
+    if (!a) return;
+    setDoc(doc(db, 'stats', 'clicks_whatsapp'), { count: increment(1) }, { merge: true }).catch(() => {});
   });
 
   // Suscribirse a Firestore en tiempo real

@@ -138,6 +138,45 @@
   }
   .page-head p{ color: var(--muted); margin-top: 4px; }
 
+  .stats{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card{
+    background: var(--bg-card);
+    padding: 22px 24px;
+    border-radius: 14px;
+    border: 1px solid rgba(60,40,20,0.08);
+  }
+  .stat-label{
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 500;
+  }
+  .stat-num{
+    font-family: 'Fraunces', serif;
+    font-size: 2.6rem;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1;
+    margin-top: 10px;
+  }
+  .stat-hint{
+    font-size: 0.78rem;
+    color: #8a7558;
+    font-style: italic;
+    margin-top: 8px;
+  }
+  @media(max-width: 640px){
+    .stats{ grid-template-columns: 1fr; }
+    .stat-num{ font-size: 2.1rem; }
+    .stat-card{ padding: 18px 20px; }
+  }
+
   .tabs{
     display: flex; gap: 8px;
     background: var(--bg-soft);
@@ -374,6 +413,19 @@
       </div>
     </div>
 
+    <section class="stats" aria-label="Estadísticas de la página">
+      <div class="stat-card">
+        <div class="stat-label">Visitas a la página</div>
+        <div class="stat-num" id="stat-visitas">—</div>
+        <div class="stat-hint">Una visita por dispositivo cada hora</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Clicks en WhatsApp</div>
+        <div class="stat-num" id="stat-wa">—</div>
+        <div class="stat-hint">Suma todos los botones WhatsApp del sitio</div>
+      </div>
+    </section>
+
     <div class="tabs">
       <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
@@ -536,6 +588,15 @@ document.querySelectorAll('.tab').forEach(t => {
     $(`panel-${currentTab}`).classList.add('active');
   });
 });
+
+// ===== SUSCRIPCIÓN A STATS (independiente del login, public read) =====
+const fmtNum = (n) => (n ?? 0).toLocaleString('es-AR');
+onSnapshot(doc(db, 'stats', 'visitas'), snap => {
+  $('stat-visitas').textContent = fmtNum(snap.data()?.count);
+}, () => { $('stat-visitas').textContent = '0'; });
+onSnapshot(doc(db, 'stats', 'clicks_whatsapp'), snap => {
+  $('stat-wa').textContent = fmtNum(snap.data()?.count);
+}, () => { $('stat-wa').textContent = '0'; });
 
 // ===== SUSCRIPCIÓN A FIRESTORE =====
 let unsubDisp = null, unsubAnt = null;

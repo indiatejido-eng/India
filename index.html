@@ -717,7 +717,7 @@
       <div class="custom-step">
         <div class="step-num">iii</div>
         <h4>Recibís tu chaleco</h4>
-        <p>Te avisamos cuando esté listo. Una prenda hecha solo para vos.</p>
+        <p>Te avisamos cuando esté listo y te lo enviamos. Una prenda hecha solo para vos.</p>
       </div>
     </div>
 
@@ -814,16 +814,15 @@
     }
 
     grid.className = 'grid ' + gridSizeClass(items.length);
-    grid.innerHTML = items.map((it, i) => {
-      const num = String(i + 1).padStart(2, '0');
+    grid.innerHTML = items.map((it) => {
       const nombre = escapeHtml(it.nombre || 'Chaleco tejido a mano');
       const desc = escapeHtml(it.desc || '');
-      const msg = `Hola! Me interesa el chaleco N°${num} ${it.nombre || ''}.`.trim();
+      const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
           <div class="piece-img"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
-            <h3>N.º ${num} · <span class="it">${nombre}</span></h3>
+            <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
             <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
               Consultar

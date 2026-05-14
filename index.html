@@ -211,6 +211,20 @@
   }
   .hero-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); box-shadow: 0 24px 50px -15px rgba(37, 211, 102, 0.65); }
   .hero-cta svg{ width: 20px; height: 20px; fill: currentColor; }
+  .hero-perk{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin-top: 14px;
+    letter-spacing: 0.01em;
+  }
+  .hero-perk::before{
+    content: "✓ ";
+    color: var(--wa);
+    font-style: normal;
+    font-weight: 600;
+  }
   .hero-img{
     position: relative;
     display: flex; align-items: center; justify-content: center;
@@ -664,6 +678,7 @@
         </svg>
         Hablar por WhatsApp
       </a>
+      <p class="hero-perk">Envío gratis a todo el país</p>
     </div>
     <div class="hero-img reveal d2">
       <img id="hero-img" src="https://res.cloudinary.com/dgl2mizsf/image/upload/e_background_removal,f_auto,q_auto/v1778193587/hero-hilos.jpg" alt="Hilos de lana hilados a mano" data-retries="0" onerror="retryImg(this)">
@@ -724,7 +739,7 @@
       <div class="custom-step">
         <div class="step-num">iii</div>
         <h4>Recibís tu chaleco</h4>
-        <p>Te avisamos cuando esté listo y te lo enviamos. Una prenda hecha solo para vos.</p>
+        <p>Te avisamos cuando esté listo y te lo enviamos gratis a tu casa. Una prenda hecha solo para vos.</p>
       </div>
     </div>
 

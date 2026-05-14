@@ -314,21 +314,65 @@
   .file-drop{
     border: 2px dashed var(--line);
     border-radius: 12px;
-    padding: 24px;
+    padding: 18px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
   }
   .file-drop:hover{ border-color: var(--accent); background: rgba(139,101,53,0.03); }
-  .file-drop.has-file{ padding: 0; border: 0; }
-  .file-drop img{
-    width: 100%; max-height: 280px; object-fit: contain;
-    border-radius: 12px; background: var(--bg-soft);
-  }
   .file-drop input{ display: none; }
-  .file-drop-text{ color: var(--muted); }
+  .file-drop-text{ color: var(--muted); font-size: 0.88rem; }
   .file-drop-text strong{ color: var(--ink-soft); display: block; margin-bottom: 4px; font-weight: 500; }
+
+  .fotos-manager{ display: flex; flex-direction: column; gap: 12px; }
+  .fotos-list{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .fotos-list:empty{ display: none; }
+  .foto-item{
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-soft);
+    cursor: grab;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.2s, opacity 0.2s;
+  }
+  .foto-item:active{ cursor: grabbing; }
+  .foto-item img{ width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .foto-item.is-principal{ border-color: var(--accent); }
+  .foto-item.dragging{ opacity: 0.35; }
+  .foto-item.drag-over{ transform: scale(1.04); border-color: var(--accent); }
+  .foto-item .foto-badge{
+    position: absolute; top: 6px; left: 6px;
+    background: var(--accent); color: white;
+    font-size: 0.62rem; padding: 3px 8px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em; font-weight: 600;
+    display: none;
+    pointer-events: none;
+  }
+  .foto-item.is-principal .foto-badge{ display: inline-block; }
+  .foto-item .foto-actions{
+    position: absolute; bottom: 4px; left: 4px; right: 4px;
+    display: flex; gap: 4px; justify-content: space-between;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .foto-item:hover .foto-actions{ opacity: 1; }
+  .foto-actions button{
+    background: rgba(0,0,0,0.72); color: white;
+    font-size: 0.65rem; padding: 4px 7px;
+    border-radius: 6px; border: 0;
+    cursor: pointer; font-weight: 500;
+  }
+  .foto-actions button:hover{ background: rgba(0,0,0,0.92); }
+  .foto-actions .foto-del{ background: rgba(220,53,69,0.85); padding: 4px 8px; font-weight: 600; }
+  .foto-actions .foto-del:hover{ background: rgba(220,53,69,1); }
 
   .modal-actions{
     display: flex; gap: 10px; margin-top: 24px;
@@ -447,15 +491,19 @@
     <h3 id="modal-title">Nuevo chaleco</h3>
 
     <div class="field">
-      <label>Foto</label>
-      <label class="file-drop" id="file-drop">
-        <input type="file" id="file-input" accept="image/*">
-        <div class="file-drop-text" id="file-drop-text">
-          <strong>Hacé clic para subir foto</strong>
-          <span>JPG, PNG o WEBP</span>
-        </div>
-      </label>
-      <div class="progress" id="progress"><div class="progress-bar" id="progress-bar"></div></div>
+      <label>Fotos del chaleco</label>
+      <div class="fotos-manager">
+        <div class="fotos-list" id="fotos-list"></div>
+        <label class="file-drop" id="file-drop">
+          <input type="file" id="file-input" accept="image/*" multiple>
+          <div class="file-drop-text">
+            <strong>Agregar fotos</strong>
+            <span>Podés seleccionar varias a la vez. JPG, PNG o WEBP.</span>
+          </div>
+        </label>
+        <div class="progress" id="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <div class="field-hint">La primera es la principal (la que se ve en la grilla). Arrastrá para reordenar o clic en "Principal".</div>
+      </div>
     </div>
 
     <div class="field">
@@ -670,11 +718,12 @@ function renderGrid(estado, items){
 }
 
 // ===== MODAL =====
-let editing = null; // { id?, estado, foto?, fotoPath? }
-let nuevoArchivo = null;
+let editing = null; // { id?, estado, ... }
+// fotos: array de objetos. Subidas → { url, path }. Pendientes → { preview, file }.
+let fotos = [];
+let dragFromIdx = null;
 
 const modal = $('modal-bg');
-const fileDrop = $('file-drop');
 const fileInput = $('file-input');
 
 $('modal-close').addEventListener('click', cerrarModal);
@@ -682,21 +731,71 @@ $('btn-cancel').addEventListener('click', cerrarModal);
 modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
 
 fileInput.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  if (!f.type.startsWith('image/')) {
-    showToast('Tiene que ser una imagen', true);
-    return;
-  }
-  nuevoArchivo = f;
-  // Preview
-  const reader = new FileReader();
-  reader.onload = ev => {
-    fileDrop.classList.add('has-file');
-    $('file-drop-text').innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
-  };
-  reader.readAsDataURL(f);
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  let pendientes = files.filter(f => f.type.startsWith('image/'));
+  if (pendientes.length !== files.length) showToast('Algunos archivos no eran imágenes', true);
+  pendientes.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      fotos.push({ preview: ev.target.result, file: f });
+      renderFotosList();
+    };
+    reader.readAsDataURL(f);
+  });
+  fileInput.value = '';
 });
+
+function renderFotosList(){
+  const list = $('fotos-list');
+  list.innerHTML = fotos.map((f, i) => `
+    <div class="foto-item ${i === 0 ? 'is-principal' : ''}" draggable="true" data-idx="${i}">
+      <img src="${f.preview || f.url}" alt="">
+      <span class="foto-badge">Principal</span>
+      <div class="foto-actions">
+        ${i !== 0 ? `<button type="button" data-make-principal="${i}">Principal</button>` : '<span></span>'}
+        <button type="button" class="foto-del" data-del-foto="${i}" title="Quitar">×</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.foto-item').forEach(el => {
+    el.addEventListener('dragstart', () => {
+      dragFromIdx = parseInt(el.dataset.idx, 10);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      list.querySelectorAll('.foto-item').forEach(x => x.classList.remove('drag-over'));
+      dragFromIdx = null;
+    });
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const toIdx = parseInt(el.dataset.idx, 10);
+      if (dragFromIdx === null || dragFromIdx === toIdx) return;
+      const [moved] = fotos.splice(dragFromIdx, 1);
+      fotos.splice(toIdx, 0, moved);
+      renderFotosList();
+    });
+  });
+  list.querySelectorAll('[data-make-principal]').forEach(b => {
+    b.addEventListener('click', () => {
+      const i = parseInt(b.dataset.makePrincipal, 10);
+      const [moved] = fotos.splice(i, 1);
+      fotos.unshift(moved);
+      renderFotosList();
+    });
+  });
+  list.querySelectorAll('[data-del-foto]').forEach(b => {
+    b.addEventListener('click', () => {
+      const i = parseInt(b.dataset.delFoto, 10);
+      fotos.splice(i, 1);
+      renderFotosList();
+    });
+  });
+}
 
 function abrirModal(modo, estado, id=null){
   const item = id ? [...dataDisp, ...dataAnt].find(x => x.id === id) : null;
@@ -706,26 +805,28 @@ function abrirModal(modo, estado, id=null){
   $('modal-title').textContent = item ? 'Editar chaleco' : 'Nuevo chaleco';
   $('m-nombre').value = item?.nombre || '';
   $('m-desc').value = item?.desc || '';
-  nuevoArchivo = null;
   fileInput.value = '';
 
-  if (item?.foto) {
-    fileDrop.classList.add('has-file');
-    $('file-drop-text').innerHTML = `<img src="${item.foto}" alt="Foto actual">`;
+  // Hidratar fotos del item (con fallback a 'foto'/'fotoPath' viejo para chalecos pre-multi)
+  if (item?.fotos && Array.isArray(item.fotos) && item.fotos.length > 0) {
+    fotos = item.fotos.map(f => ({ url: f.url, path: f.path || '' }));
+  } else if (item?.foto) {
+    fotos = [{ url: item.foto, path: item.fotoPath || '' }];
   } else {
-    fileDrop.classList.remove('has-file');
-    $('file-drop-text').innerHTML = `<strong>Hacé clic para subir foto</strong><span>JPG, PNG o WEBP</span>`;
+    fotos = [];
   }
+  renderFotosList();
+
   $('progress').classList.remove('show');
   $('progress-bar').style.width = '0%';
-
   modal.classList.add('show');
 }
 
 function cerrarModal(){
   modal.classList.remove('show');
   editing = null;
-  nuevoArchivo = null;
+  fotos = [];
+  dragFromIdx = null;
 }
 
 $('btn-save').addEventListener('click', guardar);
@@ -735,29 +836,36 @@ async function guardar(){
   const desc = $('m-desc').value.trim();
 
   if (!nombre) { showToast('Falta el nombre', true); return; }
-  if (!editing.foto && !nuevoArchivo) { showToast('Falta la foto', true); return; }
+  if (fotos.length === 0) { showToast('Falta al menos una foto', true); return; }
 
   $('btn-save').disabled = true;
   $('btn-save').textContent = 'Guardando...';
 
   try {
-    let fotoUrl = editing.foto;
-    let fotoPath = editing.fotoPath;
-
-    // Si hay archivo nuevo, subirlo a Cloudinary
-    if (nuevoArchivo) {
+    const pendientes = fotos.filter(f => f.file);
+    if (pendientes.length > 0) {
       $('progress').classList.add('show');
-      const r = await uploadToCloudinary(nuevoArchivo, (pct) => {
-        $('progress-bar').style.width = pct + '%';
-      });
-      fotoUrl = r.url;
-      fotoPath = r.publicId; // lo guardamos por referencia (no se borra desde el front)
+      let done = 0;
+      for (const f of pendientes) {
+        const r = await uploadToCloudinary(f.file, (pct) => {
+          const total = ((done + pct / 100) / pendientes.length) * 100;
+          $('progress-bar').style.width = total + '%';
+        });
+        f.url = r.url;
+        f.path = r.publicId;
+        delete f.file;
+        delete f.preview;
+        done++;
+      }
     }
+
+    const fotosFinal = fotos.map(f => ({ url: f.url, path: f.path || '' }));
 
     const payload = {
       nombre, desc,
-      foto: fotoUrl,
-      fotoPath: fotoPath,
+      fotos: fotosFinal,
+      foto: fotosFinal[0].url,            // espejo de la principal — usado por la grilla y compat con chalecos viejos
+      fotoPath: fotosFinal[0].path || '',
       estado: editing.estado,
       orden: editing.orden ?? Date.now(),
       actualizadoEn: serverTimestamp()

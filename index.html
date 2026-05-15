@@ -1041,6 +1041,22 @@
     else if (e.key === 'ArrowLeft') goLb(lbIdx - 1);
     else if (e.key === 'ArrowRight') goLb(lbIdx + 1);
   });
+  // Swipe horizontal: deslizar el dedo izquierda/derecha en el área de la foto cambia de foto.
+  // Threshold de 50px y descarta swipes mayormente verticales para no chocar con scroll.
+  const lbStage = document.querySelector('.lightbox-stage');
+  let touchStartX = 0, touchStartY = 0;
+  lbStage.addEventListener('touchstart', e => {
+    if (lbUrls.length <= 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  lbStage.addEventListener('touchend', e => {
+    if (lbUrls.length <= 1) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    goLb(dx < 0 ? lbIdx + 1 : lbIdx - 1);
+  }, { passive: true });
   window.openLightbox = openLightbox;
 
   function renderDisponibles(items){

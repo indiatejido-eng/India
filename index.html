@@ -578,7 +578,7 @@
   /* LIGHTBOX (galería del chaleco) */
   .lightbox{
     position: fixed; inset: 0; z-index: 2000;
-    background: rgba(0, 0, 0, 0.92);
+    background: rgba(245, 240, 232, 0.97);
     display: none;
     align-items: center; justify-content: center;
     padding: 36px 24px;
@@ -594,8 +594,8 @@
   }
   .lightbox-close{
     position: fixed; top: 18px; right: 18px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 0; color: #fff;
+    background: rgba(58, 46, 31, 0.1);
+    border: 0; color: #3a2e1f;
     width: 44px; height: 44px;
     border-radius: 50%;
     font-size: 1.6rem; line-height: 1;
@@ -603,31 +603,48 @@
     transition: background 0.2s;
     z-index: 2001;
   }
-  .lightbox-close:hover{ background: rgba(255, 255, 255, 0.28); }
+  .lightbox-close:hover{ background: rgba(58, 46, 31, 0.22); }
   .lightbox-stage{
     position: relative;
     width: 100%;
     display: flex; align-items: center; justify-content: center;
     padding: 8px 0;
+    min-height: 50vh;
   }
   .lightbox-img{
     max-width: 100%;
     max-height: 66vh;
     object-fit: contain;
-    filter: drop-shadow(0 30px 40px rgba(0,0,0,0.5));
+    filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.2));
+    transition: opacity 0.2s;
   }
+  .lightbox-img.loading{ opacity: 0; }
+  .lightbox-loader{
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 42px; height: 42px;
+    margin: -21px 0 0 -21px;
+    border: 3px solid rgba(58, 46, 31, 0.15);
+    border-top-color: #3a2e1f;
+    border-radius: 50%;
+    animation: lb-spin 0.8s linear infinite;
+    pointer-events: none;
+    display: none;
+  }
+  .lightbox-loader.show{ display: block; }
+  @keyframes lb-spin { to { transform: rotate(360deg); } }
   .lightbox-arrow{
     position: absolute;
     top: 50%; transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.15);
-    border: 0; color: #fff;
+    background: rgba(58, 46, 31, 0.1);
+    border: 0; color: #3a2e1f;
     width: 48px; height: 48px;
     border-radius: 50%;
     font-size: 1.8rem; line-height: 1;
     cursor: pointer;
     transition: background 0.2s;
   }
-  .lightbox-arrow:hover{ background: rgba(255, 255, 255, 0.28); }
+  .lightbox-arrow:hover{ background: rgba(58, 46, 31, 0.22); }
   .lightbox-prev{ left: -64px; }
   .lightbox-next{ right: -64px; }
   .lightbox-thumbs{
@@ -644,13 +661,13 @@
     opacity: 0.5;
     transition: opacity 0.2s, border-color 0.2s;
     border: 3px solid transparent;
-    background: rgba(255,255,255,0.06);
+    background: rgba(58,46,31,0.06);
     padding: 0;
     flex: 0 0 auto;
   }
   .lightbox-thumb img{ width: 100%; height: 100%; object-fit: cover; }
   .lightbox-thumb:hover{ opacity: 0.85; }
-  .lightbox-thumb.active{ opacity: 1; border-color: #f5e6c8; }
+  .lightbox-thumb.active{ opacity: 1; border-color: #3a2e1f; }
   .lightbox-cta{
     display: inline-flex; align-items: center; gap: 12px;
     background: var(--wa); color: #fff;
@@ -667,7 +684,7 @@
     .lightbox-close{ top: 10px; right: 10px; width: 36px; height: 36px; font-size: 1.3rem; }
     .lightbox-prev{ left: 4px; }
     .lightbox-next{ right: 4px; }
-    .lightbox-arrow{ width: 36px; height: 36px; font-size: 1.3rem; background: rgba(0,0,0,0.5); }
+    .lightbox-arrow{ width: 36px; height: 36px; font-size: 1.3rem; background: rgba(58, 46, 31, 0.15); }
     .lightbox-img{ max-height: 56vh; }
     /* Thumbs scrolleables horizontalmente cuando son más de los que entran */
     .lightbox-thumbs{
@@ -904,6 +921,7 @@
     <div class="lightbox-stage">
       <button class="lightbox-arrow lightbox-prev" id="lightbox-prev" aria-label="Anterior">‹</button>
       <img class="lightbox-img" id="lightbox-img" src="" alt="">
+      <div class="lightbox-loader" id="lightbox-loader" aria-hidden="true"></div>
       <button class="lightbox-arrow lightbox-next" id="lightbox-next" aria-label="Siguiente">›</button>
     </div>
     <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
@@ -955,6 +973,7 @@
   // === LIGHTBOX (galería de un chaleco) ===
   const lightbox = document.getElementById('lightbox');
   const lbImg = document.getElementById('lightbox-img');
+  const lbLoader = document.getElementById('lightbox-loader');
   const lbThumbs = document.getElementById('lightbox-thumbs');
   const lbCta = document.getElementById('lightbox-cta');
   const lbPrev = document.getElementById('lightbox-prev');
@@ -962,7 +981,6 @@
   let lbUrls = [];
   let lbIdx = 0;
   function openLightbox(item){
-    // Hidratar lista de fotos (compat con chalecos viejos que solo tienen 'foto')
     const urls = Array.isArray(item.fotos) && item.fotos.length > 0
       ? item.fotos.map(f => f.url).filter(Boolean)
       : (item.foto ? [item.foto] : []);
@@ -970,6 +988,9 @@
     lbUrls = urls;
     lbIdx = 0;
     lbCta.href = waLink(`Hola! Me interesa el chaleco ${item.nombre || ''}.`.trim());
+    // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
+    // Cuando el usuario cambie de foto, ya van a estar en cache.
+    urls.forEach(u => { const i = new Image(); i.src = fotoUrl(u); });
     if (urls.length > 1) {
       lbThumbs.classList.remove('hidden');
       lbThumbs.innerHTML = urls.map((u, i) =>
@@ -991,7 +1012,17 @@
   }
   function goLb(i){
     lbIdx = (i + lbUrls.length) % lbUrls.length;
-    lbImg.src = fotoUrl(lbUrls[lbIdx]);
+    const src = fotoUrl(lbUrls[lbIdx]);
+    // Mostrar loader + ocultar la imagen mientras carga. Si está en cache, complete=true al toque y se oculta.
+    lbLoader.classList.add('show');
+    lbImg.classList.add('loading');
+    lbImg.onload = () => { lbLoader.classList.remove('show'); lbImg.classList.remove('loading'); };
+    lbImg.onerror = () => { lbLoader.classList.remove('show'); lbImg.classList.remove('loading'); };
+    lbImg.src = src;
+    if (lbImg.complete && lbImg.naturalHeight > 0) {
+      lbLoader.classList.remove('show');
+      lbImg.classList.remove('loading');
+    }
     lbThumbs.querySelectorAll('.lightbox-thumb').forEach((t, j) => {
       t.classList.toggle('active', j === lbIdx);
     });

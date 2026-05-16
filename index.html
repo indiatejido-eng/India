@@ -941,7 +941,7 @@
 <script type="module">
   import { firebaseConfig } from './firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-  import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, setDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -1162,16 +1162,78 @@
     if (el) spy.observe(el);
   });
 
-  // Tracking de visitas y clicks de WhatsApp en doc stats/{visitas,clicks_whatsapp}.
-  // Visita: 1 por dispositivo cada hora (debounce con localStorage para no inflar al recargar).
-  (function trackVisita(){
+  // Tracking expandido: contadores globales (stats/*) + perfil por visitor (visits/{id}).
+  // Visitor ID persistente en localStorage para distinguir personas y medir recurrencia.
+  function detectDevice(){
+    const ua = navigator.userAgent;
+    if (/iPad|Tablet/i.test(ua)) return 'tablet';
+    if (/Mobile|Android|iPhone/i.test(ua)) return 'mobile';
+    return 'desktop';
+  }
+  function detectBrowser(){
+    const ua = navigator.userAgent;
+    if (/Edg\//i.test(ua)) return 'Edge';
+    if (/OPR\/|Opera/i.test(ua)) return 'Opera';
+    if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return 'Chrome';
+    if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return 'Safari';
+    if (/Firefox\//i.test(ua)) return 'Firefox';
+    return 'Otro';
+  }
+  function detectReferrer(){
+    const r = document.referrer;
+    if (!r) return '(directo)';
+    try { return new URL(r).hostname.replace(/^www\./, ''); }
+    catch { return '(directo)'; }
+  }
+  async function fetchGeo(){
+    try {
+      const r = await fetch('https://ipapi.co/json/');
+      if (!r.ok) return null;
+      const d = await r.json();
+      return {
+        country: d.country_name || '',
+        city: d.city || '',
+        region: d.region || ''
+      };
+    } catch { return null; }
+  }
+
+  (async function track(){
+    // visitor_id persistente (UUID) — distingue personas, sobrevive a recargas
+    let visitorId = localStorage.getItem('india_visitor_id');
+    const isNew = !visitorId;
+    if (isNew) {
+      visitorId = (crypto.randomUUID && crypto.randomUUID()) ||
+                  (Date.now() + '-' + Math.random().toString(36).slice(2));
+      localStorage.setItem('india_visitor_id', visitorId);
+    }
+    // Debounce de 1h por dispositivo para no inflar contadores al recargar
     const KEY = 'india_last_visita';
-    const COOLDOWN_MS = 3600000;
+    const COOLDOWN = 3600000;
     const last = parseInt(localStorage.getItem(KEY) || '0', 10);
-    if (Date.now() - last < COOLDOWN_MS) return;
+    if (Date.now() - last < COOLDOWN) return;
     localStorage.setItem(KEY, Date.now().toString());
+
+    // Contador global de visitas (cada page view cuenta)
     setDoc(doc(db, 'stats', 'visitas'), { count: increment(1) }, { merge: true }).catch(() => {});
+
+    // Doc por visitor: count y ultima_visita siempre se actualizan; los demás solo la primera vez
+    const updates = {
+      count: increment(1),
+      ultima_visita: serverTimestamp()
+    };
+    if (isNew) {
+      updates.primera_visita = serverTimestamp();
+      updates.referrer = detectReferrer();
+      updates.lang = navigator.language || '';
+      updates.device = detectDevice();
+      updates.browser = detectBrowser();
+      const geo = await fetchGeo();
+      if (geo) Object.assign(updates, geo);
+    }
+    setDoc(doc(db, 'visits', visitorId), updates, { merge: true }).catch(() => {});
   })();
+
   // Clicks WhatsApp: event delegation captura todos los a[href*=wa.me] (header, hero, CTA, FAB, pieces dinámicos).
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href*="wa.me"]');

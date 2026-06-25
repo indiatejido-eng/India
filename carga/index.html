@@ -76,11 +76,7 @@
   .bar-fill{height:100%;background:var(--accent);border-radius:4px}
   .bar-num{font-size:13px;font-weight:600;width:18px;text-align:right}
   footer{margin-top:auto;padding-top:32px}
-  .cfg{font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--body);padding:6px 0}
-  .cfgbox{display:none;margin-top:10px}
-  .cfgbox.on{display:block}
-  .cfgbox input{font-size:13px;margin-bottom:8px}
-  .hint{font-size:12px;color:var(--muted);line-height:1.55}
+  .cfg{font-size:13px;color:var(--muted);font-family:var(--body);padding:6px 0}
 </style>
 </head>
 <body>
@@ -131,36 +127,32 @@
   <div class="screen" id="s-stats">
     <button class="back" onclick="home()">← Volver</button>
     <div class="ttl">Tus números</div>
-    <div class="stat-period">Junio 2026 · ejemplo (se actualiza al conectar)</div>
+    <div class="stat-period" id="n-periodo">Cargando…</div>
     <div class="stat-grid">
-      <div class="stat"><div class="sl">Vendido</div><div class="sv">$435.000</div></div>
-      <div class="stat"><div class="sl">Gastos</div><div class="sv">$152.350</div></div>
-      <div class="stat"><div class="sl">Ganancia</div><div class="sv green">$282.650</div></div>
-      <div class="stat"><div class="sl">Queda en caja</div><div class="sv">$282.650</div></div>
-      <div class="stat"><div class="sl">Margen</div><div class="sv">65%</div></div>
-      <div class="stat"><div class="sl">Chalecos</div><div class="sv">3</div></div>
-      <div class="stat"><div class="sl">Costo x chaleco</div><div class="sv">$50.783</div></div>
-      <div class="stat"><div class="sl">Lana $/kg</div><div class="sv">$60.219</div></div>
+      <div class="stat"><div class="sl">Vendido</div><div class="sv" id="n-vendido">—</div></div>
+      <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
+      <div class="stat"><div class="sl">Ganancia</div><div class="sv green" id="n-ganancia">—</div></div>
+      <div class="stat"><div class="sl">Queda en caja</div><div class="sv" id="n-caja">—</div></div>
+      <div class="stat"><div class="sl">Margen</div><div class="sv" id="n-margen">—</div></div>
+      <div class="stat"><div class="sl">Chalecos</div><div class="sv" id="n-chalecos">—</div></div>
+      <div class="stat"><div class="sl">Costo x chaleco</div><div class="sv" id="n-costo">—</div></div>
+      <div class="stat"><div class="sl">Lana $/kg</div><div class="sv" id="n-lanakg">—</div></div>
     </div>
     <div class="stat-sec">En qué gastaste</div>
-    <div class="bar-row"><div class="bar-lbl">Lana</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-num" style="width:62px">$96.350</div></div>
-    <div class="bar-row"><div class="bar-lbl">Envío</div><div class="bar-track"><div class="bar-fill" style="width:37%"></div></div><div class="bar-num" style="width:62px">$36.000</div></div>
-    <div class="bar-row"><div class="bar-lbl">Transporte</div><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><div class="bar-num" style="width:62px">$13.000</div></div>
-    <div class="bar-row"><div class="bar-lbl">Publicidad</div><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div><div class="bar-num" style="width:62px">$7.000</div></div>
-    <div style="background:var(--accent);color:#faf6ee;border-radius:13px;padding:14px 16px;margin:18px 0">
+    <div id="n-gastos-bars"></div>
+    <div id="n-pub-box" style="background:var(--accent);color:#faf6ee;border-radius:13px;padding:14px 16px;margin:18px 0;display:none">
       <div style="font-size:12px;opacity:.85;margin-bottom:3px">Retorno de la publicidad</div>
-      <div style="font-family:var(--disp);font-weight:600;font-size:18px">$7.000 → $435.000 en ventas</div>
+      <div style="font-family:var(--disp);font-weight:600;font-size:18px" id="n-pub-txt"></div>
     </div>
     <div class="stat-sec">Qué se vende más</div>
-    <div class="bar-row"><div class="bar-lbl">Liso</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-num">2</div></div>
-    <div class="bar-row"><div class="bar-lbl">Trenza</div><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><div class="bar-num">1</div></div>
+    <div id="n-modelos"></div>
     <div class="stat-sec" style="font-size:15px;margin-top:20px">Cómo llegaron</div>
-    <div class="bar-row"><div class="bar-lbl">Instagram</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-num">3</div></div>
-    <div class="stat-period" style="margin-top:12px">Las 3 ventas vinieron de anuncios.</div>
+    <div id="n-canales"></div>
+    <div class="stat-period" id="n-anuncios" style="margin-top:12px"></div>
   </div>
 
   <div class="done" id="done">
-    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+    <div class="check" id="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
     <h3 id="done-t">Guardado</h3>
     <p id="done-s">Ya quedó anotado.</p>
     <div class="demo" id="demo" style="display:none"></div>
@@ -168,32 +160,106 @@
   </div>
 
   <footer>
-    <button class="cfg" onclick="document.getElementById('cfgbox').classList.toggle('on')">⚙ Conectar con la planilla</button>
-    <div class="cfgbox" id="cfgbox">
-      <input type="text" id="hook" placeholder="URL del webhook de n8n">
-      <div class="hint">Sin conectar, la página funciona en modo prueba y te muestra el dato. Cuando armes el flujo en n8n, pegás la dirección acá y empieza a cargar solo en Google Sheets.</div>
-    </div>
+    <div class="cfg" id="estado">Conectado a la planilla</div>
   </footer>
 </div>
 
 <script>
   const $=id=>document.getElementById(id);
+  const WEBHOOK_GUARDAR='https://n8n.tecleti.com/webhook/india-guardar';
+  const WEBHOOK_NUMEROS='https://n8n.tecleti.com/webhook/india-numeros';
   ['v-fecha','g-fecha'].forEach(i=>$(i).value=new Date().toISOString().slice(0,10));
-  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on')}
+
+  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
   function kg(){setTimeout(()=>{$('g-kgwrap').style.display=$('g-tipo').dataset.val==='Lana'?'block':'none'},0)}
+
+  const pesos=n=>'$'+Math.round(Number(n)||0).toLocaleString('es-AR');
+  function estado(txt){const e=$('estado');if(e)e.textContent=txt}
+
+  // Dibuja una lista de barras (gastos por tipo, modelos, canales) en un contenedor.
+  function barras(cont,items,getLabel,getVal,money){
+    const el=$(cont);el.innerHTML='';
+    if(!items||!items.length){el.innerHTML='<div class="stat-period">Sin datos todavía.</div>';return}
+    const max=Math.max(...items.map(it=>Number(getVal(it))||0),1);
+    items.forEach(it=>{
+      const v=Number(getVal(it))||0;
+      const row=document.createElement('div');row.className='bar-row';
+      const lbl=document.createElement('div');lbl.className='bar-lbl';lbl.textContent=getLabel(it);
+      const track=document.createElement('div');track.className='bar-track';
+      const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=Math.round(v/max*100)+'%';
+      track.appendChild(fill);
+      const num=document.createElement('div');num.className='bar-num';if(money)num.style.width='62px';num.textContent=money?pesos(v):v;
+      row.appendChild(lbl);row.appendChild(track);row.appendChild(num);
+      el.appendChild(row);
+    });
+  }
+
+  // Pinta la pantalla de numeros con lo que devuelve el webhook india-numeros.
+  function renderNumeros(d){
+    d=d||{};
+    const vendido=Number(d.vendido)||0, gastos=Number(d.gastos)||0;
+    const ganancia=d.ganancia!=null?Number(d.ganancia):vendido-gastos;
+    const caja=d.caja!=null?Number(d.caja):ganancia;
+    const margen=d.margen!=null?Number(d.margen):(vendido>0?Math.round(ganancia/vendido*100):0);
+    const chalecos=d.chalecos!=null?Number(d.chalecos):(d.modelos||[]).reduce((a,m)=>a+(Number(m.cantidad)||0),0);
+    $('n-periodo').textContent=d.periodo||'Este mes';
+    $('n-vendido').textContent=pesos(vendido);
+    $('n-gastos').textContent=pesos(gastos);
+    $('n-ganancia').textContent=pesos(ganancia);
+    $('n-caja').textContent=pesos(caja);
+    $('n-margen').textContent=margen+'%';
+    $('n-chalecos').textContent=chalecos;
+    $('n-costo').textContent=d.costoPorChaleco!=null?pesos(d.costoPorChaleco):(chalecos>0?pesos(gastos/chalecos):'—');
+    $('n-lanakg').textContent=d.lanaPorKg!=null?pesos(d.lanaPorKg):'—';
+    barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
+    barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);
+    barras('n-canales',d.canales,it=>it.canal,it=>it.cantidad,false);
+    const pub=d.publicidad;
+    if(pub&&Number(pub.gasto)>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(pub.gasto)+' → '+pesos(pub.ventas)+' en ventas';}
+    else $('n-pub-box').style.display='none';
+    const an=d.ventasDeAnuncios;
+    $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+  }
+
+  async function cargarNumeros(){
+    estado('Actualizando…');$('n-periodo').textContent='Cargando…';
+    try{
+      const r=await fetch(WEBHOOK_NUMEROS,{headers:{'Accept':'application/json'}});
+      if(!r.ok)throw 0;
+      let data=await r.json();
+      if(Array.isArray(data))data=data[0]||{};
+      if(data&&data.json)data=data.json; // por si n8n envuelve el item
+      renderNumeros(data);
+      estado('Conectado a la planilla');
+    }catch(e){
+      $('n-periodo').textContent='No se pudieron traer los números.';
+      estado('Sin conexión con la planilla');
+    }
+  }
+
   async function send(accion){
     let d;
     if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value};
     else d={accion,fecha:$('g-fecha').value,tipo:$('g-tipo').dataset.val,monto:Number($('g-monto').value||0),kg:$('g-tipo').dataset.val==='Lana'?Number($('g-kg').value||0):'',detalle:$('g-detalle').value};
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
-    const t={venta:['Venta guardada','Sumada a tus ventas.'],gasto:['Gasto anotado','Ya está en la caja.']}[accion];
-    $('done-t').textContent=t[0];$('done-s').textContent=t[1];
-    const hook=$('hook').value.trim();
-    if(hook){try{await fetch(hook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});$('demo').style.display='none'}catch(e){$('done-s').textContent='No se pudo conectar. Revisá la dirección.'}}
-    else{$('demo').style.display='block';$('demo').textContent='Modo prueba — se guardaría:\n'+JSON.stringify(d,null,2)}
+    $('demo').style.display='none';
+    $('done-check').style.display='none';
+    $('done-t').textContent='Guardando…';$('done-s').textContent='Un segundo.';
     $('done').classList.add('on');
+    try{
+      const r=await fetch(WEBHOOK_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+      if(!r.ok)throw 0;
+      const t={venta:['Venta guardada','Sumada a tus ventas.'],gasto:['Gasto anotado','Ya está en la caja.']}[accion];
+      $('done-check').style.display='flex';
+      $('done-t').textContent=t[0];$('done-s').textContent=t[1];
+      cargarNumeros();
+    }catch(e){
+      $('done-check').style.display='none';
+      $('done-t').textContent='No se pudo guardar';
+      $('done-s').textContent='Revisá la conexión y tocá "Anotar otra cosa" para reintentar.';
+    }
   }
 </script>
 </body>

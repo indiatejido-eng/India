@@ -129,6 +129,7 @@
     <div class="field"><label>Talle</label><div class="chips" id="v-talle" data-val="M"><div class="chip" onclick="pick(this)">S</div><div class="chip sel" onclick="pick(this)">M</div><div class="chip" onclick="pick(this)">L</div><div class="chip" onclick="pick(this)">Único</div></div></div>
     <div class="field"><label>Color</label><div class="chips" id="v-color" data-val="Marrón"><div class="chip sel" onclick="pick(this)">Marrón</div><div class="chip" onclick="pick(this)">Gris</div><div class="chip" onclick="pick(this)">Crudo</div><div class="chip" onclick="pick(this)">Negro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Para quién?</label><div class="chips" id="v-genero" data-val="Mujer"><div class="chip sel" onclick="pick(this)">Mujer</div><div class="chip" onclick="pick(this)">Hombre</div><div class="chip" onclick="pick(this)">Niño</div></div></div>
+    <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
     <div class="field"><label>Precio</label><input type="number" id="v-precio" inputmode="numeric" placeholder="145000"></div>
@@ -305,7 +306,7 @@
 
   async function send(accion){
     let d;
-    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value};
+    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value};
     else d={accion,fecha:$('g-fecha').value,tipo:$('g-tipo').dataset.val,monto:Number($('g-monto').value||0),kg:$('g-tipo').dataset.val==='Lana'?Number($('g-kg').value||0):'',detalle:$('g-detalle').value};
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
     $('demo').style.display='none';

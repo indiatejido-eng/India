@@ -196,6 +196,47 @@
     });
   }
 
+  const numero=v=>Number(String(v==null?'':v).replace(/[^\d.-]/g,''))||0;
+  const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function etiquetaMes(m){if(!m)return 'Este mes';const p=String(m).split('-');return (MESES[(+p[1])-1]||'')+' '+(p[0]||'')}
+
+  // Toma las filas crudas del Sheet (india-numeros) y calcula los totales del mes mas reciente.
+  function calcular(rows){
+    if(!Array.isArray(rows))rows=[];
+    const meses=[...new Set(rows.map(r=>r.Mes).filter(Boolean))].sort();
+    const mes=meses[meses.length-1]||'';
+    const enMes=r=>!mes||r.Mes===mes;
+    const ventas=rows.filter(r=>r.Info==='Ventas'&&enMes(r));
+    const gastos=rows.filter(r=>r.Info==='Gastos'&&enMes(r));
+    const vendido=ventas.reduce((a,r)=>a+numero(r['Precio ($)']),0);
+    const chalecos=ventas.length;
+    const esRetiro=r=>String(r.Tipo).toLowerCase()==='retiro';
+    const costosRows=gastos.filter(r=>!esRetiro(r));
+    const costos=costosRows.reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const retiros=gastos.filter(esRetiro).reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const ganancia=vendido-costos;
+    const lanaRows=gastos.filter(r=>String(r.Tipo).toLowerCase()==='lana');
+    const lanaKg=lanaRows.reduce((a,r)=>a+numero(r['Kg (si es lana)']),0);
+    const lanaMonto=lanaRows.reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const contar=(arr,key)=>{const m={};arr.forEach(r=>{const k=r[key]||'Otro';m[k]=(m[k]||0)+1});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
+    const sumarTipo=arr=>{const m={};arr.forEach(r=>{const k=r.Tipo||'Otro';m[k]=(m[k]||0)+numero(r['Monto ($)'])});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
+    const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
+    return {
+      periodo:etiquetaMes(mes),
+      vendido,gastos:costos,ganancia,caja:ganancia-retiros,
+      margen:vendido>0?Math.round(ganancia/vendido*100):0,
+      chalecos,
+      costoPorChaleco:chalecos>0?Math.round(costos/chalecos):null,
+      lanaPorKg:lanaKg>0?Math.round(lanaMonto/lanaKg):null,
+      gastosPorTipo:sumarTipo(costosRows).map(([tipo,monto])=>({tipo,monto})),
+      publicidad:{gasto:pub,ventas:vendido},
+      modelos:contar(ventas,'Modelo').map(([modelo,cantidad])=>({modelo,cantidad})),
+      canales:contar(ventas,'Canal').map(([canal,cantidad])=>({canal,cantidad})),
+      ventasDeAnuncios:anuncios,
+    };
+  }
+
   // Pinta la pantalla de numeros con lo que devuelve el webhook india-numeros.
   function renderNumeros(d){
     d=d||{};
@@ -228,10 +269,9 @@
     try{
       const r=await fetch(WEBHOOK_NUMEROS,{headers:{'Accept':'application/json'}});
       if(!r.ok)throw 0;
-      let data=await r.json();
-      if(Array.isArray(data))data=data[0]||{};
-      if(data&&data.json)data=data.json; // por si n8n envuelve el item
-      renderNumeros(data);
+      const data=await r.json();
+      const rows=Array.isArray(data)?data:(data.body||data.data||[]);
+      renderNumeros(calcular(rows));
       estado('Conectado a la planilla');
     }catch(e){
       $('n-periodo').textContent='No se pudieron traer los números.';

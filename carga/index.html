@@ -228,9 +228,11 @@
   // Toma las filas crudas del Sheet (india-numeros) y calcula los totales del mes mas reciente.
   function calcular(rows){
     if(!Array.isArray(rows))rows=[];
-    const meses=[...new Set(rows.map(r=>r.Mes).filter(Boolean))].sort();
+    // El mes lo sacamos de la Fecha (DD/MM/YYYY o YYYY-MM-DD); la columna Mes a veces viene vacia en filas nuevas.
+    const mesDe=r=>{const f=String(r.Fecha||'').trim();if(/^\d{4}-\d{2}-\d{2}/.test(f))return f.slice(0,7);const p=f.split('/');if(p.length===3)return p[2]+'-'+String(p[1]).padStart(2,'0');return r.Mes?String(r.Mes):'';};
+    const meses=[...new Set(rows.map(mesDe).filter(Boolean))].sort();
     const mes=meses[meses.length-1]||'';
-    const enMes=r=>!mes||r.Mes===mes;
+    const enMes=r=>!mes||mesDe(r)===mes;
     const ventas=rows.filter(r=>r.Info==='Ventas'&&enMes(r));
     const gastos=rows.filter(r=>r.Info==='Gastos'&&enMes(r));
     const vendido=ventas.reduce((a,r)=>a+numero(r['Precio ($)']),0);
@@ -292,7 +294,7 @@
   async function cargarNumeros(){
     estado('Actualizando…');$('n-periodo').textContent='Cargando…';
     try{
-      const r=await fetch(WEBHOOK_NUMEROS,{headers:{'Accept':'application/json'}});
+      const r=await fetch(WEBHOOK_NUMEROS,{cache:'no-store',headers:{'Accept':'application/json'}});
       if(!r.ok)throw 0;
       const data=await r.json();
       const rows=Array.isArray(data)?data:(data.body||data.data||[]);

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>India Tejidos · Carga</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -80,8 +82,9 @@
   .logout{font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--body);padding:6px 0;text-decoration:underline}
   .login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50}
   .login-box{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:30px 24px}
-  .login-brand{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:-.5px}
-  .login-sub{color:var(--muted);font-size:13.5px;margin:3px 0 18px}
+  .login-logo{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 14px;border-radius:16px}
+  .login-brand{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:-.5px;text-align:center}
+  .login-sub{color:var(--muted);font-size:13.5px;margin:3px 0 18px;text-align:center}
   .login-lbl{display:block;font-size:13px;font-weight:500;color:var(--muted);margin:14px 0 7px}
   .login .save{margin-top:22px}
   .login-err{display:none;background:#f3ddd2;color:var(--accent-d);border:1px solid #e6c3b5;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:6px}
@@ -91,6 +94,7 @@
 <body>
 <div class="login" id="login">
   <div class="login-box">
+    <img class="login-logo" src="/logo-crema.png" alt="India Tejidos">
     <div class="login-brand">India Tejidos</div>
     <div class="login-sub">Panel privado</div>
     <div class="login-err" id="login-error"></div>

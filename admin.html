@@ -496,6 +496,23 @@
     .modal{ padding: 24px 20px; }
     .grid-admin{ grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
   }
+
+  /* ===== Reseñas ===== */
+  .resenas-gen{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .resenas-h{ font-size: 1.05rem; color: var(--ink); margin-bottom: 4px; }
+  .resenas-sub{ font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; }
+  .resenas-gen-row{ display: flex; gap: 10px; flex-wrap: wrap; }
+  .resenas-gen-row input{ flex: 1; min-width: 200px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font-family: inherit; font-size: 0.95rem; color: var(--ink); }
+  .resena-link-box{ margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .resena-link-box input{ flex: 1; min-width: 220px; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 0.85rem; color: var(--ink-soft); }
+  .resena-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .resena-card .rc-stars{ color: #C2873E; letter-spacing: 2px; font-size: 1rem; }
+  .resena-card .rc-text{ font-size: 0.95rem; color: var(--ink-soft); margin: 8px 0 10px; white-space: pre-wrap; }
+  .resena-card .rc-meta{ font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+  .resena-card .rc-meta b{ color: var(--ink); font-weight: 600; }
+  .resena-card .rc-foto{ width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 12px; display: block; }
+  .resena-card .rc-actions{ display: flex; gap: 10px; }
+  .resenas-empty{ color: var(--muted); font-size: 0.9rem; padding: 18px 0; }
 </style>
 </head>
 <body>
@@ -586,6 +603,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
+      <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
     </div>
 
     <div class="tab-panel active" id="panel-disponible">
@@ -593,6 +611,23 @@
     </div>
     <div class="tab-panel" id="panel-anterior">
       <div class="grid-admin" id="grid-anterior"></div>
+    </div>
+    <div class="tab-panel" id="panel-resenas">
+      <div class="resenas-gen">
+        <h3 class="resenas-h">Generar link de reseña</h3>
+        <p class="resenas-sub">Creá un link único para mandarle a un cliente por WhatsApp. Cada link se usa una sola vez.</p>
+        <div class="resenas-gen-row">
+          <input type="text" id="resena-cliente" placeholder="Nombre del cliente (opcional)">
+          <button class="btn" id="btn-gen-link">Generar link</button>
+        </div>
+        <div class="resena-link-box" id="resena-link-box" style="display:none">
+          <input type="text" id="resena-link" readonly onclick="this.select()">
+          <button class="btn btn-ghost btn-sm" id="btn-copy-link">Copiar link</button>
+          <button class="btn btn-ghost btn-sm" id="btn-copy-msg">Copiar mensaje</button>
+        </div>
+      </div>
+      <h3 class="resenas-h" style="margin-top:28px">Para revisar <span class="tab-count" id="count-pend">0</span></h3>
+      <div id="resenas-pend"><div class="resenas-empty">No hay reseñas para revisar.</div></div>
     </div>
   </div>
 </div>
@@ -656,7 +691,7 @@
 import { firebaseConfig, cloudinaryConfig } from './firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, onSnapshot, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, orderBy, onSnapshot, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -732,10 +767,12 @@ onAuthStateChanged(auth, (user) => {
     $('admin').classList.add('active');
     suscribir();
     cargarAnalytics();
+    cargarResenas();
   } else {
     $('login').style.display = '';
     $('admin').classList.remove('active');
     desuscribir();
+    if (unsubResenas) { unsubResenas(); unsubResenas = null; }
   }
 });
 
@@ -1090,6 +1127,87 @@ function showToast(msg, isError=false){
   t.classList.add('show');
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== RESEÑAS =====
+const DOMINIO = location.origin;
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2));
+
+$('btn-gen-link').addEventListener('click', async () => {
+  const btn = $('btn-gen-link');
+  btn.disabled = true;
+  try {
+    const token = uuid();
+    const cliente = $('resena-cliente').value.trim();
+    await setDoc(doc(db, 'invitaciones', token), {
+      token, usado: false, fecha: serverTimestamp(), clienteNombre: cliente || ''
+    });
+    $('resena-link').value = `${DOMINIO}/resena?token=${token}`;
+    $('resena-link-box').style.display = 'flex';
+    $('resena-cliente').value = '';
+    showToast('Link generado');
+  } catch (e) {
+    showToast('Error al generar: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function copiar(txt, msg){
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(() => showToast(msg)).catch(() => fallbackCopy(txt, msg));
+  } else { fallbackCopy(txt, msg); }
+}
+function fallbackCopy(txt, msg){
+  const i = $('resena-link'); i.value = txt; i.select(); document.execCommand('copy'); showToast(msg);
+}
+$('btn-copy-link').addEventListener('click', () => copiar($('resena-link').value, 'Link copiado'));
+$('btn-copy-msg').addEventListener('click', () => {
+  const link = $('resena-link').value;
+  const msg = `¡Hola! Mil gracias por tu compra 🧶 Nos encantaría saber qué te pareció. Si te queda un minuto, dejanos tu opinión acá: ${link}`;
+  copiar(msg, 'Mensaje copiado');
+});
+
+let unsubResenas = null;
+function cargarResenas(){
+  if (unsubResenas) return;
+  const qPend = query(collection(db, 'resenas'), where('estado', '==', 'pendiente'), orderBy('fecha', 'desc'));
+  unsubResenas = onSnapshot(qPend, snap => {
+    $('count-resenas').textContent = snap.size;
+    $('count-pend').textContent = snap.size;
+    const cont = $('resenas-pend');
+    if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">No hay reseñas para revisar.</div>'; return; }
+    const stars = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
+    cont.innerHTML = snap.docs.map(d => {
+      const r = d.data();
+      const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
+      const foto = r.fotoURL ? `<img class="rc-foto" src="${escapeHtml(r.fotoURL)}" alt="">` : '';
+      return `<div class="resena-card">
+        <div class="rc-stars">${stars(Number(r.estrellas) || 0)}</div>
+        <div class="rc-text">${escapeHtml(r.texto || '')}</div>
+        ${foto}
+        <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
+        <div class="rc-actions">
+          <button class="btn btn-sm" data-aprobar="${escapeHtml(d.id)}">Aprobar</button>
+          <button class="btn btn-ghost btn-sm" data-borrar="${escapeHtml(d.id)}">Borrar</button>
+        </div>
+      </div>`;
+    }).join('');
+    cont.querySelectorAll('[data-aprobar]').forEach(b => b.addEventListener('click', () => aprobarResena(b.dataset.aprobar)));
+    cont.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => borrarResena(b.dataset.borrar)));
+  }, err => {
+    $('resenas-pend').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>';
+  });
+}
+
+async function aprobarResena(id){
+  try { await updateDoc(doc(db, 'resenas', id), { estado: 'publicada' }); showToast('Reseña publicada'); }
+  catch (e) { showToast('Error: ' + e.message, true); }
+}
+async function borrarResena(id){
+  if (!confirm('¿Borrar esta reseña? No se puede deshacer.')) return;
+  try { await deleteDoc(doc(db, 'resenas', id)); showToast('Reseña borrada'); }
+  catch (e) { showToast('Error: ' + e.message, true); }
 }
 </script>
 

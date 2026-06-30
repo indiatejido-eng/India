@@ -1173,7 +1173,7 @@ $('btn-copy-link').addEventListener('click', () => copiar($('resena-link').value
 $('btn-copy-msg').addEventListener('click', () => {
   const link = $('resena-link').value;
   const saludo = ultimoCliente ? `¡Hola ${ultimoCliente}!` : '¡Hola!';
-  const msg = `${saludo} 🧶 Mil gracias por tu compra. Nos encantaría saber qué te pareció. Si te queda un minuto, dejanos tu opinión acá: ${link} ¡Gracias!`;
+  const msg = `${saludo} Gracias por tu compra. Nos encantaría saber qué te pareció. Si te queda un minuto, dejanos tu opinión acá: ${link} ¡Gracias!`;
   copiar(msg, 'Mensaje copiado');
 });
 

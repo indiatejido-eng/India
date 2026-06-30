@@ -1137,6 +1137,7 @@ function showToast(msg, isError=false){
 
 // ===== RESEÑAS =====
 const DOMINIO = location.origin;
+let ultimoCliente = '';
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2));
 
 $('btn-gen-link').addEventListener('click', async () => {
@@ -1145,6 +1146,7 @@ $('btn-gen-link').addEventListener('click', async () => {
   try {
     const token = uuid();
     const cliente = $('resena-cliente').value.trim();
+    ultimoCliente = cliente;
     await setDoc(doc(db, 'invitaciones', token), {
       token, usado: false, fecha: serverTimestamp(), clienteNombre: cliente || ''
     });
@@ -1170,7 +1172,8 @@ function fallbackCopy(txt, msg){
 $('btn-copy-link').addEventListener('click', () => copiar($('resena-link').value, 'Link copiado'));
 $('btn-copy-msg').addEventListener('click', () => {
   const link = $('resena-link').value;
-  const msg = `¡Hola! Mil gracias por tu compra 🧶 Nos encantaría saber qué te pareció. Si te queda un minuto, dejanos tu opinión acá: ${link}`;
+  const saludo = ultimoCliente ? `¡Hola ${ultimoCliente}!` : '¡Hola!';
+  const msg = `${saludo} 🧶 Mil gracias por tu compra. Nos encantaría saber qué te pareció. Si te queda un minuto, dejanos tu opinión acá: ${link} ¡Gracias!`;
   copiar(msg, 'Mensaje copiado');
 });
 

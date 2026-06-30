@@ -628,6 +628,8 @@
       </div>
       <h3 class="resenas-h" style="margin-top:28px">Para revisar <span class="tab-count" id="count-pend">0</span></h3>
       <div id="resenas-pend"><div class="resenas-empty">No hay reseñas para revisar.</div></div>
+      <h3 class="resenas-h" style="margin-top:28px">Publicadas <span class="tab-count" id="count-pub">0</span></h3>
+      <div id="resenas-pub"><div class="resenas-empty">Todavía no hay reseñas publicadas.</div></div>
     </div>
   </div>
 </div>
@@ -773,6 +775,7 @@ onAuthStateChanged(auth, (user) => {
     $('admin').classList.remove('active');
     desuscribir();
     if (unsubResenas) { unsubResenas(); unsubResenas = null; }
+    if (unsubPub) { unsubPub(); unsubPub = null; }
   }
 });
 
@@ -1168,41 +1171,59 @@ $('btn-copy-msg').addEventListener('click', () => {
   copiar(msg, 'Mensaje copiado');
 });
 
-let unsubResenas = null;
+let unsubResenas = null, unsubPub = null;
+const starsResena = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
+const ordenarDocs = snap => snap.docs.slice().sort((a, b) => (b.data().fecha?.seconds || 0) - (a.data().fecha?.seconds || 0));
+function tarjetaResena(d, acciones){
+  const r = d.data();
+  const id = escapeHtml(d.id);
+  const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
+  const foto = r.fotoURL ? `<img class="rc-foto" src="${escapeHtml(r.fotoURL)}" alt="">` : '';
+  return `<div class="resena-card">
+    <div class="rc-stars">${starsResena(Number(r.estrellas) || 0)}</div>
+    <div class="rc-text">${escapeHtml(r.texto || '')}</div>
+    ${foto}
+    <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
+    <div class="rc-actions">${acciones(id)}</div>
+  </div>`;
+}
+function cablearAcciones(cont){
+  cont.querySelectorAll('[data-aprobar]').forEach(b => b.addEventListener('click', () => aprobarResena(b.dataset.aprobar)));
+  cont.querySelectorAll('[data-despublicar]').forEach(b => b.addEventListener('click', () => despublicarResena(b.dataset.despublicar)));
+  cont.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => borrarResena(b.dataset.borrar)));
+}
 function cargarResenas(){
   if (unsubResenas) return;
-  const qPend = query(collection(db, 'resenas'), where('estado', '==', 'pendiente'));
-  unsubResenas = onSnapshot(qPend, snap => {
+  // Pendientes (para revisar)
+  unsubResenas = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'pendiente')), snap => {
     $('count-resenas').textContent = snap.size;
     $('count-pend').textContent = snap.size;
     const cont = $('resenas-pend');
     if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">No hay reseñas para revisar.</div>'; return; }
-    const stars = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
-    const docs = snap.docs.slice().sort((a, b) => (b.data().fecha?.seconds || 0) - (a.data().fecha?.seconds || 0));
-    cont.innerHTML = docs.map(d => {
-      const r = d.data();
-      const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
-      const foto = r.fotoURL ? `<img class="rc-foto" src="${escapeHtml(r.fotoURL)}" alt="">` : '';
-      return `<div class="resena-card">
-        <div class="rc-stars">${stars(Number(r.estrellas) || 0)}</div>
-        <div class="rc-text">${escapeHtml(r.texto || '')}</div>
-        ${foto}
-        <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
-        <div class="rc-actions">
-          <button class="btn btn-sm" data-aprobar="${escapeHtml(d.id)}">Aprobar</button>
-          <button class="btn btn-ghost btn-sm" data-borrar="${escapeHtml(d.id)}">Borrar</button>
-        </div>
-      </div>`;
-    }).join('');
-    cont.querySelectorAll('[data-aprobar]').forEach(b => b.addEventListener('click', () => aprobarResena(b.dataset.aprobar)));
-    cont.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => borrarResena(b.dataset.borrar)));
-  }, err => {
-    $('resenas-pend').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>';
-  });
+    cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, id =>
+      `<button class="btn btn-sm" data-aprobar="${id}">Aprobar</button>`
+      + `<button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`)).join('');
+    cablearAcciones(cont);
+  }, () => { $('resenas-pend').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
+
+  // Publicadas (en la web)
+  unsubPub = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'publicada')), snap => {
+    $('count-pub').textContent = snap.size;
+    const cont = $('resenas-pub');
+    if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">Todavía no hay reseñas publicadas.</div>'; return; }
+    cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, id =>
+      `<button class="btn btn-ghost btn-sm" data-despublicar="${id}">Despublicar</button>`
+      + `<button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`)).join('');
+    cablearAcciones(cont);
+  }, () => { $('resenas-pub').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
 }
 
 async function aprobarResena(id){
   try { await updateDoc(doc(db, 'resenas', id), { estado: 'publicada' }); showToast('Reseña publicada'); }
+  catch (e) { showToast('Error: ' + e.message, true); }
+}
+async function despublicarResena(id){
+  try { await updateDoc(doc(db, 'resenas', id), { estado: 'pendiente' }); showToast('Reseña despublicada'); }
   catch (e) { showToast('Error: ' + e.message, true); }
 }
 async function borrarResena(id){

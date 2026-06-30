@@ -41,6 +41,9 @@
   .file input{display:none}
   .file .fname{font-size:13px;color:var(--tinta2)}
   .file img.prev{width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--linea)}
+  .priv-box{border:1px dashed var(--linea);background:#FCF8F0;border-radius:14px;padding:16px;margin-top:4px}
+  .priv-box textarea{min-height:80px}
+  .priv-note{font-size:12px;color:var(--tinta2);margin-top:8px}
   .send{margin-top:8px;width:100%;background:var(--tinta);color:#F5EFE4;border:none;border-radius:12px;padding:16px 30px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s}
   .send:hover{background:#2c2317}
 
@@ -98,6 +101,11 @@
         <img class="prev" id="prev" style="display:none" alt="">
         <span class="fname" id="fname">Ninguna foto elegida</span>
       </div>
+    </div>
+    <div class="field priv-box">
+      <label>¿Algo que podamos mejorar? <span class="opt">(opcional)</span></label>
+      <textarea id="sugerencia" placeholder="Lo que se te ocurra, para que mejoremos"></textarea>
+      <div class="priv-note">Esto queda solo para nosotros, no se publica.</div>
     </div>
     <button class="send" id="send">Enviar mi opinión</button>
   </div>
@@ -207,6 +215,7 @@
     const apellido = $('apellido').value.trim();
     const ciudad = $('ciudad').value.trim();
     const texto = $('texto').value.trim();
+    const sugerencia = $('sugerencia').value.trim();
     if (!invitacionOK) { alert('Este link no es válido.'); return; }
     if (!rating) { alert('Elegí cuántas estrellas le ponés.'); return; }
     if (!nombre) { alert('Escribí tu nombre.'); return; }
@@ -229,6 +238,7 @@
         estado: 'pendiente', fecha: serverTimestamp(), token
       });
       batch.update(invRef, { usado: true });
+      if (sugerencia) batch.set(doc(db, 'sugerencias', token), { texto: sugerencia, fecha: serverTimestamp() });
       await batch.commit();
       $('gname').textContent = nombre;
       $('main').style.display = 'none';

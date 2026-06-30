@@ -38,6 +38,16 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;        // moderar (publicar / borrar)
     }
 
+    // Sugerencias privadas (feedback interno) — ID = token. SOLO el admin las lee. Nunca son públicas.
+    match /sugerencias/{token} {
+      allow read: if request.auth != null;                  // solo admin
+      allow create: if request.resource.data.keys().hasOnly(['texto','fecha'])
+        && request.resource.data.texto is string && request.resource.data.texto.size() <= 1500
+        && request.resource.data.fecha == request.time
+        && getAfter(/databases/$(database)/documents/resenas/$(token)).data.estado == 'pendiente';
+      allow update, delete: if request.auth != null;        // admin (se borra junto con la reseña)
+    }
+
     function resenaValida(token) {
       let inv = /databases/$(database)/documents/invitaciones/$(token);
       let d = request.resource.data;

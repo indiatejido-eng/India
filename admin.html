@@ -513,6 +513,8 @@
   .resena-card .rc-foto{ width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 12px; display: block; }
   .resena-card .rc-actions{ display: flex; gap: 10px; }
   .resenas-empty{ color: var(--muted); font-size: 0.9rem; padding: 18px 0; }
+  .rc-sug{ margin: 0 0 12px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; background: var(--bg-soft); font-size: 0.9rem; color: var(--ink-soft); white-space: pre-wrap; }
+  .rc-sug-lbl{ display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -776,6 +778,7 @@ onAuthStateChanged(auth, (user) => {
     desuscribir();
     if (unsubResenas) { unsubResenas(); unsubResenas = null; }
     if (unsubPub) { unsubPub(); unsubPub = null; }
+    if (unsubSug) { unsubSug(); unsubSug = null; }
   }
 });
 
@@ -1171,7 +1174,8 @@ $('btn-copy-msg').addEventListener('click', () => {
   copiar(msg, 'Mensaje copiado');
 });
 
-let unsubResenas = null, unsubPub = null;
+let unsubResenas = null, unsubPub = null, unsubSug = null;
+let snapPend = null, snapPub = null, sugMap = {};
 const starsResena = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
 const ordenarDocs = snap => snap.docs.slice().sort((a, b) => (b.data().fecha?.seconds || 0) - (a.data().fecha?.seconds || 0));
 function tarjetaResena(d, acciones){
@@ -1179,11 +1183,14 @@ function tarjetaResena(d, acciones){
   const id = escapeHtml(d.id);
   const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
   const foto = r.fotoURL ? `<img class="rc-foto" src="${escapeHtml(r.fotoURL)}" alt="">` : '';
+  const sug = sugMap[d.id];
+  const sugHtml = sug ? `<div class="rc-sug"><span class="rc-sug-lbl">Sugerencia privada (no se publica)</span>${escapeHtml(sug)}</div>` : '';
   return `<div class="resena-card">
     <div class="rc-stars">${starsResena(Number(r.estrellas) || 0)}</div>
     <div class="rc-text">${escapeHtml(r.texto || '')}</div>
     ${foto}
     <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
+    ${sugHtml}
     <div class="rc-actions">${acciones(id)}</div>
   </div>`;
 }
@@ -1192,30 +1199,34 @@ function cablearAcciones(cont){
   cont.querySelectorAll('[data-despublicar]').forEach(b => b.addEventListener('click', () => despublicarResena(b.dataset.despublicar)));
   cont.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => borrarResena(b.dataset.borrar)));
 }
+const accionesPend = id => `<button class="btn btn-sm" data-aprobar="${id}">Aprobar</button><button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`;
+const accionesPub = id => `<button class="btn btn-ghost btn-sm" data-despublicar="${id}">Despublicar</button><button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`;
+function pintarLista(snap, contId, vacio, acciones){
+  const cont = $(contId);
+  if (!snap || snap.empty) { cont.innerHTML = `<div class="resenas-empty">${vacio}</div>`; return; }
+  cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, acciones)).join('');
+  cablearAcciones(cont);
+}
+function renderResenas(){
+  const nPend = snapPend ? snapPend.size : 0;
+  $('count-resenas').textContent = nPend;
+  $('count-pend').textContent = nPend;
+  $('count-pub').textContent = snapPub ? snapPub.size : 0;
+  pintarLista(snapPend, 'resenas-pend', 'No hay reseñas para revisar.', accionesPend);
+  pintarLista(snapPub, 'resenas-pub', 'Todavía no hay reseñas publicadas.', accionesPub);
+}
 function cargarResenas(){
   if (unsubResenas) return;
-  // Pendientes (para revisar)
-  unsubResenas = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'pendiente')), snap => {
-    $('count-resenas').textContent = snap.size;
-    $('count-pend').textContent = snap.size;
-    const cont = $('resenas-pend');
-    if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">No hay reseñas para revisar.</div>'; return; }
-    cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, id =>
-      `<button class="btn btn-sm" data-aprobar="${id}">Aprobar</button>`
-      + `<button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`)).join('');
-    cablearAcciones(cont);
-  }, () => { $('resenas-pend').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
-
-  // Publicadas (en la web)
-  unsubPub = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'publicada')), snap => {
-    $('count-pub').textContent = snap.size;
-    const cont = $('resenas-pub');
-    if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">Todavía no hay reseñas publicadas.</div>'; return; }
-    cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, id =>
-      `<button class="btn btn-ghost btn-sm" data-despublicar="${id}">Despublicar</button>`
-      + `<button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`)).join('');
-    cablearAcciones(cont);
-  }, () => { $('resenas-pub').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
+  unsubResenas = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'pendiente')),
+    s => { snapPend = s; renderResenas(); },
+    () => { $('resenas-pend').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
+  unsubPub = onSnapshot(query(collection(db, 'resenas'), where('estado', '==', 'publicada')),
+    s => { snapPub = s; renderResenas(); },
+    () => { $('resenas-pub').innerHTML = '<div class="resenas-empty">No se pudieron cargar las reseñas.</div>'; });
+  // Sugerencias privadas (solo admin las puede leer): mapa token -> texto
+  unsubSug = onSnapshot(collection(db, 'sugerencias'),
+    s => { sugMap = {}; s.forEach(d => sugMap[d.id] = d.data().texto || ''); renderResenas(); },
+    () => {});
 }
 
 async function aprobarResena(id){
@@ -1228,8 +1239,11 @@ async function despublicarResena(id){
 }
 async function borrarResena(id){
   if (!confirm('¿Borrar esta reseña? No se puede deshacer.')) return;
-  try { await deleteDoc(doc(db, 'resenas', id)); showToast('Reseña borrada'); }
-  catch (e) { showToast('Error: ' + e.message, true); }
+  try {
+    await deleteDoc(doc(db, 'resenas', id));
+    deleteDoc(doc(db, 'sugerencias', id)).catch(() => {});
+    showToast('Reseña borrada');
+  } catch (e) { showToast('Error: ' + e.message, true); }
 }
 </script>
 

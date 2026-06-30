@@ -1171,14 +1171,15 @@ $('btn-copy-msg').addEventListener('click', () => {
 let unsubResenas = null;
 function cargarResenas(){
   if (unsubResenas) return;
-  const qPend = query(collection(db, 'resenas'), where('estado', '==', 'pendiente'), orderBy('fecha', 'desc'));
+  const qPend = query(collection(db, 'resenas'), where('estado', '==', 'pendiente'));
   unsubResenas = onSnapshot(qPend, snap => {
     $('count-resenas').textContent = snap.size;
     $('count-pend').textContent = snap.size;
     const cont = $('resenas-pend');
     if (snap.empty) { cont.innerHTML = '<div class="resenas-empty">No hay reseñas para revisar.</div>'; return; }
     const stars = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
-    cont.innerHTML = snap.docs.map(d => {
+    const docs = snap.docs.slice().sort((a, b) => (b.data().fecha?.seconds || 0) - (a.data().fecha?.seconds || 0));
+    cont.innerHTML = docs.map(d => {
       const r = d.data();
       const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
       const foto = r.fotoURL ? `<img class="rc-foto" src="${escapeHtml(r.fotoURL)}" alt="">` : '';

@@ -124,7 +124,7 @@
 <script type="module">
   import { firebaseConfig, cloudinaryConfig } from '/firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, writeBatch, collection, query, where, orderBy, limit, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { getFirestore, doc, getDoc, writeBatch, collection, query, where, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -152,16 +152,19 @@
   // ---- Otras opiniones (reseñas reales ya publicadas) ----
   (async () => {
     try {
-      const qs = await getDocs(query(collection(db, 'resenas'), where('estado', '==', 'publicada'), orderBy('fecha', 'desc'), limit(3)));
+      const qs = await getDocs(query(collection(db, 'resenas'), where('estado', '==', 'publicada')));
       const items = [];
       qs.forEach(d => items.push(d.data()));
-      if (!items.length) { document.querySelector('.others').style.display = 'none'; return; }
-      $('mini').innerHTML = items.map(r => {
+      items.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+      const top = items.slice(0, 3);
+      if (!top.length) { document.querySelector('.others').style.display = 'none'; return; }
+      $('mini').innerHTML = top.map(r => {
         const nom = esc(r.nombre) + (r.apellido ? ' ' + esc(r.apellido) : '');
         return `<div class="mini"><div class="stars">${starStr(Number(r.estrellas) || 0)}</div><p>${esc(r.texto)}</p>`
           + `<span class="nm">${nom}</span> · <span class="loc">${esc(r.ciudad)}</span></div>`;
       }).join('');
     } catch (e) {
+      console.error('otras opiniones:', e);
       document.querySelector('.others').style.display = 'none';
     }
   })();
@@ -173,7 +176,8 @@
 
   // ---- Previsualización de la foto ----
   const foto = $('foto'), prev = $('prev'), fname = $('fname');
-  foto.onchange = () => { const f = foto.files[0]; if (!f) return; fname.textContent = f.name; prev.style.display = 'block'; prev.src = URL.createObjectURL(f); };
+  let fotoSubida = null;
+  foto.onchange = () => { fotoSubida = null; const f = foto.files[0]; if (!f) return; fname.textContent = f.name; prev.style.display = 'block'; prev.src = URL.createObjectURL(f); };
 
   // ---- Subida a Cloudinary (unsigned) ----
   function subirFoto(file) {
@@ -218,7 +222,7 @@
     send.textContent = 'Enviando…';
     try {
       let fotoURL = '';
-      if (file) fotoURL = await subirFoto(file);
+      if (file) { if (!fotoSubida) fotoSubida = await subirFoto(file); fotoURL = fotoSubida; }
       const batch = writeBatch(db);
       batch.set(doc(db, 'resenas', token), {
         nombre, apellido, ciudad, estrellas: rating, texto, fotoURL,

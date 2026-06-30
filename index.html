@@ -1299,9 +1299,10 @@
   const opSection = document.getElementById('opiniones');
   const opNav = document.getElementById('op-navlink');
   const ocultarOp = () => { opSection.style.display = 'none'; if (opNav) opNav.style.display = 'none'; };
-  const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'), orderBy('fecha', 'desc'));
+  const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'));
   onSnapshot(qOp, snap => {
-    const items = snap.docs.map(d => d.data());
+    const items = snap.docs.map(d => d.data())
+      .sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
     if (!items.length) { ocultarOp(); return; }
     opSection.style.display = '';
     if (opNav) opNav.style.display = '';

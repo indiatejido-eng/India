@@ -1,0 +1,51 @@
+// ============================================================================
+// REGLAS DE FIRESTORE PARA EL SISTEMA DE RESEÑAS  (referencia versionada)
+// ----------------------------------------------------------------------------
+// NO es un firestore.rules completo: son SOLO los bloques de reseñas.
+// Pegalos en Firebase Console > Firestore > Reglas, DENTRO de
+//   match /databases/{database}/documents { ... }
+// junto a tus reglas existentes de 'chalecos' / 'stats' / 'visits' (NO las borres).
+//
+// Endurecido tras revisión de seguridad:
+//  - getAfter(inv).usado == true        -> el link se consume sí o sí en la misma
+//    transacción (imposible reusarlo con un cliente hecho a mano).
+//  - getAfter(resena).estado=='pendiente' en el update de la invitación -> nadie
+//    puede "quemar" un token suelto sin crear al mismo tiempo la reseña.
+//  - fotoURL anclada a tu cloud (dgl2mizsf) y al endpoint de upload.
+// ============================================================================
+
+// Invitaciones de reseña (ID del documento = token)
+match /invitaciones/{token} {
+  allow get: if true;                                  // /resena valida el token por ID
+  allow list, create, delete: if request.auth != null; // solo el admin logueado
+  // Marcar usada: el admin, o el cliente al enviar (solo flip false->true Y solo si
+  // en la misma transacción se crea la reseña pendiente).
+  allow update: if request.auth != null
+    || (resource.data.usado == false
+        && request.resource.data.usado == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado'])
+        && getAfter(/databases/$(database)/documents/resenas/$(token)).data.estado == 'pendiente');
+}
+
+// Reseñas (ID del documento = token)
+match /resenas/{token} {
+  allow read: if resource.data.estado == 'publicada' || request.auth != null;
+  allow create: if resenaValida(token);
+  allow update, delete: if request.auth != null;       // moderar (publicar / borrar)
+}
+
+function resenaValida(token) {
+  let inv = /databases/$(database)/documents/invitaciones/$(token);
+  let d = request.resource.data;
+  return d.keys().hasOnly(['nombre','apellido','ciudad','estrellas','texto','fotoURL','estado','fecha','token'])
+    && d.estado == 'pendiente' && d.token == token
+    && d.estrellas is int && d.estrellas >= 1 && d.estrellas <= 5
+    && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 80
+    && d.apellido is string && d.apellido.size() <= 80
+    && d.ciudad is string && d.ciudad.size() > 0 && d.ciudad.size() <= 80
+    && d.texto is string && d.texto.size() > 0 && d.texto.size() <= 1500
+    && d.fotoURL is string && (d.fotoURL == '' || d.fotoURL.matches('https://res\\.cloudinary\\.com/dgl2mizsf/image/upload/.*'))
+    && d.fecha == request.time
+    && exists(inv) && get(inv).data.usado == false
+    && getAfter(inv).data.usado == true;   // <-- consume la invitación en la MISMA transacción
+}

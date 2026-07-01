@@ -526,6 +526,16 @@
     cont.querySelectorAll('[data-accion]').forEach(b=>b.addEventListener('click',()=>accionCliente(b.dataset.id,b.dataset.accion)));
   }
 
+  // Cruza una reseña con el cliente por nombre completo (para reseñas de links sueltos o clientes importados sin token).
+  function resenaPorNombre(cliente){
+    const c = normCli(cliente).replace(/\s+/g,' ').trim(); if(!c) return null;
+    for(const t in RESENAS_MAP){
+      const r = RESENAS_MAP[t];
+      const nom = normCli((r.nombre||'')+' '+(r.apellido||'')).replace(/\s+/g,' ').trim();
+      if(nom && nom===c) return r;
+    }
+    return null;
+  }
   function tarjetaCliente(p){
     const chips=[];
     if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)))}</span>`);
@@ -533,7 +543,8 @@
     if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
     else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
     else chips.push(`<span class="cli-chip">Sin enviar</span>`);
-    const rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
+    let rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
+    if(!rev) rev = resenaPorNombre(p.cliente);   // cruce por nombre (reseñas de links sueltos / importados)
     if(rev) chips.push(`<span class="cli-chip star">★ respondió (${Number(rev.estrellas)||0})</span>`);
     else if(p.tokenResena) chips.push(`<span class="cli-chip">Link enviado</span>`);
     else chips.push(`<span class="cli-chip">Sin reseña</span>`);
@@ -542,8 +553,10 @@
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
-    if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
-    else if(!rev) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="resena-copiar">Copiar mensaje</button>`);
+    if(!rev){
+      if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
+      else btns.push(`<button class="cli-btn" data-id="${id}" data-accion="resena-copiar">Copiar mensaje</button>`);
+    }
 
     return `<div class="cli-card">
       <div class="cli-nombre">${escCli(p.cliente||'Sin nombre')}</div>

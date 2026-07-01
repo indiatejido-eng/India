@@ -97,6 +97,9 @@
   .cli-tools{margin-bottom:16px}
   .cli-tools input{width:100%;padding:12px 14px;font-size:15px;font-family:var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:11px}
   .cli-tools input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(182,91,56,.14)}
+  .cli-import{width:100%;padding:10px;font-size:13px;font-family:var(--body);color:var(--muted);background:none;border:1px dashed var(--line2);border-radius:11px;cursor:pointer;margin-bottom:16px}
+  .cli-import:active{transform:scale(.99)}
+  .cli-import:disabled{opacity:.5}
   .cli-grupo{margin-bottom:22px}
   .cli-grupo-h{font-family:var(--disp);font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
   .cli-count{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
@@ -214,6 +217,7 @@
     <button class="back" onclick="home()">← Volver</button>
     <div class="ttl">Clientes</div>
     <div class="cli-tools"><input type="text" id="cli-buscar" placeholder="Buscar por nombre…" oninput="renderClientes()"></div>
+    <button class="cli-import" id="cli-importar" onclick="importarDelSheet()">↓ Importar ventas del Sheet</button>
     <div id="cli-cont"><div class="cli-vacio">Cargando…</div></div>
   </div>
 
@@ -403,6 +407,7 @@
     if(sena>total) sena=total;
     const pedido = {
       cliente: $('v-cliente').value.trim(),
+      telefono: $('v-tel').value.trim(),
       queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
       total,
       sena,
@@ -442,6 +447,47 @@
     unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
+
+  // Importar las ventas del Sheet como fichas de pedido (una vez; sin duplicar; no toca el Sheet).
+  const slugCli = s => normCli(s).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  function parseFechaSheet(f){
+    f=String(f||'').trim(); let y,m,d;
+    if(/^\d{4}-\d{2}-\d{2}/.test(f)){ const p=f.slice(0,10).split('-'); y=+p[0];m=+p[1];d=+p[2]; }
+    else { const p=f.split('/'); if(p.length!==3) return null; d=+p[0];m=+p[1];y=+p[2]; }
+    if(!y||!m||!d) return null;
+    return new Date(y, m-1, d, 12, 0, 0);   // mediodía local, evita saltos de día por zona horaria
+  }
+  async function importarDelSheet(){
+    const btn=$('cli-importar'); if(btn){ btn.disabled=true; btn.textContent='Importando…'; }
+    try{
+      const r=await fetch(WEBHOOK_NUMEROS,{cache:'no-store',headers:{'Accept':'application/json'}});
+      const data=await r.json();
+      const rows=Array.isArray(data)?data:(data.body||data.data||[]);
+      const ventas=rows.filter(x=>x.Info==='Ventas');
+      const existentes=new Set((PEDIDOS||[]).map(p=>normCli(p.cliente)+'|'+(Number(p.total)||0)));
+      let nuevos=0;
+      for(const v of ventas){
+        const cliente=String(v.Cliente||'').trim(); if(!cliente) continue;
+        const total=Number(String(v['Precio ($)']==null?'':v['Precio ($)']).replace(/[^\d.-]/g,''))||0;
+        const key=normCli(cliente)+'|'+total;
+        if(existentes.has(key)) continue;
+        existentes.add(key);
+        const fechaStr=String(v.Fecha||'').trim();
+        const id='imp_'+slugCli(cliente)+'_'+fechaStr.replace(/[^\dA-Za-z]/g,'-')+'_'+total;
+        const partes=[v.Modelo, v.Talle&&('talle '+v.Talle), v.Color].filter(Boolean);
+        await window.FB.crearPedidoConId(id, {
+          cliente,
+          telefono:String(v['Teléfono']||v.Telefono||'').trim(),
+          queCompro:partes.join(', '),
+          total, sena:0, saldoCobrado:true, enviado:true, entregado:true, tokenResena:'',
+          fecha: parseFechaSheet(fechaStr) || new Date()
+        });
+        nuevos++;
+      }
+      alert(nuevos ? ('Listo ✓ '+nuevos+' cliente'+(nuevos===1?'':'s')+' importado'+(nuevos===1?'':'s')+' del Sheet.') : 'Ya estaban todos (no había clientes nuevos para importar).');
+    }catch(e){ console.error('importar:',e); alert('No se pudo importar. Probá de nuevo.'); }
+    finally{ if(btn){ btn.disabled=false; btn.textContent='↓ Importar ventas del Sheet'; } }
+  }
   // Por cobrar = saldos no cobrados (Firebase); Entró en caja = Vendido (Sheet) − Por cobrar.
   // Mes (YYYY-MM) de un pedido, desde su fecha (serverTimestamp). null si aún no resolvió.
   function mesDePedido(p){
@@ -501,7 +547,7 @@
 
     return `<div class="cli-card">
       <div class="cli-nombre">${escCli(p.cliente||'Sin nombre')}</div>
-      <div class="cli-sub">${escCli(p.queCompro||'')}</div>
+      <div class="cli-sub">${escCli(p.queCompro||'')}${p.telefono?' · '+escCli(p.telefono):''}</div>
       <div class="cli-total">${pesosCli(p.total)}${p.sena>0?` · seña ${pesosCli(p.sena)}`:''}</div>
       <div class="cli-chips">${chips.join('')}</div>
       <div class="cli-acciones">${btns.join('')}</div>
@@ -549,6 +595,7 @@
   // API de Firestore para el resto de la app (pedidos / seguimiento de clientes).
   window.FB = {
     crearPedido: (p) => addDoc(collection(db, 'pedidos'), { ...p, fecha: serverTimestamp() }),
+    crearPedidoConId: (id, p) => setDoc(doc(db, 'pedidos', id), p),   // import del Sheet: ID estable + fecha real
     usuario: () => (auth.currentUser ? auth.currentUser.email : null),
     escucharPedidos: (cb) => onSnapshot(collection(db, 'pedidos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => {}),
     escucharResenas: (cb) => onSnapshot(collection(db, 'resenas'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }, () => {}),

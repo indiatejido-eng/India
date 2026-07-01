@@ -362,9 +362,18 @@
       entregado: $('v-estado').dataset.val==='Ya entregado',
       tokenResena: ''
     };
-    if(!window.FB || !window.FB.crearPedido){ console.error('window.FB no está listo'); return ' · ⚠️ ficha no creada (app no lista)'; }
-    try{ await window.FB.crearPedido(pedido); return ''; }
-    catch(e){ console.error('No se pudo crear el pedido:', e); return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')'; }
+    let diag = 'DIAGNÓSTICO FICHA\nwindow.FB: ' + (window.FB ? 'OK' : 'UNDEFINED');
+    diag += '\nlogueado como: ' + (window.FB && window.FB.usuario ? (window.FB.usuario() || '❌ NADIE (auth null)') : '?');
+    if(!window.FB || !window.FB.crearPedido){ alert(diag + '\n\nwindow.FB no está listo'); return ' · ⚠️ ficha no creada (app no lista)'; }
+    try{
+      const ref = await window.FB.crearPedido(pedido);
+      alert(diag + '\n\n✅ addDoc OK · id=' + (ref && ref.id));
+      return '';
+    }catch(e){
+      console.error('No se pudo crear el pedido:', e);
+      alert(diag + '\n\n❌ addDoc ERROR:\n' + ((e && e.code) || '') + '\n' + ((e && e.message) || e));
+      return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')';
+    }
   }
 </script>
 
@@ -382,6 +391,7 @@
   // API de Firestore para el resto de la app (pedidos / seguimiento de clientes).
   window.FB = {
     crearPedido: (p) => addDoc(collection(db, 'pedidos'), { ...p, fecha: serverTimestamp() }),
+    usuario: () => (auth.currentUser ? auth.currentUser.email : null),
   };
   const USERNAME_TO_EMAIL = (u) => `${u.toLowerCase()}@india-admin.local`;
   const el = (id) => document.getElementById(id);

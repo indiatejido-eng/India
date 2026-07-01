@@ -194,7 +194,7 @@
       <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
       <div class="stat"><div class="sl">Ganancia</div><div class="sv green" id="n-ganancia">—</div></div>
       <div class="stat"><div class="sl">Por cobrar</div><div class="sv" id="n-porcobrar">—</div></div>
-      <div class="stat wide"><div class="sl">Entró en caja</div><div class="sv green" id="n-encaja">—</div></div>
+      <div class="stat wide"><div class="sl">Hay en caja</div><div class="sv green" id="n-encaja">—</div></div>
       <div class="stat"><div class="sl">Margen</div><div class="sv" id="n-margen">—</div></div>
       <div class="stat"><div class="sl">Chalecos</div><div class="sv" id="n-chalecos">—</div></div>
       <div class="stat"><div class="sl">Costo x chaleco</div><div class="sv" id="n-costo">—</div></div>
@@ -488,7 +488,7 @@
     }catch(e){ console.error('importar:',e); alert('No se pudo importar. Probá de nuevo.'); }
     finally{ if(btn){ btn.disabled=false; btn.textContent='↓ Importar ventas del Sheet'; } }
   }
-  // Por cobrar = saldos no cobrados (Firebase); Entró en caja = Vendido (Sheet) − Por cobrar.
+  // Por cobrar = saldos no cobrados (Firebase); Hay en caja = caja del Sheet (vendido − gastos − retiros) − Por cobrar.
   // Mes (YYYY-MM) de un pedido, desde su fecha (serverTimestamp). null si aún no resolvió.
   function mesDePedido(p){
     const s = p.fecha && p.fecha.seconds; if(!s) return null;
@@ -504,7 +504,7 @@
     });
     const porCobrar = impagos.reduce((a,p)=>a+Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)),0);
     if($('n-porcobrar')) $('n-porcobrar').textContent = PEDIDOS===null ? '—' : pesos(porCobrar);
-    if($('n-encaja')) $('n-encaja').textContent = (ULTIMO_NUM===null||PEDIDOS===null) ? '—' : pesos((Number(ULTIMO_NUM.vendido)||0)-porCobrar);
+    if($('n-encaja')) $('n-encaja').textContent = (ULTIMO_NUM===null||PEDIDOS===null) ? '—' : pesos((Number(ULTIMO_NUM.caja)||0)-porCobrar);
   }
 
   function renderClientes(){

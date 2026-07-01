@@ -407,10 +407,10 @@
   const normCli = s => String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const cobradoP = p => !!p.saldoCobrado;   // la elección explícita manda: saldoCobrado=true solo si "Pagó todo"
   function estadoPedido(p){
-    if(p.entregado && cobradoP(p)) return 'cerrado';
-    if(p.entregado) return 'falta_cobrar';   // entregado pero debe plata
-    if(p.enviado) return 'enviado';
-    return 'en_proceso';
+    if(!cobradoP(p)) return 'falta_cobrar';   // debe plata (cualquier estado, cualquier mes) -> lista de cobro completa
+    if(p.entregado) return 'cerrado';         // pagado + entregado = listo
+    if(p.enviado) return 'enviado';           // pagado, en camino
+    return 'en_proceso';                       // pagado, en producción
   }
   function limpiarClientes(){
     if(unsubPedidos)unsubPedidos(); if(unsubResenasCli)unsubResenasCli();

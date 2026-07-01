@@ -397,32 +397,41 @@
   }
 
   // ===== CLIENTES / PEDIDOS =====
-  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false;
+  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null;
   const pesosCli = n => '$'+Math.round(Number(n)||0).toLocaleString('es-AR');
   const escCli = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const cobradoP = p => p.sena>0 ? !!p.saldoCobrado : true;
+  const normCli = s => String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const cobradoP = p => !!p.saldoCobrado;   // la elección explícita manda: saldoCobrado=true solo si "Pagó todo"
   function estadoPedido(p){
     if(p.entregado && cobradoP(p)) return 'cerrado';
+    if(p.entregado) return 'falta_cobrar';   // entregado pero debe plata
     if(p.enviado) return 'enviado';
     return 'en_proceso';
   }
+  function limpiarClientes(){
+    if(unsubPedidos)unsubPedidos(); if(unsubResenasCli)unsubResenasCli();
+    unsubPedidos=unsubResenasCli=null; cliIniciado=false; PEDIDOS=null; RESENAS_MAP={};
+  }
+  window.limpiarClientes = limpiarClientes;
 
   function cargarClientes(){
+    if(!window.FB) return;
     if(cliIniciado){ renderClientes(); return; }
     cliIniciado=true;
-    window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); });
-    window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
+    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); });
+    unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
   }
 
   function renderClientes(){
     const cont=$('cli-cont'); if(!cont) return;
+    const scr=$('s-clientes'); if(scr && !scr.classList.contains('on')) return;   // no reconstruir de fondo
     if(PEDIDOS===null){ cont.innerHTML='<div class="cli-vacio">Cargando…</div>'; return; }
-    const q=($('cli-buscar').value||'').trim().toLowerCase();
+    const q=normCli($('cli-buscar').value).trim();
     let lista=PEDIDOS;
-    if(q) lista=lista.filter(p=>(p.cliente||'').toLowerCase().includes(q));
+    if(q) lista=lista.filter(p=>normCli(p.cliente).includes(q));
     if(!lista.length){ cont.innerHTML='<div class="cli-vacio">'+(q?'Sin resultados.':'Todavía no hay pedidos. Cargá una venta para empezar.')+'</div>'; return; }
     const porFecha=(a,b)=>(b.fecha?.seconds||0)-(a.fecha?.seconds||0);
-    const grupos=[['en_proceso','En proceso'],['enviado','Enviados'],['cerrado','Cerrados']];
+    const grupos=[['en_proceso','En proceso'],['enviado','Enviados'],['falta_cobrar','Falta cobrar'],['cerrado','Cerrados']];
     const html=grupos.map(([key,titulo])=>{
       const ps=lista.filter(p=>estadoPedido(p)===key).sort(porFecha);
       if(!ps.length) return '';
@@ -434,7 +443,7 @@
 
   function tarjetaCliente(p){
     const chips=[];
-    if(p.sena>0 && !p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(p.total-p.sena)}</span>`);
+    if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(p.total-p.sena)}</span>`);
     else chips.push(`<span class="cli-chip ok">Pagado</span>`);
     if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
     else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
@@ -445,7 +454,7 @@
     else chips.push(`<span class="cli-chip">Sin reseña</span>`);
 
     const id=escCli(p.id), btns=[];
-    if(p.sena>0 && !p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
+    if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
     if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
@@ -467,8 +476,7 @@
       else if(accion==='enviar') await window.FB.actualizarPedido(id,{enviado:true});
       else if(accion==='entregar') await window.FB.actualizarPedido(id,{entregado:true});
       else if(accion==='resena'){
-        const token=await window.FB.crearInvitacion(p.cliente);
-        await window.FB.actualizarPedido(id,{tokenResena:token});
+        const token=await window.FB.generarLinkResena(id, p.cliente);
         copiarMensajeResena(p.cliente, token);
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena);
@@ -489,7 +497,7 @@
   import { firebaseConfig } from '/firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-  import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const fbApp = initializeApp(firebaseConfig);
   const auth = getAuth(fbApp);
@@ -499,10 +507,18 @@
   window.FB = {
     crearPedido: (p) => addDoc(collection(db, 'pedidos'), { ...p, fecha: serverTimestamp() }),
     usuario: () => (auth.currentUser ? auth.currentUser.email : null),
-    escucharPedidos: (cb) => onSnapshot(collection(db, 'pedidos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
-    escucharResenas: (cb) => onSnapshot(collection(db, 'resenas'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }),
+    escucharPedidos: (cb) => onSnapshot(collection(db, 'pedidos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => {}),
+    escucharResenas: (cb) => onSnapshot(collection(db, 'resenas'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }, () => {}),
     actualizarPedido: (id, patch) => updateDoc(doc(db, 'pedidos', id), patch),
-    crearInvitacion: async (nombre) => { const token = (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2)); await setDoc(doc(db, 'invitaciones', token), { token, usado: false, fecha: serverTimestamp(), clienteNombre: nombre || '' }); return token; },
+    // Crea la invitación y guarda tokenResena en el pedido en UN batch atómico (sin huérfanas ni token perdido).
+    generarLinkResena: async (pedidoId, nombre) => {
+      const token = (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2));
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'invitaciones', token), { token, usado: false, fecha: serverTimestamp(), clienteNombre: nombre || '' });
+      batch.update(doc(db, 'pedidos', pedidoId), { tokenResena: token });
+      await batch.commit();
+      return token;
+    },
   };
   const USERNAME_TO_EMAIL = (u) => `${u.toLowerCase()}@india-admin.local`;
   const el = (id) => document.getElementById(id);
@@ -534,6 +550,7 @@
       el('app').style.display = 'none';
       el('login').style.display = 'flex';
       el('pass').value = '';
+      if (window.limpiarClientes) window.limpiarClientes();
     }
   });
 </script>

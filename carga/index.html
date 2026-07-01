@@ -140,6 +140,9 @@
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
     <div class="field"><label>Precio</label><input type="number" id="v-precio" inputmode="numeric" placeholder="145000"></div>
     <div class="field"><label>Destino</label><input type="text" id="v-destino" placeholder="Buenos Aires"></div>
+    <div class="field"><label>¿Cómo pagó?</label><div class="chips" id="v-pago" data-val="Pagó todo" onclick="togglePago()"><div class="chip sel" onclick="pick(this)">Pagó todo</div><div class="chip" onclick="pick(this)">Pagó seña</div></div></div>
+    <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="number" id="v-sena" inputmode="numeric" placeholder="50000"></div>
+    <div class="field"><label>¿Estado?</label><div class="chips" id="v-estado" data-val="En proceso"><div class="chip" onclick="pick(this)">Ya entregado</div><div class="chip sel" onclick="pick(this)">En proceso</div></div></div>
     <button class="save" onclick="send('venta')">Guardar venta</button>
   </div>
 
@@ -205,6 +208,7 @@
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
   function kg(){setTimeout(()=>{$('g-kgwrap').style.display=$('g-tipo').dataset.val==='Lana'?'block':'none'},0)}
+  function togglePago(){setTimeout(()=>{$('v-senawrap').style.display=$('v-pago').dataset.val==='Pagó seña'?'block':'none'},0)}
 
   const pesos=n=>'$'+Math.round(Number(n)||0).toLocaleString('es-AR');
   function estado(txt){const e=$('estado');if(e)e.textContent=txt}
@@ -324,6 +328,7 @@
     try{
       const r=await fetch(WEBHOOK_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
       if(!r.ok)throw 0;
+      if(accion==='venta')await crearPedidoDesdeForm();
       const t={venta:['Venta guardada','Sumada a tus ventas.'],gasto:['Gasto anotado','Ya está en la caja.']}[accion];
       $('done-check').style.display='flex';
       $('done-t').textContent=t[0];$('done-s').textContent=t[1];
@@ -334,6 +339,24 @@
       $('done-s').textContent='Revisá la conexión y tocá "Anotar otra cosa" para reintentar.';
     }
   }
+
+  // Crea la ficha de seguimiento en Firebase (pedidos). El Sheet ya recibió el total vía n8n.
+  // Si esto falla, la venta igual quedó guardada en el Sheet (solo se pierde la ficha).
+  async function crearPedidoDesdeForm(){
+    const total = Number($('v-precio').value||0);
+    const sena = $('v-pago').dataset.val==='Pagó seña' ? Number($('v-sena').value||0) : 0;
+    const pedido = {
+      cliente: $('v-cliente').value.trim(),
+      queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
+      total,
+      sena,
+      saldoCobrado: sena===0,
+      enviado: false,
+      entregado: $('v-estado').dataset.val==='Ya entregado',
+      tokenResena: ''
+    };
+    try{ await window.FB.crearPedido(pedido); }catch(e){ console.error('No se pudo crear el pedido:', e); }
+  }
 </script>
 
 <script type="module">
@@ -341,9 +364,16 @@
   import { firebaseConfig } from '/firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+  import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const fbApp = initializeApp(firebaseConfig);
   const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+
+  // API de Firestore para el resto de la app (pedidos / seguimiento de clientes).
+  window.FB = {
+    crearPedido: (p) => addDoc(collection(db, 'pedidos'), { ...p, fecha: serverTimestamp() }),
+  };
   const USERNAME_TO_EMAIL = (u) => `${u.toLowerCase()}@india-admin.local`;
   const el = (id) => document.getElementById(id);
 

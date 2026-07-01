@@ -290,7 +290,7 @@
     const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
     return {
-      periodo:etiquetaMes(mes),
+      periodo:etiquetaMes(mes), mes,
       vendido,gastos:costos,ganancia,caja:ganancia-retiros,
       margen:vendido>0?Math.round(ganancia/vendido*100):0,
       chalecos,
@@ -383,7 +383,7 @@
     // La seña se clampea al rango [0, total] para no romper (total - sena).
     let sena = pagoTodo ? 0 : Number($('v-sena').value||0);
     if(sena<0) sena=0;
-    if(total>0 && sena>total) sena=total;
+    if(sena>total) sena=total;
     const pedido = {
       cliente: $('v-cliente').value.trim(),
       queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
@@ -401,6 +401,7 @@
 
   // ===== CLIENTES / PEDIDOS =====
   let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null, ULTIMO_NUM=null;
+  const generandoResena = new Set();
   const pesosCli = n => '$'+Math.round(Number(n)||0).toLocaleString('es-AR');
   const escCli = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normCli = s => String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -425,8 +426,20 @@
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
   // Por cobrar = saldos no cobrados (Firebase); Entró en caja = Vendido (Sheet) − Por cobrar.
+  // Mes (YYYY-MM) de un pedido, desde su fecha (serverTimestamp). null si aún no resolvió.
+  function mesDePedido(p){
+    const s = p.fecha && p.fecha.seconds; if(!s) return null;
+    const d = new Date(s*1000); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
   function renderCaja(){
-    const porCobrar=(PEDIDOS||[]).filter(p=>!p.saldoCobrado).reduce((a,p)=>a+Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)),0);
+    const mes = ULTIMO_NUM ? ULTIMO_NUM.mes : null;   // mismo mes que el "Vendido" del Sheet
+    const impagos = (PEDIDOS||[]).filter(p=>{
+      if(p.saldoCobrado) return false;
+      if(!mes) return true;
+      const pm = mesDePedido(p);
+      return pm===null || pm===mes;   // fecha pendiente -> tratar como mes actual
+    });
+    const porCobrar = impagos.reduce((a,p)=>a+Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)),0);
     if($('n-porcobrar')) $('n-porcobrar').textContent = PEDIDOS===null ? '—' : pesos(porCobrar);
     if($('n-encaja')) $('n-encaja').textContent = (ULTIMO_NUM===null||PEDIDOS===null) ? '—' : pesos((Number(ULTIMO_NUM.vendido)||0)-porCobrar);
   }
@@ -452,7 +465,7 @@
 
   function tarjetaCliente(p){
     const chips=[];
-    if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(p.total-p.sena)}</span>`);
+    if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)))}</span>`);
     else chips.push(`<span class="cli-chip ok">Pagado</span>`);
     if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
     else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
@@ -485,8 +498,12 @@
       else if(accion==='enviar') await window.FB.actualizarPedido(id,{enviado:true});
       else if(accion==='entregar') await window.FB.actualizarPedido(id,{entregado:true});
       else if(accion==='resena'){
-        const token=await window.FB.generarLinkResena(id, p.cliente);
-        copiarMensajeResena(p.cliente, token);
+        if(generandoResena.has(id) || p.tokenResena) return;   // evita doble token por double-tap
+        generandoResena.add(id);
+        try{
+          const token=await window.FB.generarLinkResena(id, p.cliente);
+          copiarMensajeResena(p.cliente, token);
+        } finally { generandoResena.delete(id); }
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena);
     }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }

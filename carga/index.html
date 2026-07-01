@@ -187,7 +187,8 @@
       <div class="stat"><div class="sl">Vendido</div><div class="sv" id="n-vendido">—</div></div>
       <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
       <div class="stat"><div class="sl">Ganancia</div><div class="sv green" id="n-ganancia">—</div></div>
-      <div class="stat"><div class="sl">Queda en caja</div><div class="sv" id="n-caja">—</div></div>
+      <div class="stat"><div class="sl">Por cobrar</div><div class="sv" id="n-porcobrar">—</div></div>
+      <div class="stat wide"><div class="sl">Entró en caja</div><div class="sv green" id="n-encaja">—</div></div>
       <div class="stat"><div class="sl">Margen</div><div class="sv" id="n-margen">—</div></div>
       <div class="stat"><div class="sl">Chalecos</div><div class="sv" id="n-chalecos">—</div></div>
       <div class="stat"><div class="sl">Costo x chaleco</div><div class="sv" id="n-costo">—</div></div>
@@ -315,7 +316,6 @@
     $('n-vendido').textContent=pesos(vendido);
     $('n-gastos').textContent=pesos(gastos);
     $('n-ganancia').textContent=pesos(ganancia);
-    $('n-caja').textContent=pesos(caja);
     $('n-margen').textContent=margen+'%';
     $('n-chalecos').textContent=chalecos;
     $('n-costo').textContent=d.costoPorChaleco!=null?pesos(d.costoPorChaleco):(chalecos>0?pesos(gastos/chalecos):'—');
@@ -337,7 +337,10 @@
       if(!r.ok)throw 0;
       const data=await r.json();
       const rows=Array.isArray(data)?data:(data.body||data.data||[]);
-      renderNumeros(calcular(rows));
+      ULTIMO_NUM=calcular(rows);
+      renderNumeros(ULTIMO_NUM);
+      asegurarPedidos();
+      renderCaja();
       estado('Conectado a la planilla');
     }catch(e){
       $('n-periodo').textContent='No se pudieron traer los números.';
@@ -397,7 +400,7 @@
   }
 
   // ===== CLIENTES / PEDIDOS =====
-  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null;
+  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null, ULTIMO_NUM=null;
   const pesosCli = n => '$'+Math.round(Number(n)||0).toLocaleString('es-AR');
   const escCli = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normCli = s => String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -414,12 +417,18 @@
   }
   window.limpiarClientes = limpiarClientes;
 
-  function cargarClientes(){
-    if(!window.FB) return;
-    if(cliIniciado){ renderClientes(); return; }
+  function asegurarPedidos(){
+    if(!window.FB || cliIniciado) return;
     cliIniciado=true;
-    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); });
+    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); renderCaja(); });
     unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
+  }
+  function cargarClientes(){ asegurarPedidos(); renderClientes(); }
+  // Por cobrar = saldos no cobrados (Firebase); Entró en caja = Vendido (Sheet) − Por cobrar.
+  function renderCaja(){
+    const porCobrar=(PEDIDOS||[]).filter(p=>!p.saldoCobrado).reduce((a,p)=>a+Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)),0);
+    if($('n-porcobrar')) $('n-porcobrar').textContent = PEDIDOS===null ? '—' : pesos(porCobrar);
+    if($('n-encaja')) $('n-encaja').textContent = (ULTIMO_NUM===null||PEDIDOS===null) ? '—' : pesos((Number(ULTIMO_NUM.vendido)||0)-porCobrar);
   }
 
   function renderClientes(){

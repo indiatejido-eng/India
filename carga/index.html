@@ -344,13 +344,19 @@
   // Si esto falla, la venta igual quedó guardada en el Sheet (solo se pierde la ficha).
   async function crearPedidoDesdeForm(){
     const total = Number($('v-precio').value||0);
-    const sena = $('v-pago').dataset.val==='Pagó seña' ? Number($('v-sena').value||0) : 0;
+    const pagoTodo = $('v-pago').dataset.val==='Pagó todo';
+    // La elección explícita manda: si eligió "Pagó seña" el saldo NO está cobrado,
+    // aunque deje el monto vacío (así el pedido igual aparece en "Por cobrar").
+    // La seña se clampea al rango [0, total] para no romper (total - sena).
+    let sena = pagoTodo ? 0 : Number($('v-sena').value||0);
+    if(sena<0) sena=0;
+    if(total>0 && sena>total) sena=total;
     const pedido = {
       cliente: $('v-cliente').value.trim(),
       queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
       total,
       sena,
-      saldoCobrado: sena===0,
+      saldoCobrado: pagoTodo,
       enviado: false,
       entregado: $('v-estado').dataset.val==='Ya entregado',
       tokenResena: ''

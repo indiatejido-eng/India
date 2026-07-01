@@ -67,6 +67,8 @@
   .demo{font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--muted);white-space:pre-wrap;text-align:left;width:100%;font-family:ui-monospace,monospace;margin-bottom:18px}
 
   .stat-period{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .n-sel{width:100%;padding:11px 14px;font-size:14px;font-family:var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:11px;margin-bottom:10px;cursor:pointer}
+  .n-sel:focus{outline:none;border-color:var(--accent)}
   .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
   .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
   .stat.wide{grid-column:1/-1}
@@ -182,6 +184,7 @@
   <div class="screen" id="s-stats">
     <button class="back" onclick="home()">← Volver</button>
     <div class="ttl">Tus números</div>
+    <select class="n-sel" id="n-periodo-sel" onchange="cambiarPeriodo()"></select>
     <div class="stat-period" id="n-periodo">Cargando…</div>
     <div class="stat-grid">
       <div class="stat"><div class="sl">Vendido</div><div class="sv" id="n-vendido">—</div></div>
@@ -266,12 +269,12 @@
   function etiquetaMes(m){if(!m)return 'Este mes';const p=String(m).split('-');return (MESES[(+p[1])-1]||'')+' '+(p[0]||'')}
 
   // Toma las filas crudas del Sheet (india-numeros) y calcula los totales del mes mas reciente.
-  function calcular(rows){
+  function calcular(rows, periodoSel){
     if(!Array.isArray(rows))rows=[];
     // El mes lo sacamos de la Fecha (DD/MM/YYYY o YYYY-MM-DD); la columna Mes a veces viene vacia en filas nuevas.
     const mesDe=r=>{const f=String(r.Fecha||'').trim();if(/^\d{4}-\d{2}-\d{2}/.test(f))return f.slice(0,7);const p=f.split('/');if(p.length===3)return p[2]+'-'+String(p[1]).padStart(2,'0');return r.Mes?String(r.Mes):'';};
-    const meses=[...new Set(rows.map(mesDe).filter(Boolean))].sort();
-    const mes=meses[meses.length-1]||'';
+    const meses=[...new Set(rows.map(mesDe).filter(Boolean))].sort().reverse();
+    const mes = periodoSel || '';   // '' = todo el año; 'YYYY-MM' = ese mes
     const enMes=r=>!mes||mesDe(r)===mes;
     const ventas=rows.filter(r=>r.Info==='Ventas'&&enMes(r));
     const gastos=rows.filter(r=>r.Info==='Gastos'&&enMes(r));
@@ -290,7 +293,7 @@
     const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
     return {
-      periodo:etiquetaMes(mes), mes,
+      periodo: mes?etiquetaMes(mes):'Todo el año', mes, mesesDisponibles:meses,
       vendido,gastos:costos,ganancia,caja:ganancia-retiros,
       margen:vendido>0?Math.round(ganancia/vendido*100):0,
       chalecos,
@@ -312,7 +315,7 @@
     const caja=d.caja!=null?Number(d.caja):ganancia;
     const margen=d.margen!=null?Number(d.margen):(vendido>0?Math.round(ganancia/vendido*100):0);
     const chalecos=d.chalecos!=null?Number(d.chalecos):(d.modelos||[]).reduce((a,m)=>a+(Number(m.cantidad)||0),0);
-    $('n-periodo').textContent=d.periodo||'Este mes';
+    $('n-periodo').textContent='';
     $('n-vendido').textContent=pesos(vendido);
     $('n-gastos').textContent=pesos(gastos);
     $('n-ganancia').textContent=pesos(ganancia);
@@ -330,14 +333,28 @@
     $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
   }
 
+  function poblarSelectorPeriodo(meses){
+    const sel=$('n-periodo-sel'); if(!sel) return;
+    const opts=['<option value="">Todo el año</option>'].concat((meses||[]).map(m=>`<option value="${m}">${etiquetaMes(m)}</option>`));
+    sel.innerHTML=opts.join('');
+    sel.value=PERIODO_SEL;
+  }
+  function cambiarPeriodo(){
+    if(!ULTIMO_ROWS) return;
+    PERIODO_SEL=$('n-periodo-sel').value;
+    ULTIMO_NUM=calcular(ULTIMO_ROWS, PERIODO_SEL);
+    renderNumeros(ULTIMO_NUM);
+    renderCaja();
+  }
   async function cargarNumeros(){
     estado('Actualizando…');$('n-periodo').textContent='Cargando…';
     try{
       const r=await fetch(WEBHOOK_NUMEROS,{cache:'no-store',headers:{'Accept':'application/json'}});
       if(!r.ok)throw 0;
       const data=await r.json();
-      const rows=Array.isArray(data)?data:(data.body||data.data||[]);
-      ULTIMO_NUM=calcular(rows);
+      ULTIMO_ROWS=Array.isArray(data)?data:(data.body||data.data||[]);
+      ULTIMO_NUM=calcular(ULTIMO_ROWS, PERIODO_SEL);
+      poblarSelectorPeriodo(ULTIMO_NUM.mesesDisponibles);
       renderNumeros(ULTIMO_NUM);
       asegurarPedidos();
       renderCaja();
@@ -400,7 +417,7 @@
   }
 
   // ===== CLIENTES / PEDIDOS =====
-  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null, ULTIMO_NUM=null;
+  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null, ULTIMO_NUM=null, ULTIMO_ROWS=null, PERIODO_SEL='';
   const generandoResena = new Set();
   const pesosCli = n => '$'+Math.round(Number(n)||0).toLocaleString('es-AR');
   const escCli = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

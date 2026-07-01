@@ -91,6 +91,27 @@
   .login .save{margin-top:22px}
   .login-err{display:none;background:#f3ddd2;color:var(--accent-d);border:1px solid #e6c3b5;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:6px}
   .login-err.show{display:block}
+
+  .cli-tools{margin-bottom:16px}
+  .cli-tools input{width:100%;padding:12px 14px;font-size:15px;font-family:var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:11px}
+  .cli-tools input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(182,91,56,.14)}
+  .cli-grupo{margin-bottom:22px}
+  .cli-grupo-h{font-family:var(--disp);font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .cli-count{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+  .cli-card{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px 17px;margin-bottom:12px}
+  .cli-nombre{font-family:var(--disp);font-weight:600;font-size:17px;letter-spacing:-.3px}
+  .cli-sub{font-size:13px;color:var(--muted);margin-top:2px}
+  .cli-total{font-family:var(--disp);font-weight:600;font-size:15px;margin-top:7px}
+  .cli-chips{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+  .cli-chip{font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid var(--line2);background:#fff;color:var(--ink)}
+  .cli-chip.ok{background:#e8efe0;border-color:#cde0bd;color:#4f7a3a}
+  .cli-chip.warn{background:#f6e6d8;border-color:#e6c9ab;color:var(--accent-d)}
+  .cli-chip.star{background:#f7ecd6;border-color:#e6d3a8;color:#9c7521}
+  .cli-acciones{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .cli-btn{font-size:13px;font-weight:500;font-family:var(--body);padding:9px 14px;border-radius:10px;border:1px solid var(--line2);background:#fff;color:var(--ink);cursor:pointer;transition:transform .1s}
+  .cli-btn:active{transform:scale(.97)}
+  .cli-btn.pri{background:var(--accent);color:#faf6ee;border-color:var(--accent)}
+  .cli-vacio{color:var(--muted);font-size:14px;padding:18px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -121,6 +142,7 @@
       <button class="act" onclick="go('venta')"><div><b>Vendí un chaleco</b><small>Suma a las ventas</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('gasto')"><div><b>Anoté un gasto</b><small>Lana, envío, publicidad, retiro</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('stats')"><div><b>Ver mis números</b><small>Ventas, ganancia, qué se vende más</small></div><div class="arr">→</div></button>
+      <button class="act" onclick="go('clientes')"><div><b>Clientes</b><small>Pedidos, señas, envíos y reseñas</small></div><div class="arr">→</div></button>
       <button class="act" onclick="location.href='/admin.html'"><div><b>Editar catálogo</b><small>Chalecos, fotos y analytics de la web</small></div><div class="arr">→</div></button>
     </div>
   </div>
@@ -184,6 +206,13 @@
     <div class="stat-period" id="n-anuncios" style="margin-top:12px"></div>
   </div>
 
+  <div class="screen" id="s-clientes">
+    <button class="back" onclick="home()">← Volver</button>
+    <div class="ttl">Clientes</div>
+    <div class="cli-tools"><input type="text" id="cli-buscar" placeholder="Buscar por nombre…" oninput="renderClientes()"></div>
+    <div id="cli-cont"><div class="cli-vacio">Cargando…</div></div>
+  </div>
+
   <div class="done" id="done">
     <div class="check" id="done-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
     <h3 id="done-t">Guardado</h3>
@@ -204,7 +233,7 @@
   const WEBHOOK_NUMEROS='https://n8n.tecleti.com/webhook/india-numeros';
   ['v-fecha','g-fecha'].forEach(i=>$(i).value=new Date().toISOString().slice(0,10));
 
-  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros()}
+  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
   function kg(){setTimeout(()=>{$('g-kgwrap').style.display=$('g-tipo').dataset.val==='Lana'?'block':'none'},0)}
@@ -362,18 +391,96 @@
       entregado: $('v-estado').dataset.val==='Ya entregado',
       tokenResena: ''
     };
-    let diag = 'DIAGNÓSTICO FICHA\nwindow.FB: ' + (window.FB ? 'OK' : 'UNDEFINED');
-    diag += '\nlogueado como: ' + (window.FB && window.FB.usuario ? (window.FB.usuario() || '❌ NADIE (auth null)') : '?');
-    if(!window.FB || !window.FB.crearPedido){ alert(diag + '\n\nwindow.FB no está listo'); return ' · ⚠️ ficha no creada (app no lista)'; }
+    if(!window.FB || !window.FB.crearPedido){ console.error('window.FB no está listo'); return ' · ⚠️ ficha no creada (app no lista)'; }
+    try{ await window.FB.crearPedido(pedido); return ''; }
+    catch(e){ console.error('No se pudo crear el pedido:', e); return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')'; }
+  }
+
+  // ===== CLIENTES / PEDIDOS =====
+  let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false;
+  const pesosCli = n => '$'+Math.round(Number(n)||0).toLocaleString('es-AR');
+  const escCli = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cobradoP = p => p.sena>0 ? !!p.saldoCobrado : true;
+  function estadoPedido(p){
+    if(p.entregado && cobradoP(p)) return 'cerrado';
+    if(p.enviado) return 'enviado';
+    return 'en_proceso';
+  }
+
+  function cargarClientes(){
+    if(cliIniciado){ renderClientes(); return; }
+    cliIniciado=true;
+    window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); });
+    window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
+  }
+
+  function renderClientes(){
+    const cont=$('cli-cont'); if(!cont) return;
+    if(PEDIDOS===null){ cont.innerHTML='<div class="cli-vacio">Cargando…</div>'; return; }
+    const q=($('cli-buscar').value||'').trim().toLowerCase();
+    let lista=PEDIDOS;
+    if(q) lista=lista.filter(p=>(p.cliente||'').toLowerCase().includes(q));
+    if(!lista.length){ cont.innerHTML='<div class="cli-vacio">'+(q?'Sin resultados.':'Todavía no hay pedidos. Cargá una venta para empezar.')+'</div>'; return; }
+    const porFecha=(a,b)=>(b.fecha?.seconds||0)-(a.fecha?.seconds||0);
+    const grupos=[['en_proceso','En proceso'],['enviado','Enviados'],['cerrado','Cerrados']];
+    const html=grupos.map(([key,titulo])=>{
+      const ps=lista.filter(p=>estadoPedido(p)===key).sort(porFecha);
+      if(!ps.length) return '';
+      return `<div class="cli-grupo"><div class="cli-grupo-h">${titulo} <span class="cli-count">${ps.length}</span></div>`+ps.map(tarjetaCliente).join('')+`</div>`;
+    }).join('');
+    cont.innerHTML = html || '<div class="cli-vacio">Sin resultados.</div>';
+    cont.querySelectorAll('[data-accion]').forEach(b=>b.addEventListener('click',()=>accionCliente(b.dataset.id,b.dataset.accion)));
+  }
+
+  function tarjetaCliente(p){
+    const chips=[];
+    if(p.sena>0 && !p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(p.total-p.sena)}</span>`);
+    else chips.push(`<span class="cli-chip ok">Pagado</span>`);
+    if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
+    else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
+    else chips.push(`<span class="cli-chip">Sin enviar</span>`);
+    const rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
+    if(rev) chips.push(`<span class="cli-chip star">★ respondió (${Number(rev.estrellas)||0})</span>`);
+    else if(p.tokenResena) chips.push(`<span class="cli-chip">Link enviado</span>`);
+    else chips.push(`<span class="cli-chip">Sin reseña</span>`);
+
+    const id=escCli(p.id), btns=[];
+    if(p.sena>0 && !p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
+    if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
+    if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
+    if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
+    else if(!rev) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="resena-copiar">Copiar mensaje</button>`);
+
+    return `<div class="cli-card">
+      <div class="cli-nombre">${escCli(p.cliente||'Sin nombre')}</div>
+      <div class="cli-sub">${escCli(p.queCompro||'')}</div>
+      <div class="cli-total">${pesosCli(p.total)}${p.sena>0?` · seña ${pesosCli(p.sena)}`:''}</div>
+      <div class="cli-chips">${chips.join('')}</div>
+      <div class="cli-acciones">${btns.join('')}</div>
+    </div>`;
+  }
+
+  async function accionCliente(id, accion){
+    const p=(PEDIDOS||[]).find(x=>x.id===id); if(!p) return;
     try{
-      const ref = await window.FB.crearPedido(pedido);
-      alert(diag + '\n\n✅ addDoc OK · id=' + (ref && ref.id));
-      return '';
-    }catch(e){
-      console.error('No se pudo crear el pedido:', e);
-      alert(diag + '\n\n❌ addDoc ERROR:\n' + ((e && e.code) || '') + '\n' + ((e && e.message) || e));
-      return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')';
-    }
+      if(accion==='cobrar') await window.FB.actualizarPedido(id,{saldoCobrado:true});
+      else if(accion==='enviar') await window.FB.actualizarPedido(id,{enviado:true});
+      else if(accion==='entregar') await window.FB.actualizarPedido(id,{entregado:true});
+      else if(accion==='resena'){
+        const token=await window.FB.crearInvitacion(p.cliente);
+        await window.FB.actualizarPedido(id,{tokenResena:token});
+        copiarMensajeResena(p.cliente, token);
+      }
+      else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena);
+    }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }
+  }
+
+  function copiarMensajeResena(nombre, token){
+    const link=`${location.origin}/resena?token=${token}`;
+    const saludo = nombre ? `¡Hola ${String(nombre).trim().split(' ')[0]}!` : '¡Hola!';
+    const msg=`${saludo} Esperamos que estés disfrutando tu chaleco. Cada opinión nos ayuda un montón a crecer y a mejorar. Si te queda un minuto, nos encantaría que nos dejes la tuya acá: ${link}. ¡Gracias por elegirnos!`;
+    if(navigator.clipboard) navigator.clipboard.writeText(msg).then(()=>alert('Mensaje copiado ✓ Pegalo en el WhatsApp del cliente.')).catch(()=>prompt('Copiá el mensaje:',msg));
+    else prompt('Copiá el mensaje:',msg);
   }
 </script>
 
@@ -392,6 +499,10 @@
   window.FB = {
     crearPedido: (p) => addDoc(collection(db, 'pedidos'), { ...p, fecha: serverTimestamp() }),
     usuario: () => (auth.currentUser ? auth.currentUser.email : null),
+    escucharPedidos: (cb) => onSnapshot(collection(db, 'pedidos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+    escucharResenas: (cb) => onSnapshot(collection(db, 'resenas'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }),
+    actualizarPedido: (id, patch) => updateDoc(doc(db, 'pedidos', id), patch),
+    crearInvitacion: async (nombre) => { const token = (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2)); await setDoc(doc(db, 'invitaciones', token), { token, usado: false, fecha: serverTimestamp(), clienteNombre: nombre || '' }); return token; },
   };
   const USERNAME_TO_EMAIL = (u) => `${u.toLowerCase()}@india-admin.local`;
   const el = (id) => document.getElementById(id);

@@ -328,10 +328,11 @@
     try{
       const r=await fetch(WEBHOOK_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
       if(!r.ok)throw 0;
-      if(accion==='venta')await crearPedidoDesdeForm();
+      let avisoPedido='';
+      if(accion==='venta')avisoPedido=await crearPedidoDesdeForm();
       const t={venta:['Venta guardada','Sumada a tus ventas.'],gasto:['Gasto anotado','Ya está en la caja.']}[accion];
       $('done-check').style.display='flex';
-      $('done-t').textContent=t[0];$('done-s').textContent=t[1];
+      $('done-t').textContent=t[0];$('done-s').textContent=t[1]+avisoPedido;
       cargarNumeros();
     }catch(e){
       $('done-check').style.display='none';
@@ -361,7 +362,9 @@
       entregado: $('v-estado').dataset.val==='Ya entregado',
       tokenResena: ''
     };
-    try{ await window.FB.crearPedido(pedido); }catch(e){ console.error('No se pudo crear el pedido:', e); }
+    if(!window.FB || !window.FB.crearPedido){ console.error('window.FB no está listo'); return ' · ⚠️ ficha no creada (app no lista)'; }
+    try{ await window.FB.crearPedido(pedido); return ''; }
+    catch(e){ console.error('No se pudo crear el pedido:', e); return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')'; }
   }
 </script>
 

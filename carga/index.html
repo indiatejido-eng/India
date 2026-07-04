@@ -117,6 +117,23 @@
   .cli-btn:active{transform:scale(.97)}
   .cli-btn.pri{background:var(--accent);color:#faf6ee;border-color:var(--accent)}
   .cli-vacio{color:var(--muted);font-size:14px;padding:18px 0;text-align:center}
+
+  /* ===== Desktop: usar el ancho de la compu en vez de columna de celular ===== */
+  @media(min-width:760px){
+    .app{max-width:960px;padding:40px 44px 84px}
+    /* Menú: tarjetas de acción en 2 columnas */
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    /* Formularios y pantalla "listo": columna cómoda y centrada (no estirada) */
+    #s-venta,#s-gasto,.done{align-self:center;width:100%;max-width:600px}
+    /* Números: panel centrado, tarjetas en 4 columnas (Hay en caja = barra ancha al medio) */
+    #s-stats{align-self:center;width:100%;max-width:880px}
+    .stat-grid{grid-template-columns:repeat(4,1fr)}
+    /* Clientes: buscador acotado y fichas en grilla (2-3 columnas según ancho) */
+    .cli-tools,.cli-import{max-width:420px}
+    .cli-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start}
+    .cli-grupo-h{grid-column:1/-1;margin-bottom:2px}
+    .cli-card{margin-bottom:0}
+  }
 </style>
 </head>
 <body>

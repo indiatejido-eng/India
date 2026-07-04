@@ -255,8 +255,8 @@
 
 <script>
   const $=id=>document.getElementById(id);
-  const WEBHOOK_GUARDAR='https://n8n.tecleti.com/webhook/india-guardar';
-  const WEBHOOK_NUMEROS='https://n8n.tecleti.com/webhook/india-numeros';
+  const WEBHOOK_GUARDAR='https://india-tejidos.duckdns.org/webhook/india-guardar';
+  const WEBHOOK_NUMEROS='https://india-tejidos.duckdns.org/webhook/india-numeros';
   ['v-fecha','g-fecha'].forEach(i=>$(i).value=new Date().toISOString().slice(0,10));
 
   function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes()}

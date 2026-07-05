@@ -515,6 +515,16 @@
   .resenas-empty{ color: var(--muted); font-size: 0.9rem; padding: 18px 0; }
   .rc-sug{ margin: 0 0 12px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; background: var(--bg-soft); font-size: 0.9rem; color: var(--ink-soft); white-space: pre-wrap; }
   .rc-sug-lbl{ display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+
+  /* ===== Lanas ===== */
+  .lana-badge{
+    position: absolute; top: 8px; right: 8px;
+    font-size: 0.62rem; padding: 3px 9px;
+    border-radius: 100px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .lana-badge.is-on{ background: rgba(79,122,58,0.92); color: #fff; }
+  .lana-badge.is-off{ background: rgba(138,117,88,0.9); color: #fff; }
 </style>
 </head>
 <body>
@@ -606,6 +616,7 @@
       <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
+      <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
     </div>
 
     <div class="tab-panel active" id="panel-disponible">
@@ -632,6 +643,10 @@
       <div id="resenas-pend"><div class="resenas-empty">No hay reseñas para revisar.</div></div>
       <h3 class="resenas-h" style="margin-top:28px">Publicadas <span class="tab-count" id="count-pub">0</span></h3>
       <div id="resenas-pub"><div class="resenas-empty">Todavía no hay reseñas publicadas.</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-lanas">
+      <div class="grid-admin" id="grid-lanas"></div>
     </div>
   </div>
 </div>
@@ -689,6 +704,54 @@
   </div>
 </div>
 
+<!-- MODAL LANA (NUEVA / EDITAR) -->
+<div class="modal-bg" id="modal-lana-bg">
+  <div class="modal">
+    <button class="modal-close" id="modal-lana-close">×</button>
+    <h3 id="modal-lana-title">Nueva lana</h3>
+
+    <div class="field">
+      <label>Foto de la lana</label>
+      <div class="fotos-manager">
+        <div class="fotos-list" id="lana-foto-list"></div>
+        <label class="file-drop" id="lana-file-drop">
+          <input type="file" id="lana-file-input" accept="image/*">
+          <div class="file-drop-text">
+            <strong>Subir foto</strong>
+            <span>Una foto del ovillo. Se le quita el fondo sola. JPG, PNG o WEBP.</span>
+          </div>
+        </label>
+        <div class="progress" id="lana-progress"><div class="progress-bar" id="lana-progress-bar"></div></div>
+        <div class="field-hint">Se sube a Cloudinary con quita-fondo automática (la primera carga puede tardar unos segundos).</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="lana-color">Color</label>
+      <input type="text" id="lana-color" placeholder="Ej: Marrón claro">
+      <div class="field-hint">El nombre del color de la lana.</div>
+    </div>
+
+    <div class="field">
+      <label for="lana-desc">Descripción</label>
+      <textarea id="lana-desc" placeholder="Ej: lana gruesa, ideal para chalecos de invierno"></textarea>
+      <div class="field-hint">Un detalle simple. Lo usa el bot.</div>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:var(--ink-soft);">
+        <input type="checkbox" id="lana-disponible" checked style="width:18px; height:18px; accent-color: var(--accent);">
+        Disponible
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="lana-cancel">Cancelar</button>
+      <button class="btn" id="lana-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -702,13 +765,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Sube un archivo a Cloudinary (unsigned upload). Devuelve { url, publicId }.
-function uploadToCloudinary(file, onProgress) {
+function uploadToCloudinary(file, onProgress, folder = 'chalecos') {
   return new Promise((resolve, reject) => {
     const url = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`;
     const fd = new FormData();
     fd.append('file', file);
     fd.append('upload_preset', cloudinaryConfig.uploadPreset);
-    fd.append('folder', 'chalecos');
+    fd.append('folder', folder);
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -772,10 +835,12 @@ onAuthStateChanged(auth, (user) => {
     suscribir();
     cargarAnalytics();
     cargarResenas();
+    suscribirLanas();
   } else {
     $('login').style.display = '';
     $('admin').classList.remove('active');
     desuscribir();
+    desuscribirLanas();
     if (unsubResenas) { unsubResenas(); unsubResenas = null; }
     if (unsubPub) { unsubPub(); unsubPub = null; }
     if (unsubSug) { unsubSug(); unsubSug = null; }
@@ -1247,6 +1312,184 @@ async function borrarResena(id){
     deleteDoc(doc(db, 'sugerencias', id)).catch(() => {});
     showToast('Reseña borrada');
   } catch (e) { showToast('Error: ' + e.message, true); }
+}
+
+// ===== LANAS (catálogo interno para el bot — mismo patrón que chalecos) =====
+// Cloudinary AI background removal puede tardar 3-5s la primera vez (devuelve 423). Reintenta.
+window.retryImg = (img) => {
+  const r = parseInt(img.dataset.retries || '0', 10);
+  if (r >= 3) return;
+  img.dataset.retries = r + 1;
+  if (!img.dataset.baseSrc) img.dataset.baseSrc = img.src.split('?')[0];
+  setTimeout(() => { img.src = img.dataset.baseSrc + '?retry=' + (r + 1); }, 3000);
+};
+
+let unsubLanas = null;
+let dataLanas = [];
+let editingLana = null;   // { id?, ... } | null
+let lanaFoto = null;      // { url } (existente) | { preview, file } (nueva) | null
+
+const modalLana = $('modal-lana-bg');
+
+function suscribirLanas(){
+  if (unsubLanas) return;
+  unsubLanas = onSnapshot(collection(db, 'lanas'), snap => {
+    dataLanas = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    renderGridLanas(dataLanas);
+    $('count-lanas').textContent = dataLanas.length;
+  }, err => console.warn('No se pudieron cargar las lanas:', err));
+}
+function desuscribirLanas(){
+  if (unsubLanas) { unsubLanas(); unsubLanas = null; }
+}
+
+function renderGridLanas(items){
+  const grid = $('grid-lanas');
+  const addCard = `<button class="add-card" data-add-lana>
+    <span class="plus">+</span>
+    <span>Agregar lana</span>
+  </button>`;
+
+  if (items.length === 0) {
+    grid.innerHTML = addCard + `<div class="empty-state">Todavía no agregaste lanas.</div>`;
+  } else {
+    grid.innerHTML = items.map(it => {
+      const color = escapeHtml(it.color || 'Sin color');
+      const desc = escapeHtml(it.descripcion || '');
+      const disp = it.disponible !== false;   // default: disponible
+      return `
+        <div class="card" data-id="${it.id}">
+          <div class="card-img">
+            ${it.foto_url ? `<img src="${it.foto_url}" alt="${color}" onerror="retryImg(this)">` : `<span class="card-img-empty">Sin foto</span>`}
+            <span class="lana-badge ${disp ? 'is-on' : 'is-off'}">${disp ? 'Disponible' : 'No disp.'}</span>
+          </div>
+          <div class="card-body">
+            <h3>${color}</h3>
+            <div class="desc">${desc || '—'}</div>
+            <div class="card-actions">
+              <button class="btn btn-ghost btn-sm" data-edit-lana="${it.id}">Editar</button>
+              <button class="btn btn-ghost btn-sm" data-toggle-lana="${it.id}" data-to="${disp ? 'false' : 'true'}">${disp ? '→ No disp.' : '↻ Disponible'}</button>
+              <button class="btn btn-danger btn-sm" data-del-lana="${it.id}">Borrar</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('') + addCard;
+  }
+
+  grid.querySelectorAll('[data-add-lana]').forEach(b => b.addEventListener('click', () => abrirModalLana('nuevo')));
+  grid.querySelectorAll('[data-edit-lana]').forEach(b => b.addEventListener('click', () => abrirModalLana('editar', b.dataset.editLana)));
+  grid.querySelectorAll('[data-toggle-lana]').forEach(b => b.addEventListener('click', () => toggleDisponibleLana(b.dataset.toggleLana, b.dataset.to === 'true')));
+  grid.querySelectorAll('[data-del-lana]').forEach(b => b.addEventListener('click', () => borrarLana(b.dataset.delLana)));
+}
+
+// Foto única de la lana dentro del modal
+function renderLanaFoto(){
+  const list = $('lana-foto-list');
+  if (!lanaFoto) { list.innerHTML = ''; return; }
+  const src = lanaFoto.preview || lanaFoto.url;
+  list.innerHTML = `
+    <div class="foto-item is-principal">
+      <img src="${src}" alt="" onerror="retryImg(this)">
+      <div class="foto-actions">
+        <span></span>
+        <button type="button" class="foto-del" id="lana-foto-del" title="Quitar">×</button>
+      </div>
+    </div>`;
+  const del = $('lana-foto-del');
+  if (del) del.addEventListener('click', () => { lanaFoto = null; renderLanaFoto(); });
+}
+
+$('lana-file-input').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { showToast('Ese archivo no es una imagen', true); e.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = ev => { lanaFoto = { preview: ev.target.result, file: f }; renderLanaFoto(); };
+  reader.readAsDataURL(f);
+  e.target.value = '';
+});
+
+function abrirModalLana(modo, id=null){
+  const item = id ? dataLanas.find(x => x.id === id) : null;
+  editingLana = item ? { ...item } : {};
+  $('modal-lana-title').textContent = item ? 'Editar lana' : 'Nueva lana';
+  $('lana-color').value = item?.color || '';
+  $('lana-desc').value = item?.descripcion || '';
+  $('lana-disponible').checked = item ? (item.disponible !== false) : true;
+  lanaFoto = item?.foto_url ? { url: item.foto_url } : null;
+  renderLanaFoto();
+  $('lana-progress').classList.remove('show');
+  $('lana-progress-bar').style.width = '0%';
+  $('lana-file-input').value = '';
+  modalLana.classList.add('show');
+}
+function cerrarModalLana(){
+  modalLana.classList.remove('show');
+  editingLana = null;
+  lanaFoto = null;
+}
+$('modal-lana-close').addEventListener('click', cerrarModalLana);
+$('lana-cancel').addEventListener('click', cerrarModalLana);
+modalLana.addEventListener('click', e => { if (e.target === modalLana) cerrarModalLana(); });
+
+$('lana-save').addEventListener('click', guardarLana);
+async function guardarLana(){
+  const color = $('lana-color').value.trim();
+  const descripcion = $('lana-desc').value.trim();
+  const disponible = $('lana-disponible').checked;
+
+  if (!color) { showToast('Falta el color', true); return; }
+  if (!lanaFoto) { showToast('Falta la foto', true); return; }
+
+  $('lana-save').disabled = true;
+  $('lana-save').textContent = 'Guardando...';
+  try {
+    let foto_url = lanaFoto.url;
+    if (lanaFoto.file) {
+      $('lana-progress').classList.add('show');
+      const r = await uploadToCloudinary(lanaFoto.file, pct => { $('lana-progress-bar').style.width = pct + '%'; }, 'lanas');
+      // Guardamos la URL ya con quita-fondo aplicada (mismo transform que usa el sitio).
+      foto_url = r.url.replace('/image/upload/', '/image/upload/e_background_removal,f_auto,q_auto/');
+    }
+
+    const payload = {
+      color, descripcion, foto_url, disponible,
+      orden: editingLana.orden ?? Date.now(),
+      actualizadoEn: serverTimestamp()
+    };
+
+    if (editingLana.id) {
+      await updateDoc(doc(db, 'lanas', editingLana.id), payload);
+      showToast('Lana actualizada');
+    } else {
+      payload.creadoEn = serverTimestamp();
+      await addDoc(collection(db, 'lanas'), payload);
+      showToast('Lana agregada');
+    }
+    cerrarModalLana();
+  } catch (err) {
+    console.error(err);
+    showToast('Error al guardar: ' + err.message, true);
+  } finally {
+    $('lana-save').disabled = false;
+    $('lana-save').textContent = 'Guardar';
+  }
+}
+
+async function toggleDisponibleLana(id, nuevo){
+  try {
+    await updateDoc(doc(db, 'lanas', id), { disponible: nuevo, actualizadoEn: serverTimestamp() });
+    showToast(nuevo ? 'Marcada disponible' : 'Marcada no disponible');
+  } catch (err) { showToast('Error: ' + err.message, true); }
+}
+
+async function borrarLana(id){
+  if (!confirm('¿Borrar esta lana? No se puede deshacer.')) return;
+  try {
+    await deleteDoc(doc(db, 'lanas', id));
+    showToast('Lana eliminada');
+  } catch (err) { showToast('Error: ' + err.message, true); }
 }
 </script>
 

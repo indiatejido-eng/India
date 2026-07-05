@@ -7,6 +7,12 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Catálogo de lanas (uso interno del bot; lo edita el admin). Mismo acceso que chalecos.
+    match /lanas/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
     match /stats/{doc} {
       allow read: if true;
       allow write: if true;

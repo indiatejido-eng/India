@@ -322,6 +322,8 @@
   .card-actions{
     display: flex; gap: 6px; flex-wrap: wrap;
   }
+  .card-actions .btn-arrow{ padding: 6px 11px; font-weight: 600; line-height: 1; font-size: 1rem; }
+  .card-actions .btn-arrow:disabled{ opacity: 0.3; cursor: default; }
 
   /* AGREGAR */
   .add-card{
@@ -758,7 +760,7 @@
 import { firebaseConfig, cloudinaryConfig } from './firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, orderBy, onSnapshot, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, orderBy, onSnapshot, getDocs, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -950,7 +952,7 @@ function renderGrid(estado, items){
   if (items.length === 0) {
     grid.innerHTML = addCard + `<div class="empty-state">Todavía no agregaste ${estado === 'disponible' ? 'chalecos disponibles' : 'trabajos anteriores'}.</div>`;
   } else {
-    grid.innerHTML = items.map(it => {
+    grid.innerHTML = items.map((it, idx) => {
       const nombre = escapeHtml(it.nombre || 'Sin nombre');
       const desc = escapeHtml(it.desc || '');
       const otroEstado = estado === 'disponible' ? 'anterior' : 'disponible';
@@ -964,6 +966,8 @@ function renderGrid(estado, items){
             <h3>${nombre}</h3>
             <div class="desc">${desc || '—'}</div>
             <div class="card-actions">
+              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="up" data-id="${it.id}" data-estado="${estado}" title="Subir" aria-label="Subir"${idx === 0 ? ' disabled' : ''}>↑</button>
+              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="down" data-id="${it.id}" data-estado="${estado}" title="Bajar" aria-label="Bajar"${idx === items.length - 1 ? ' disabled' : ''}>↓</button>
               <button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
               <button class="btn btn-ghost btn-sm" data-move="${it.id}" data-to="${otroEstado}">${otroLabel}</button>
               <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>
@@ -977,6 +981,7 @@ function renderGrid(estado, items){
   grid.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => abrirModal('nuevo', estado)));
   grid.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirModal('editar', estado, b.dataset.edit)));
   grid.querySelectorAll('[data-move]').forEach(b => b.addEventListener('click', () => moverChaleco(b.dataset.move, b.dataset.to)));
+  grid.querySelectorAll('[data-orden]').forEach(b => b.addEventListener('click', () => reordenar(b.dataset.estado, b.dataset.id, b.dataset.orden)));
   grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => confirmarBorrado(b.dataset.del, b.dataset.foto)));
 }
 
@@ -1158,11 +1163,34 @@ async function moverChaleco(id, nuevoEstado){
   try {
     await updateDoc(doc(db, 'chalecos', id), {
       estado: nuevoEstado,
+      orden: Date.now(),   // cae al final de la pestaña destino (no choca con los 0..n normalizados)
       actualizadoEn: serverTimestamp()
     });
     showToast(nuevoEstado === 'anterior' ? 'Movido a "Vendidos"' : 'Movido a "Disponibles"');
   } catch (err) {
     showToast('Error: ' + err.message, true);
+  }
+}
+
+// ===== REORDENAR (subir/bajar en la grilla; reescribe `orden` como 0..n en un batch atómico) =====
+let reordenando = false;
+async function reordenar(estado, id, dir){
+  if (reordenando) return;
+  const lista = (estado === 'disponible' ? dataDisp : dataAnt).slice();   // ya viene ordenada asc por `orden`
+  const i = lista.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const j = dir === 'up' ? i - 1 : i + 1;
+  if (j < 0 || j >= lista.length) return;   // ya está en el extremo
+  reordenando = true;
+  try {
+    [lista[i], lista[j]] = [lista[j], lista[i]];   // intercambia con el vecino
+    const batch = writeBatch(db);
+    lista.forEach((it, idx) => { if (it.orden !== idx) batch.update(doc(db, 'chalecos', it.id), { orden: idx }); });
+    await batch.commit();
+  } catch (err) {
+    showToast('Error al reordenar: ' + err.message, true);
+  } finally {
+    reordenando = false;
   }
 }
 

@@ -1298,6 +1298,7 @@
   const starsR = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
   const opSection = document.getElementById('opiniones');
   const opNav = document.getElementById('op-navlink');
+  let opScrolled = false;
   const ocultarOp = () => { opSection.style.display = 'none'; if (opNav) opNav.style.display = 'none'; };
   const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'));
   onSnapshot(qOp, snap => {
@@ -1306,6 +1307,11 @@
     if (!items.length) { ocultarOp(); return; }
     opSection.style.display = '';
     if (opNav) opNav.style.display = '';
+    // Si entraron con el link directo #opiniones, bajar hasta acá (la sección recién ahora existe).
+    if (!opScrolled && location.hash === '#opiniones') {
+      opScrolled = true;
+      requestAnimationFrame(() => opSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
     const avg = items.reduce((a, r) => a + (Number(r.estrellas) || 0), 0) / items.length;
     document.getElementById('op-rating').style.display = 'flex';
     document.getElementById('op-avg-stars').textContent = starsR(Math.round(avg));

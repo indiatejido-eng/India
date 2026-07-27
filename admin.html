@@ -256,6 +256,41 @@
     .stats-detail{ grid-template-columns: 1fr; }
   }
 
+  /* Gráfico de visitantes por día */
+  .stats-chart{
+    background: var(--bg-card);
+    padding: 20px 22px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(60,40,20,0.08);
+    margin-bottom: 28px;
+  }
+  .chart-head{
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .chart-sub{ font-size: 0.8rem; color: var(--muted); margin-top: 5px; font-variant-numeric: tabular-nums; }
+  .chart-filters{ display: flex; gap: 6px; flex-wrap: wrap; }
+  .chart-f{
+    font-family: inherit; font-size: 0.76rem; padding: 6px 12px;
+    border: 1px solid var(--line); border-radius: 100px;
+    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .chart-f:hover{ border-color: var(--accent); color: var(--accent); }
+  .chart-f.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; }
+  .chart-bar{
+    flex: 1 1 0; min-width: 0; min-height: 2px;
+    background: var(--accent); border-radius: 4px 4px 0 0;
+    opacity: 0.82; transition: opacity 0.15s;
+  }
+  .chart-bar:hover{ opacity: 1; }
+  .chart-bar.zero{ background: var(--line); opacity: 0.35; }
+  .chart-axis{
+    display: flex; justify-content: space-between;
+    margin-top: 8px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .chart-empty{ color: var(--muted); font-style: italic; font-size: 0.9rem; text-align: center; padding: 46px 0; width: 100%; }
+
   .tabs{
     display: flex; gap: 8px;
     background: var(--bg-soft);
@@ -595,6 +630,23 @@
       </div>
     </section>
 
+    <section class="stats-chart">
+      <div class="chart-head">
+        <div>
+          <div class="stats-detail-title">Visitantes nuevos por día</div>
+          <div class="chart-sub" id="chart-sub">—</div>
+        </div>
+        <div class="chart-filters">
+          <button type="button" class="chart-f" data-dias="14">14 días</button>
+          <button type="button" class="chart-f active" data-dias="30">30 días</button>
+          <button type="button" class="chart-f" data-dias="90">90 días</button>
+          <button type="button" class="chart-f" data-dias="0">Todo</button>
+        </div>
+      </div>
+      <div class="chart" id="chart-bars"><div class="chart-empty">Cargando…</div></div>
+      <div class="chart-axis" id="chart-axis"></div>
+    </section>
+
     <section class="stats-detail">
       <div class="stats-detail-card">
         <div class="stats-detail-title">Top países</div>
@@ -906,9 +958,66 @@ async function cargarAnalytics() {
     renderTopList('top-referrers', topN(visits, 'referrer', 6));
     renderTopList('top-devices', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
+    renderVisitasPorDia(visits);
   } catch (err) {
     console.warn('No se pudo cargar analytics:', err);
   }
+}
+
+// ===== GRÁFICO: visitantes nuevos por día (desde visits.primera_visita) =====
+let VISITAS_SERIE = [], CHART_DIAS = 30, chartInit = false;
+const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const fmtDiaCorto = k => { const p = k.split('-'); return p[2] + '/' + p[1]; };
+function construirSerieVisitas(visits){
+  const porDia = {};
+  for (const v of visits) {
+    const s = v.primera_visita && v.primera_visita.seconds;
+    if (!s) continue;
+    const k = claveDia(new Date(s * 1000));
+    porDia[k] = (porDia[k] || 0) + 1;
+  }
+  const claves = Object.keys(porDia).sort();
+  if (!claves.length) return [];
+  const serie = [];
+  const cur = new Date(claves[0] + 'T00:00:00');
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  while (cur <= hoy) {
+    const k = claveDia(cur);
+    serie.push({ fecha: k, count: porDia[k] || 0 });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return serie;
+}
+function dibujarChart(){
+  const cont = $('chart-bars'), axis = $('chart-axis'), sub = $('chart-sub');
+  if (!cont) return;
+  if (!VISITAS_SERIE.length) { cont.innerHTML = '<div class="chart-empty">Todavía no hay visitas registradas.</div>'; axis.innerHTML = ''; sub.textContent = ''; return; }
+  let serie = VISITAS_SERIE;
+  if (CHART_DIAS > 0) serie = serie.slice(-CHART_DIAS);
+  const max = Math.max.apply(null, serie.map(d => d.count).concat(1));
+  cont.innerHTML = serie.map(d => {
+    const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
+    const noun = d.count === 1 ? 'visitante nuevo' : 'visitantes nuevos';
+    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" title="${fmtDiaCorto(d.fecha)}: ${d.count} ${noun}"></div>`;
+  }).join('');
+  axis.innerHTML = `<span>${fmtDiaCorto(serie[0].fecha)}</span><span>${fmtDiaCorto(serie[Math.floor(serie.length/2)].fecha)}</span><span>${fmtDiaCorto(serie[serie.length-1].fecha)}</span>`;
+  const totalR = serie.reduce((a, d) => a + d.count, 0);
+  const pico = serie.reduce((m, d) => d.count > m.count ? d : m, serie[0]);
+  const prom = totalR / serie.length;
+  sub.textContent = `${fmtNum(totalR)} nuevos · ${prom.toFixed(1)}/día promedio · pico ${pico.count} el ${fmtDiaCorto(pico.fecha)}`;
+}
+function renderVisitasPorDia(visits){
+  VISITAS_SERIE = construirSerieVisitas(visits);
+  if (!chartInit) {
+    chartInit = true;
+    document.querySelectorAll('.chart-f').forEach(b => b.addEventListener('click', () => {
+      CHART_DIAS = parseInt(b.dataset.dias, 10) || 0;
+      document.querySelectorAll('.chart-f').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      dibujarChart();
+    }));
+  }
+  dibujarChart();
 }
 
 // ===== SUSCRIPCIÓN A FIRESTORE =====

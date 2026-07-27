@@ -266,7 +266,7 @@
   }
   .chart-head{
     display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 26px;
   }
   .chart-sub{ font-size: 0.8rem; color: var(--muted); margin-top: 5px; font-variant-numeric: tabular-nums; }
   .chart-filters{ display: flex; gap: 6px; flex-wrap: wrap; }
@@ -277,14 +277,27 @@
   }
   .chart-f:hover{ border-color: var(--accent); color: var(--accent); }
   .chart-f.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
-  .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; }
+  .chart-wrap{ position: relative; }
+  .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; overflow: visible; touch-action: pan-y; }
   .chart-bar{
     flex: 1 1 0; min-width: 0; min-height: 2px;
     background: var(--accent); border-radius: 4px 4px 0 0;
-    opacity: 0.82; transition: opacity 0.15s;
+    opacity: 0.82; transition: opacity 0.15s; cursor: pointer;
   }
   .chart-bar:hover{ opacity: 1; }
   .chart-bar.zero{ background: var(--line); opacity: 0.35; }
+  .chart-tip{
+    position: absolute; z-index: 6; pointer-events: none;
+    left: 0; top: 0; transform: translate(-50%, calc(-100% - 8px));
+    background: var(--ink); color: #fff; font-size: 0.72rem; font-weight: 500;
+    padding: 5px 9px; border-radius: 7px; white-space: nowrap;
+    opacity: 0; transition: opacity 0.12s; font-variant-numeric: tabular-nums;
+  }
+  .chart-tip.show{ opacity: 1; }
+  .chart-tip::after{
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--ink);
+  }
   .chart-axis{
     display: flex; justify-content: space-between;
     margin-top: 8px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums;
@@ -643,7 +656,10 @@
           <button type="button" class="chart-f" data-dias="0">Todo</button>
         </div>
       </div>
-      <div class="chart" id="chart-bars"><div class="chart-empty">Cargando…</div></div>
+      <div class="chart-wrap">
+        <div class="chart" id="chart-bars"><div class="chart-empty">Cargando…</div></div>
+        <div class="chart-tip" id="chart-tip"></div>
+      </div>
       <div class="chart-axis" id="chart-axis"></div>
     </section>
 
@@ -998,7 +1014,7 @@ function dibujarChart(){
   cont.innerHTML = serie.map(d => {
     const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
     const noun = d.count === 1 ? 'visitante nuevo' : 'visitantes nuevos';
-    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" title="${fmtDiaCorto(d.fecha)}: ${d.count} ${noun}"></div>`;
+    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" data-label="${fmtDiaCorto(d.fecha)} · ${d.count} ${noun}"></div>`;
   }).join('');
   axis.innerHTML = `<span>${fmtDiaCorto(serie[0].fecha)}</span><span>${fmtDiaCorto(serie[Math.floor(serie.length/2)].fecha)}</span><span>${fmtDiaCorto(serie[serie.length-1].fecha)}</span>`;
   const totalR = serie.reduce((a, d) => a + d.count, 0);
@@ -1016,6 +1032,22 @@ function renderVisitasPorDia(visits){
       b.classList.add('active');
       dibujarChart();
     }));
+    // Tooltip propio: hover en la compu + tocar la barra en el teléfono
+    const bars = $('chart-bars'), tip = $('chart-tip');
+    const mostrarTip = bar => {
+      if (!tip || !bar.dataset.label) return;
+      tip.textContent = bar.dataset.label;
+      tip.style.left = (bar.offsetLeft + bar.offsetWidth / 2) + 'px';
+      tip.style.top = bar.offsetTop + 'px';
+      tip.classList.add('show');
+    };
+    const ocultarTip = () => { if (tip) tip.classList.remove('show'); };
+    if (bars && tip) {
+      bars.addEventListener('pointermove', e => { const b = e.target.closest('.chart-bar'); if (b) mostrarTip(b); });
+      bars.addEventListener('pointerdown', e => { const b = e.target.closest('.chart-bar'); if (b) mostrarTip(b); });
+      bars.addEventListener('pointerleave', ocultarTip);
+      document.addEventListener('pointerdown', e => { if (!e.target.closest('#chart-bars')) ocultarTip(); });
+    }
   }
   dibujarChart();
 }

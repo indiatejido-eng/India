@@ -189,7 +189,9 @@
   }
   .hero::after{
     content: ""; position: absolute; inset: 0; z-index: -1;
-    background: linear-gradient(to top, rgba(22,15,8,0.88) 0%, rgba(22,15,8,0.40) 26%, rgba(22,15,8,0.05) 52%, rgba(22,15,8,0) 100%);
+    background:
+      radial-gradient(130% 105% at 50% 38%, transparent 52%, rgba(14,9,4,0.34) 100%),
+      linear-gradient(to top, rgba(22,15,8,0.88) 0%, rgba(22,15,8,0.40) 26%, rgba(22,15,8,0.05) 52%, rgba(22,15,8,0) 100%);
   }
   .hero-content{
     position: relative; z-index: 1;

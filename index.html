@@ -174,33 +174,15 @@
   /* HERO */
   .hero{
     position: relative;
-    width: 100%;
-    min-height: 84vh;
-    display: flex; align-items: flex-end;
-    overflow: hidden;
-    isolation: isolate;
+    max-width: 1300px; margin: 0 auto;
+    padding: 40px 24px 60px;
+    display: grid; grid-template-columns: 1.05fr 1fr;
+    gap: 40px; align-items: center;
   }
-  .hero-bg{
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover; object-position: center 42%;
-    filter: saturate(1.16) contrast(1.06);
-    z-index: -2;
-  }
-  .hero::after{
-    content: ""; position: absolute; inset: 0; z-index: -1;
-    background:
-      radial-gradient(130% 105% at 50% 38%, transparent 52%, rgba(14,9,4,0.34) 100%),
-      linear-gradient(to top, rgba(22,15,8,0.88) 0%, rgba(22,15,8,0.40) 26%, rgba(22,15,8,0.05) 52%, rgba(22,15,8,0) 100%);
-  }
-  .hero-content{
-    position: relative; z-index: 1;
-    width: 100%; max-width: 1300px; margin: 0 auto;
-    padding: 0 40px 64px; color: #fff;
-  }
-  .hero-content h1{ color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.30); }
-  .hero-content .hero-lead{ color: rgba(255,255,255,0.92); text-shadow: 0 1px 16px rgba(0,0,0,0.35); }
-  .hero-content .hero-perk{ color: rgba(255,255,255,0.85); }
+  /* foto de fondo + overlay: SOLO en celular (ver media query de abajo) */
+  .hero-bg{ display: none; }
+  .hero::after{ display: none; }
+  .hero-content{ position: relative; z-index: 1; }
   .hero h1{
     font-size: clamp(4.8rem, 16vw, 11rem);
     font-weight: 600;
@@ -271,11 +253,31 @@
     top: 50%; left: 50%; transform: translate(-50%, -50%);
   }
   @media(max-width: 800px){
-    .hero{ min-height: 86vh; }
-    .hero-content{ padding: 0 22px 46px; }
+    .hero{
+      display: flex; align-items: flex-end;
+      max-width: none; margin: 0; padding: 0;
+      min-height: 86vh; overflow: hidden; isolation: isolate;
+    }
+    .hero-bg{
+      display: block;
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center 42%;
+      filter: saturate(1.16) contrast(1.06); z-index: -2;
+    }
+    .hero::after{
+      display: block; content: ""; position: absolute; inset: 0; z-index: -1;
+      background:
+        radial-gradient(135% 110% at 50% 40%, transparent 46%, rgba(12,8,3,0.52) 100%),
+        linear-gradient(to top, rgba(20,13,6,0.90) 0%, rgba(20,13,6,0.46) 28%, rgba(20,13,6,0.10) 54%, rgba(20,13,6,0) 100%);
+    }
+    .hero-content{ width: 100%; padding: 0 22px 46px; color: #fff; }
+    .hero-content h1{ color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.35); }
+    .hero-content .hero-lead{ color: rgba(255,255,255,0.92); text-shadow: 0 1px 16px rgba(0,0,0,0.40); max-width: none; }
+    .hero-content .hero-perk{ color: rgba(255,255,255,0.85); }
     .hero h1{ font-size: clamp(56px, 17vw, 96px); margin: 0 0 8px; }
     .hero-lead{ font-size: 1.05rem; margin-bottom: 26px; }
     .hero-cta{ padding: 15px 26px; font-size: 0.95rem; }
+    .hero-img{ display: none; }
   }
 
   /* GALERIA */
@@ -833,10 +835,13 @@
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
         </svg>
-        Hablar por WhatsApp
+        Encargá el tuyo
       </a>
       <p class="hero-perk">Envío gratis a todo el país</p>
       </div>
+    </div>
+    <div class="hero-img reveal d2">
+      <img id="hero-img" src="https://res.cloudinary.com/dgl2mizsf/image/upload/e_background_removal,f_auto,q_auto/v1778812279/hero-ovillos.jpg" alt="Ovillos de lana hilada a mano" data-retries="0" onerror="retryImg(this)">
     </div>
 </section>
 

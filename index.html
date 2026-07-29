@@ -343,17 +343,20 @@
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
-  .foto-badge{
-    position: absolute; top: 12px; right: 12px; z-index: 2;
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 9px; border-radius: 100px;
-    background: rgba(30, 22, 14, 0.5);
-    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-    color: #fff; font-size: 0.8rem; font-weight: 500;
-    font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+  .ver-fotos{
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    z-index: 2;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 15px; border-radius: 100px;
+    background: rgba(255, 253, 249, 0.9);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border: 1px solid rgba(139, 101, 53, 0.18);
+    box-shadow: 0 6px 20px -8px rgba(60, 40, 20, 0.28);
+    color: var(--ink); font-size: 0.82rem; font-weight: 500;
+    letter-spacing: 0.01em; white-space: nowrap;
     pointer-events: none;
   }
-  .foto-badge svg{ width: 14px; height: 14px; }
+  .ver-fotos svg{ width: 15px; height: 15px; opacity: 0.75; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.4rem; font-weight: 400; line-height: 1.2;
@@ -1115,11 +1118,11 @@
   }, { passive: true });
   window.openLightbox = openLightbox;
 
-  // Indicador de "hay más fotos": ícono de galería + cantidad (solo si tiene 2+).
+  // "Ver más fotos": cartelito sobre la foto, solo si el chaleco tiene 2+ fotos.
   function badgeFotos(it){
     const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
     if (n <= 1) return '';
-    return `<span class="foto-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="13" height="13" rx="2"/><path d="M3 8v11a2 2 0 0 0 2 2h11"/></svg>${n}</span>`;
+    return `<span class="ver-fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="13" height="13" rx="2"/><path d="M3 8v11a2 2 0 0 0 2 2h11"/></svg>Ver más fotos</span>`;
   }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');

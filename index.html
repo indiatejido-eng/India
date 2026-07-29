@@ -1146,7 +1146,7 @@
             ${desc ? `<div class="desc">${desc}</div>` : ''}
             ${verFotos(it, i)}
             <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
-              Consultar
+              Reservar
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </a>
           </div>
@@ -1179,7 +1179,6 @@
           <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
-            ${desc ? `<div class="desc">${desc}</div>` : ''}
             ${verFotos(it, i)}
           </div>
         </article>`;

@@ -1119,7 +1119,7 @@
   function badgeFotos(it){
     const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
     if (n <= 1) return '';
-    return `<span class="ver-fotos" aria-label="Ver más fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7"/><path d="M21 21l-4.5-4.5M10.5 7.5v6M7.5 10.5h6"/></svg></span>`;
+    return `<span class="ver-fotos" aria-label="Ver más fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg></span>`;
   }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');

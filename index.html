@@ -344,19 +344,16 @@
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
   .ver-fotos{
-    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
-    z-index: 2;
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 8px 15px; border-radius: 100px;
+    position: absolute; right: 12px; bottom: 12px; z-index: 2;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%;
     background: rgba(255, 253, 249, 0.9);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     border: 1px solid rgba(139, 101, 53, 0.18);
-    box-shadow: 0 6px 20px -8px rgba(60, 40, 20, 0.28);
-    color: var(--ink); font-size: 0.82rem; font-weight: 500;
-    letter-spacing: 0.01em; white-space: nowrap;
-    pointer-events: none;
+    box-shadow: 0 4px 14px -6px rgba(60, 40, 20, 0.35);
+    color: var(--ink); pointer-events: none;
   }
-  .ver-fotos svg{ width: 15px; height: 15px; opacity: 0.75; }
+  .ver-fotos svg{ width: 19px; height: 19px; opacity: 0.8; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.4rem; font-weight: 400; line-height: 1.2;
@@ -1118,11 +1115,11 @@
   }, { passive: true });
   window.openLightbox = openLightbox;
 
-  // "Ver más fotos": cartelito sobre la foto, solo si el chaleco tiene 2+ fotos.
+  // Ícono "ampliar" sobre la foto (avisa que hay galería), solo si el chaleco tiene 2+ fotos.
   function badgeFotos(it){
     const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
     if (n <= 1) return '';
-    return `<span class="ver-fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="13" height="13" rx="2"/><path d="M3 8v11a2 2 0 0 0 2 2h11"/></svg>Ver más fotos</span>`;
+    return `<span class="ver-fotos" aria-label="Ver más fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7"/><path d="M21 21l-4.5-4.5M10.5 7.5v6M7.5 10.5h6"/></svg></span>`;
   }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');

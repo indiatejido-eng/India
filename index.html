@@ -344,16 +344,16 @@
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
   .ver-fotos{
-    position: absolute; right: 12px; bottom: 12px; z-index: 2;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 50%;
-    background: rgba(255, 253, 249, 0.9);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    border: 1px solid rgba(139, 101, 53, 0.18);
-    box-shadow: 0 4px 14px -6px rgba(60, 40, 20, 0.35);
-    color: var(--ink); pointer-events: none;
+    display: flex; width: fit-content; align-items: center; gap: 7px;
+    margin: 4px 0 16px;
+    background: none; border: none; padding: 0 0 2px;
+    font-family: inherit; font-size: 0.92rem; font-weight: 500;
+    color: var(--accent-deep); cursor: pointer;
+    border-bottom: 1.5px solid rgba(139, 101, 53, 0.35);
+    transition: color 0.15s, border-color 0.15s;
   }
-  .ver-fotos svg{ width: 19px; height: 19px; opacity: 0.8; }
+  .ver-fotos:hover{ color: var(--accent); border-bottom-color: var(--accent); }
+  .ver-fotos svg{ width: 16px; height: 16px; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.4rem; font-weight: 400; line-height: 1.2;
@@ -1115,11 +1115,11 @@
   }, { passive: true });
   window.openLightbox = openLightbox;
 
-  // Ícono "ampliar" sobre la foto (avisa que hay galería), solo si el chaleco tiene 2+ fotos.
-  function badgeFotos(it){
+  // Link de texto "Ver más fotos" (claro para cualquiera), solo si el chaleco tiene 2+ fotos.
+  function verFotos(it, i){
     const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
     if (n <= 1) return '';
-    return `<span class="ver-fotos" aria-label="Ver más fotos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg></span>`;
+    return `<button class="ver-fotos" type="button" data-idx="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Ver más fotos</button>`;
   }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');
@@ -1140,10 +1140,11 @@
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)">${badgeFotos(it)}</div>
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
+            ${verFotos(it, i)}
             <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
               Consultar
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -1152,7 +1153,7 @@
         </article>`;
     }).join('');
 
-    grid.querySelectorAll('.piece-img').forEach(el => {
+    grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
       el.addEventListener('click', () => openLightbox(items[parseInt(el.dataset.idx, 10)]));
     });
 
@@ -1175,15 +1176,16 @@
       const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)">${badgeFotos(it)}</div>
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
+            ${verFotos(it, i)}
           </div>
         </article>`;
     }).join('');
 
-    grid.querySelectorAll('.piece-img').forEach(el => {
+    grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
       el.addEventListener('click', () => openLightbox(items[parseInt(el.dataset.idx, 10)]));
     });
 

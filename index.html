@@ -343,6 +343,17 @@
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
+  .foto-badge{
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 9px; border-radius: 100px;
+    background: rgba(30, 22, 14, 0.5);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    color: #fff; font-size: 0.8rem; font-weight: 500;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+    pointer-events: none;
+  }
+  .foto-badge svg{ width: 14px; height: 14px; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.4rem; font-weight: 400; line-height: 1.2;
@@ -1104,6 +1115,12 @@
   }, { passive: true });
   window.openLightbox = openLightbox;
 
+  // Indicador de "hay más fotos": ícono de galería + cantidad (solo si tiene 2+).
+  function badgeFotos(it){
+    const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
+    if (n <= 1) return '';
+    return `<span class="foto-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="13" height="13" rx="2"/><path d="M3 8v11a2 2 0 0 0 2 2h11"/></svg>${n}</span>`;
+  }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');
 
@@ -1123,7 +1140,7 @@
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)">${badgeFotos(it)}</div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
@@ -1158,7 +1175,7 @@
       const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)">${badgeFotos(it)}</div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}

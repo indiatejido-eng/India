@@ -415,11 +415,13 @@
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     object-fit: cover; object-position: center 42%;
+    filter: blur(3px) brightness(0.5);
+    transform: scale(1.06);
     z-index: 0;
   }
   .custom::after{
     content: ""; position: absolute; inset: 0; z-index: 0;
-    background: linear-gradient(rgba(24,17,10,0.60), rgba(24,17,10,0.82));
+    background: linear-gradient(rgba(20,14,9,0.82), rgba(20,14,9,0.92));
     pointer-events: none;
   }
   .custom-inner{
@@ -442,26 +444,28 @@
     margin-bottom: 50px;
   }
   .custom-grid{
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 32px; margin-bottom: 50px;
+    display: flex; flex-direction: column;
+    max-width: 620px; margin-bottom: 46px;
   }
   .custom-step{
-    border-top: 1px solid rgba(212, 175, 130, 0.3);
-    padding-top: 22px;
+    display: flex; align-items: baseline; gap: 20px;
+    border-top: 1px solid rgba(212, 175, 130, 0.22);
+    padding: 20px 0;
   }
   .custom-step .step-num{
     font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 2rem; color: #d4af82;
-    margin-bottom: 14px; font-weight: 300;
+    font-size: 2.1rem; color: #d4af82; font-weight: 300;
+    line-height: 1; flex: none; width: 40px;
   }
+  .custom-step .step-body{ flex: 1; }
   .custom-step h4{
     font-family: 'Fraunces', serif;
-    font-size: 1.2rem; font-weight: 400;
-    margin-bottom: 8px;
+    font-size: 1.22rem; font-weight: 400;
+    margin-bottom: 5px;
   }
   .custom-step p{
-    font-size: 0.95rem; color: rgba(250, 245, 234, 0.7);
-    line-height: 1.55;
+    font-size: 0.98rem; color: rgba(250, 245, 234, 0.72);
+    line-height: 1.55; margin: 0;
   }
   .custom-cta{
     display: inline-flex; align-items: center; gap: 12px;
@@ -475,7 +479,7 @@
   .custom-cta svg{ width: 20px; height: 20px; fill: currentColor; }
   @media(max-width: 767px){
     .custom{ padding: 50px 16px; }
-    .custom-grid{ grid-template-columns: 1fr; gap: 22px; margin-bottom: 30px; }
+    .custom-grid{ margin-bottom: 30px; }
     .custom h2{ font-size: clamp(1.8rem, 7vw, 2.6rem); margin: 12px 0 18px; }
     .custom-lead{ font-size: 1rem; margin-bottom: 32px; }
   }
@@ -926,18 +930,25 @@
 
     <div class="custom-grid">
       <div class="custom-step">
-        <div class="step-num">i</div>
-        <h4>Contanos qué querés</h4>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Contanos qué querés</h4>
+          <p>Nos pasás tus medidas y elegís la lana, el color y el dibujo.</p>
+        </div>
       </div>
       <div class="custom-step">
-        <div class="step-num">ii</div>
-        <h4>Te pasamos presupuesto</h4>
-        <p>Cuando estás de acuerdo con el precio y los detalles, arrancamos a tejer.</p>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Arrancamos a tejer</h4>
+          <p>Con una seña empezamos a tejer tu chaleco, hecho solo para vos.</p>
+        </div>
       </div>
       <div class="custom-step">
-        <div class="step-num">iii</div>
-        <h4>Recibís tu chaleco</h4>
-        <p>Te avisamos cuando esté listo y te lo enviamos gratis a tu casa. Una prenda hecha solo para vos.</p>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Recibís tu chaleco</h4>
+          <p>Te avisamos cuando esté listo y te lo enviamos gratis a tu casa.</p>
+        </div>
       </div>
     </div>
 

@@ -332,7 +332,7 @@
   .piece{
     display: flex; flex-direction: column;
     align-items: center; text-align: center;
-    gap: 18px;
+    gap: 22px;
   }
   .piece-img{
     position: relative;
@@ -340,6 +340,9 @@
     aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
+    background: #f7f0e3;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(120, 100, 70, 0.10);
   }
   .piece-img img{
     position: relative; z-index: 1;
@@ -366,8 +369,8 @@
   .ver-fotos svg{ width: 16px; height: 16px; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
-    font-size: 1.4rem; font-weight: 400; line-height: 1.2;
-    margin-bottom: 6px;
+    font-size: 1.62rem; font-weight: 400; line-height: 1.15;
+    margin-bottom: 8px;
   }
   .piece-info .desc{
     font-family: 'Fraunces', serif;
@@ -377,13 +380,15 @@
   }
   .piece-cta{
     display: inline-flex; align-items: center; gap: 8px;
-    background: var(--ink); color: var(--cream);
-    padding: 12px 22px; border-radius: 100px;
-    font-size: 0.88rem; font-weight: 500;
-    transition: all 0.3s;
+    background: none; color: var(--ink);
+    padding: 4px 0; border-radius: 0;
+    font-family: 'Fraunces', serif;
+    font-size: 1rem; font-weight: 500; letter-spacing: 0.01em;
+    border-bottom: 1.5px solid var(--ink);
+    transition: gap 0.3s, opacity 0.3s;
   }
-  .piece-cta:hover{ background: var(--wa); transform: translateY(-2px); }
-  .piece-cta svg{ width: 14px; height: 14px; fill: currentColor; }
+  .piece-cta:hover{ gap: 13px; opacity: 0.65; }
+  .piece-cta svg{ width: 13px; height: 13px; fill: currentColor; }
   @media(max-width: 767px){
     .grid{ gap: 40px; }
     .gallery{ padding: 40px 16px 50px; }

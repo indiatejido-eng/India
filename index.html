@@ -822,7 +822,8 @@
   .op-rating-count{ color:var(--muted); font-size:0.92rem; }
   .op-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px; max-width:1080px; margin:0 auto; }
   .op-card{ background:var(--cream); border:1px solid var(--line); border-radius:16px; padding:22px; }
-  .op-foto{ width:100%; height:210px; object-fit:cover; border-radius:11px; margin-bottom:14px; border:1px solid var(--line); background:var(--bg-soft); }
+  .op-foto{ width:100%; height:210px; object-fit:cover; border-radius:11px; margin-bottom:14px; border:1px solid var(--line); background:var(--bg-soft); cursor:pointer; transition:filter .2s, transform .3s cubic-bezier(.2,.8,.2,1); }
+  .op-foto:hover{ filter:brightness(1.05); transform:scale(1.01); }
   .op-stars{ color:#C2873E; letter-spacing:2px; font-size:1rem; }
   .op-text{ font-size:0.98rem; color:var(--ink-soft); line-height:1.62; margin:10px 0 14px; white-space:pre-wrap; }
   .op-who{ font-size:0.9rem; color:var(--muted); }
@@ -1038,9 +1039,14 @@
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
   // Cloudinary AI background removal: detecta el chaleco como objeto y borra todo lo demás (sombras, color spill, cualquier fondo).
   // La primera carga puede tardar 3-5s mientras Cloudinary procesa la imagen, después queda cacheada.
-  const fotoUrl = (url) => {
+  const fotoUrl = (url, w = 1100) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', '/image/upload/e_background_removal,f_auto,q_auto/');
+    return url.replace('/image/upload/', `/image/upload/e_background_removal,f_auto,q_auto,w_${w},c_limit/`);
+  };
+  // Igual que fotoUrl pero SIN recorte de fondo: para fotos de clientes (opiniones).
+  const fotoPlain = (url, w = 1100) => {
+    if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
+    return url.replace('/image/upload/', `/image/upload/f_auto,q_auto,w_${w},c_limit/`);
   };
   // Si Cloudinary devuelve 423 (procesando) reintenta hasta 3 veces con 3s de espera.
   // Expuesto en window para que el handler inline `onerror="retryImg(this)"` lo encuentre.
@@ -1064,21 +1070,24 @@
   const lbNext = document.getElementById('lightbox-next');
   let lbUrls = [];
   let lbIdx = 0;
-  function openLightbox(item){
+  let lbPlain = false;
+  function openLightbox(item, opts = {}){
     const urls = Array.isArray(item.fotos) && item.fotos.length > 0
       ? item.fotos.map(f => f.url).filter(Boolean)
       : (item.foto ? [item.foto] : []);
     if (!urls.length) return;
     lbUrls = urls;
     lbIdx = 0;
-    lbCta.href = waLink(`Hola! Me interesa el chaleco ${item.nombre || ''}.`.trim());
+    lbPlain = !!opts.plain;
+    if (opts.hideCta) { lbCta.style.display = 'none'; }
+    else { lbCta.style.display = ''; lbCta.href = waLink(`Hola! Me interesa el chaleco ${item.nombre || ''}.`.trim()); }
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.
-    urls.forEach(u => { const i = new Image(); i.src = fotoUrl(u); });
+    urls.forEach(u => { const i = new Image(); i.src = (lbPlain ? fotoPlain : fotoUrl)(u); });
     if (urls.length > 1) {
       lbThumbs.classList.remove('hidden');
       lbThumbs.innerHTML = urls.map((u, i) =>
-        `<button class="lightbox-thumb" data-i="${i}" type="button"><img src="${fotoUrl(u)}" alt=""></button>`
+        `<button class="lightbox-thumb" data-i="${i}" type="button"><img src="${fotoUrl(u, 200)}" alt=""></button>`
       ).join('');
       lbThumbs.querySelectorAll('.lightbox-thumb').forEach(b => {
         b.addEventListener('click', () => goLb(parseInt(b.dataset.i, 10)));
@@ -1096,7 +1105,7 @@
   }
   function goLb(i){
     lbIdx = (i + lbUrls.length) % lbUrls.length;
-    const src = fotoUrl(lbUrls[lbIdx]);
+    const src = (lbPlain ? fotoPlain : fotoUrl)(lbUrls[lbIdx]);
     // Mostrar loader + ocultar la imagen mientras carga. Si está en cache, complete=true al toque y se oculta.
     lbLoader.classList.add('show');
     lbImg.classList.add('loading');
@@ -1393,11 +1402,14 @@
     document.getElementById('op-count').textContent = `· ${items.length} ${items.length === 1 ? 'opinión' : 'opiniones'}`;
     document.getElementById('op-grid').innerHTML = items.map(r => {
       const nom = escR(r.nombre || '') + (r.apellido ? ' ' + escR(r.apellido) : '');
-      const foto = r.fotoURL ? `<img class="op-foto" src="${escR(r.fotoURL)}" alt="" loading="lazy">` : '';
+      const foto = r.fotoURL ? `<img class="op-foto" src="${fotoPlain(r.fotoURL, 600)}" data-full="${escR(r.fotoURL)}" alt="" loading="lazy">` : '';
       return `<div class="op-card">${foto}<div class="op-stars">${starsR(Number(r.estrellas) || 0)}</div>`
         + `<p class="op-text">${escR(r.texto || '')}</p>`
         + `<div class="op-who"><b>${nom}</b> · ${escR(r.ciudad || '')}</div></div>`;
     }).join('');
+    document.querySelectorAll('#op-grid .op-foto').forEach(img => {
+      img.addEventListener('click', () => openLightbox({ fotos: [{ url: img.dataset.full }] }, { hideCta: true, plain: true }));
+    });
   }, err => {
     console.error('Error cargando opiniones:', err);
     ocultarOp();

@@ -670,14 +670,17 @@
     display: flex; align-items: center; justify-content: center;
     padding: 8px 0;
     min-height: 50vh;
+    overflow: hidden;
   }
   .lightbox-img{
     max-width: 100%;
     max-height: 66vh;
     object-fit: contain;
     filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.2));
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, transform 0.35s cubic-bezier(.2,.8,.2,1);
+    cursor: zoom-in;
   }
+  .lightbox-img.zoomed{ cursor: zoom-out; transform: scale(2.4); filter: none; }
   .lightbox-img.loading{ opacity: 0; }
   .lightbox-loader{
     position: absolute;
@@ -1105,6 +1108,7 @@
   }
   function goLb(i){
     lbIdx = (i + lbUrls.length) % lbUrls.length;
+    lbImg.classList.remove('zoomed'); lbImg.style.transformOrigin = '';
     const src = (lbPlain ? fotoPlain : fotoUrl)(lbUrls[lbIdx]);
     // Mostrar loader + ocultar la imagen mientras carga. Si está en cache, complete=true al toque y se oculta.
     lbLoader.classList.add('show');
@@ -1122,6 +1126,7 @@
   }
   function closeLb(){
     lightbox.classList.remove('show');
+    lbImg.classList.remove('zoomed'); lbImg.style.transformOrigin = '';
     document.body.style.overflow = '';
   }
   lbPrev.addEventListener('click', () => goLb(lbIdx - 1));
@@ -1139,17 +1144,28 @@
   const lbStage = document.querySelector('.lightbox-stage');
   let touchStartX = 0, touchStartY = 0;
   lbStage.addEventListener('touchstart', e => {
-    if (lbUrls.length <= 1) return;
+    if (lbUrls.length <= 1 || lbImg.classList.contains('zoomed')) return;
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }, { passive: true });
   lbStage.addEventListener('touchend', e => {
-    if (lbUrls.length <= 1) return;
+    if (lbUrls.length <= 1 || lbImg.classList.contains('zoomed')) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
     goLb(dx < 0 ? lbIdx + 1 : lbIdx - 1);
   }, { passive: true });
+
+  // Zoom al tocar la foto: acerca en ese punto; tocar de nuevo aleja.
+  lbImg.addEventListener('click', e => {
+    if (lbImg.classList.contains('zoomed')) {
+      lbImg.classList.remove('zoomed'); lbImg.style.transformOrigin = '';
+    } else {
+      const r = lbImg.getBoundingClientRect();
+      lbImg.style.transformOrigin = `${(e.clientX - r.left) / r.width * 100}% ${(e.clientY - r.top) / r.height * 100}%`;
+      lbImg.classList.add('zoomed');
+    }
+  });
   window.openLightbox = openLightbox;
 
   // Link de texto "Ver más fotos" (claro para cualquiera), solo si el chaleco tiene 2+ fotos.

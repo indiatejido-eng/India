@@ -643,6 +643,19 @@
       </div>
     </section>
 
+    <section class="stats" aria-label="Entradas por link" style="margin-top:4px">
+      <div class="stat-card">
+        <div class="stat-label">Entran por link "Disponibles"</div>
+        <div class="stat-num" id="stat-entrada-chalecos">—</div>
+        <div class="stat-hint">Los que llegan con el link .../#chalecos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Entran por link "Opiniones"</div>
+        <div class="stat-num" id="stat-entrada-opiniones">—</div>
+        <div class="stat-hint">Los que llegan con el link .../#opiniones</div>
+      </div>
+    </section>
+
     <section class="stats-chart">
       <div class="chart-head">
         <div>
@@ -937,6 +950,12 @@ onSnapshot(doc(db, 'stats', 'visitas'), snap => {
 onSnapshot(doc(db, 'stats', 'clicks_whatsapp'), snap => {
   $('stat-wa').textContent = fmtNum(snap.data()?.count);
 }, () => { $('stat-wa').textContent = '0'; });
+onSnapshot(doc(db, 'stats', 'entrada_chalecos'), snap => {
+  $('stat-entrada-chalecos').textContent = fmtNum(snap.data()?.count);
+}, () => { $('stat-entrada-chalecos').textContent = '0'; });
+onSnapshot(doc(db, 'stats', 'entrada_opiniones'), snap => {
+  $('stat-entrada-opiniones').textContent = fmtNum(snap.data()?.count);
+}, () => { $('stat-entrada-opiniones').textContent = '0'; });
 
 // ===== ANALYTICS DETALLADO (visits/*) — se carga al login porque requiere auth =====
 function topN(visits, key, n) {

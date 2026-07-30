@@ -606,6 +606,11 @@
     font-size: 1.5rem; color: var(--cream);
     letter-spacing: 0.18em; text-transform: uppercase;
   }
+  .foot-seal{
+    width: 190px; height: auto; display: block;
+    opacity: 0.96;
+    filter: drop-shadow(0 6px 16px rgba(0,0,0,0.38));
+  }
   .foot-nav{
     display: flex; gap: 28px; flex-wrap: wrap;
   }
@@ -973,8 +978,7 @@
 <footer>
   <div class="foot-inner">
     <div class="foot-brand">
-      <img class="foot-logo" src="/logo-ovillo.png" alt="India" loading="lazy" data-retries="0" onerror="retryImg(this)">
-      <span class="foot-brand-text">India</span>
+      <img class="foot-seal" src="/sello-india.png" alt="India — hecho a mano" loading="lazy">
     </div>
     <div class="foot-nav">
       <a href="#chalecos">Chalecos</a>
@@ -1283,6 +1287,8 @@
   }
 
   (async function track(){
+    // Link de entrada: qué sección venía en el enlace por el que llegó (para medir desde qué link entran).
+    const entryHash = (location.hash || '').toLowerCase();
     // visitor_id persistente (UUID) — distingue personas, sobrevive a recargas
     let visitorId = localStorage.getItem('india_visitor_id');
     const isNew = !visitorId;
@@ -1300,6 +1306,10 @@
 
     // Contador global de visitas (cada page view cuenta)
     setDoc(doc(db, 'stats', 'visitas'), { count: increment(1) }, { merge: true }).catch(() => {});
+
+    // Entradas por link: cuenta cuántos llegan con el link a "Disponibles" (#chalecos) o "Opiniones" (#opiniones)
+    if (entryHash === '#chalecos') setDoc(doc(db, 'stats', 'entrada_chalecos'), { count: increment(1) }, { merge: true }).catch(() => {});
+    else if (entryHash === '#opiniones') setDoc(doc(db, 'stats', 'entrada_opiniones'), { count: increment(1) }, { merge: true }).catch(() => {});
 
     // Doc por visitor: count y ultima_visita siempre se actualizan; los demás solo la primera vez
     const updates = {

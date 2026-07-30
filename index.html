@@ -268,13 +268,6 @@
   }
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
   /* círculo decorativo detrás */
-  .hero-img::before{
-    content:""; position:absolute;
-    width: 78%; aspect-ratio: 1; border-radius: 50%;
-    background: radial-gradient(circle at 50% 45%, var(--bg-deep), transparent 70%);
-    z-index: -1;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-  }
   @media(max-width: 800px){
     .hero{
       display: flex; align-items: flex-end;
@@ -348,15 +341,6 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
-  /* halo orgánico detrás de la prenda */
-  .piece-img::before{
-    content:""; position:absolute;
-    width: 75%; aspect-ratio: 1; border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, var(--bg-deep), transparent 65%);
-    z-index: 0;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-    transition: transform 1s cubic-bezier(.2,.8,.2,1);
-  }
   .piece-img img{
     position: relative; z-index: 1;
     max-height: 100%; max-width: 100%;
@@ -365,7 +349,6 @@
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
-  .piece:hover .piece-img::before{ transform: translate(-50%, -50%) scale(1.06); }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
     margin: 4px auto 16px;
@@ -971,7 +954,6 @@
 <!-- FINAL -->
 <section class="final">
   <div class="final-inner">
-    <img class="final-logo" src="/logo-ovillo.png" alt="India" loading="lazy" data-retries="0" onerror="retryImg(this)">
     <span class="label">Hablemos</span>
     <h2 class="display">Tu próximo invierno <span class="it">empieza acá.</span></h2>
     <p>Escribime por WhatsApp.</p>
@@ -994,7 +976,6 @@
     <div class="foot-nav">
       <a href="#chalecos">Chalecos</a>
       <a href="#a-medida">A medida</a>
-      <a href="https://wa.me/543456268401" target="_blank" rel="noopener">WhatsApp</a>
     </div>
   </div>
   <div class="foot-bottom">

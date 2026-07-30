@@ -349,6 +349,10 @@
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
+  /* Chalecos "con fondo": la foto llena un marco rectangular (no flota) */
+  .piece-img.con-fondo{ border-radius: 16px; overflow: hidden; }
+  .piece-img.con-fondo img{ width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; filter: none; }
+  .piece:hover .piece-img.con-fondo img{ transform: scale(1.04); }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
     margin: 4px auto 16px;
@@ -1072,7 +1076,7 @@
     if (urls.length > 1) {
       lbThumbs.classList.remove('hidden');
       lbThumbs.innerHTML = urls.map((u, i) =>
-        `<button class="lightbox-thumb" data-i="${i}" type="button"><img src="${fotoUrl(u, 200)}" alt=""></button>`
+        `<button class="lightbox-thumb" data-i="${i}" type="button"><img src="${(lbPlain ? fotoPlain : fotoUrl)(u, 200)}" alt=""></button>`
       ).join('');
       lbThumbs.querySelectorAll('.lightbox-thumb').forEach(b => {
         b.addEventListener('click', () => goLb(parseInt(b.dataset.i, 10)));
@@ -1213,7 +1217,7 @@
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+          <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
@@ -1227,7 +1231,7 @@
     }).join('');
 
     grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => openLightbox(items[parseInt(el.dataset.idx, 10)]));
+      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; openLightbox(it, { plain: !!it.conFondo }); });
     });
 
     animatePieces();
@@ -1249,7 +1253,7 @@
       const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+          <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${verFotos(it, i)}
@@ -1258,7 +1262,7 @@
     }).join('');
 
     grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => openLightbox(items[parseInt(el.dataset.idx, 10)]));
+      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; openLightbox(it, { plain: !!it.conFondo }); });
     });
 
     animatePieces();

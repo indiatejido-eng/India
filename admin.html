@@ -768,6 +768,14 @@
       <div class="field-hint">Detalles del chaleco. Se muestra debajo del nombre.</div>
     </div>
 
+    <div class="field">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:500;">
+        <input type="checkbox" id="m-confondo" style="width:18px; height:18px; accent-color: var(--accent); flex:none;">
+        Mostrar con fondo (sin recortar)
+      </label>
+      <div class="field-hint">Por defecto se le recorta el fondo (el chaleco queda "flotando"). Activá esto para mostrar la foto tal cual — ambientada, con el campo, puesta, etc.</div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btn-cancel">Cancelar</button>
       <button class="btn" id="btn-save">Guardar</button>
@@ -1233,6 +1241,7 @@ function abrirModal(modo, estado, id=null){
   $('modal-title').textContent = item ? 'Editar chaleco' : 'Nuevo chaleco';
   $('m-nombre').value = item?.nombre || '';
   $('m-desc').value = item?.desc || '';
+  $('m-confondo').checked = !!item?.conFondo;
   fileInput.value = '';
 
   // Hidratar fotos del item (con fallback a 'foto'/'fotoPath' viejo para chalecos pre-multi)
@@ -1291,6 +1300,7 @@ async function guardar(){
 
     const payload = {
       nombre, desc,
+      conFondo: $('m-confondo').checked,
       fotos: fotosFinal,
       foto: fotosFinal[0].url,            // espejo de la principal — usado por la grilla y compat con chalecos viejos
       fotoPath: fotosFinal[0].path || '',

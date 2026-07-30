@@ -349,10 +349,18 @@
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
-  /* Chalecos "con fondo": la foto llena un marco rectangular (no flota) */
-  .piece-img.con-fondo{ border-radius: 16px; overflow: hidden; }
-  .piece-img.con-fondo img{ width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; filter: none; }
-  .piece:hover .piece-img.con-fondo img{ transform: scale(1.04); }
+  /* Chaleco "con fondo": tarjeta editorial estilo intro — foto + degradado + texto encima */
+  .piece.con-fondo{ position: relative; border-radius: 18px; overflow: hidden; box-shadow: var(--shadow-soft); }
+  .piece.con-fondo .piece-img{ height: auto; margin: 0; border-radius: 0; display: block; }
+  .piece.con-fondo .piece-img img{ width: 100%; height: auto; max-width: none; max-height: none; object-fit: contain; filter: none; display: block; }
+  .piece.con-fondo:hover .piece-img img{ transform: scale(1.04); }
+  .piece.con-fondo .piece-img::after{ content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(to top, rgba(22,15,9,0.9) 0%, rgba(22,15,9,0.4) 34%, rgba(22,15,9,0) 62%); }
+  .piece.con-fondo .piece-info{ position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 22px 24px 24px; text-align: left; display: flex; flex-direction: column; align-items: flex-start; }
+  .piece.con-fondo .piece-info h3{ color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,0.4); }
+  .piece.con-fondo .piece-info h3 .it{ color: #fff; }
+  .piece.con-fondo .piece-info .desc{ color: rgba(255,255,255,0.85); text-shadow: 0 1px 10px rgba(0,0,0,0.45); }
+  .piece.con-fondo .ver-fotos{ color: #fff; border-bottom-color: rgba(255,255,255,0.55); margin: 10px 0 14px; }
+  .piece.con-fondo .ver-fotos:hover{ color: #fff; border-bottom-color: #fff; }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
     margin: 4px auto 16px;
@@ -1216,7 +1224,7 @@
       const desc = escapeHtml(it.desc || '');
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
-        <article class="piece">
+        <article class="piece${it.conFondo ? ' con-fondo' : ''}">
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
@@ -1252,7 +1260,7 @@
       const nombre = escapeHtml(it.nombre || 'Chaleco');
       const desc = escapeHtml(it.desc || '');
       return `
-        <article class="piece">
+        <article class="piece${it.conFondo ? ' con-fondo' : ''}">
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>

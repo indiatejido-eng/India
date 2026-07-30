@@ -26,8 +26,8 @@
     --accent: #8b6535;
     --accent-deep: #5e4422;
     --cream: #faf5ea;
-    --wa: #25d366;
-    --wa-deep: #128c7e;
+    --wa: #5e7548;
+    --wa-deep: #4a5c39;
     --shadow: 0 30px 60px -30px rgba(60,40,20,0.35);
     --shadow-soft: 0 18px 40px -20px rgba(60,40,20,0.30);
   }
@@ -35,7 +35,9 @@
   html{ scroll-behavior:smooth; scroll-padding-top: 90px; }
   @media(max-width: 900px){ html{ scroll-padding-top: 130px; } }
   body{
-    background: var(--bg);
+    background-color: var(--bg);
+    background-image: radial-gradient(130% 95% at 50% -12%, #f9f3e8 0%, var(--bg) 46%, #e7d9c1 100%);
+    background-attachment: fixed;
     color: var(--ink);
     font-family: 'DM Sans', system-ui, sans-serif;
     font-size: 16px;
@@ -62,6 +64,18 @@
     color: var(--muted);
   }
   .it{ font-style: italic; font-weight: 350; color: var(--accent-deep); }
+  .sep-hilo{
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    max-width: 1100px; margin: 6px auto; padding: 0 24px;
+    color: var(--accent);
+  }
+  .sep-hilo::before, .sep-hilo::after{
+    content: ""; height: 6px; flex: 1 1 40px; max-width: 160px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='26'%20height='6'%3E%3Cpath%20d='M0%204%20Q6.5%202.7%2013%204%20T26%204'%20fill='none'%20stroke='%238b6535'%20stroke-width='1.3'/%3E%3C/svg%3E");
+    background-repeat: repeat-x; background-position: center;
+    opacity: 0.5;
+  }
+  .sep-hilo svg{ width: 26px; height: 26px; opacity: 0.7; flex: none; }
 
   /* Grano sutil global */
   body::before{
@@ -121,7 +135,7 @@
     font-size: 0.85rem; font-weight: 500;
     transition: all 0.3s;
     display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: 0 8px 20px -8px rgba(37, 211, 102, 0.5);
+    box-shadow: 0 8px 20px -8px rgba(94, 117, 72, 0.5);
   }
   .nav-cta:hover{ background: var(--wa-deep); transform: translateY(-1px); }
   .nav-cta svg{ width: 16px; height: 16px; fill: currentColor; }
@@ -142,7 +156,7 @@
   .nav-links a::after{
     content:""; position: absolute;
     left: 0; right: 0; bottom: -7px; height: 6px;
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='6'%3E%3Cpath%20d='M0%203%20Q4%200.5%208%203%20T16%203'%20fill='none'%20stroke='%238b6535'%20stroke-width='1.5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='26'%20height='6'%3E%3Cpath%20d='M0%204%20Q6.5%202.7%2013%204%20T26%204'%20fill='none'%20stroke='%238b6535'%20stroke-width='1.3'/%3E%3C/svg%3E");
     background-repeat: repeat-x; background-position: left center;
     opacity: 0; transform: translateY(2px);
     transition: opacity 0.3s, transform 0.3s cubic-bezier(.2,.8,.2,1);
@@ -212,10 +226,10 @@
     background: var(--wa); color: #fff;
     padding: 18px 32px; border-radius: 100px;
     font-weight: 500; font-size: 1rem;
-    box-shadow: 0 18px 40px -15px rgba(37, 211, 102, 0.55);
+    box-shadow: 0 18px 40px -15px rgba(94, 117, 72, 0.55);
     transition: all 0.3s;
   }
-  .hero-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); box-shadow: 0 24px 50px -15px rgba(37, 211, 102, 0.65); }
+  .hero-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); box-shadow: 0 24px 50px -15px rgba(94, 117, 72, 0.65); }
   .hero-cta svg{ width: 20px; height: 20px; fill: currentColor; }
   .hero-actions{ display: flex; flex-direction: column; align-items: center; width: fit-content; }
   .hero-perk{
@@ -445,7 +459,7 @@
     padding: 18px 32px; border-radius: 100px;
     font-weight: 500; font-size: 1rem;
     transition: all 0.3s;
-    box-shadow: 0 18px 40px -15px rgba(37, 211, 102, 0.5);
+    box-shadow: 0 18px 40px -15px rgba(94, 117, 72, 0.5);
   }
   .custom-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); }
   .custom-cta svg{ width: 20px; height: 20px; fill: currentColor; }
@@ -554,13 +568,13 @@
     background: var(--wa); color: #fff;
     padding: 22px 38px; border-radius: 100px;
     font-weight: 500; font-size: 1.05rem;
-    box-shadow: 0 20px 40px -15px rgba(37, 211, 102, 0.5);
+    box-shadow: 0 20px 40px -15px rgba(94, 117, 72, 0.5);
     transition: all 0.3s;
   }
   .wa-btn:hover{
     background: var(--wa-deep);
     transform: translateY(-3px);
-    box-shadow: 0 25px 50px -15px rgba(37, 211, 102, 0.6);
+    box-shadow: 0 25px 50px -15px rgba(94, 117, 72, 0.6);
   }
   .wa-btn svg{ width: 24px; height: 24px; fill: white; }
 
@@ -705,7 +719,7 @@
     background: var(--wa); color: #fff;
     padding: 16px 28px; border-radius: 100px;
     font-weight: 500; font-size: 1rem;
-    box-shadow: 0 18px 40px -15px rgba(37, 211, 102, 0.55);
+    box-shadow: 0 18px 40px -15px rgba(94, 117, 72, 0.55);
     transition: all 0.3s;
   }
   .lightbox-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); }
@@ -739,7 +753,7 @@
     width: 58px; height: 58px;
     background: var(--wa); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 10px 28px rgba(37, 211, 102, 0.45);
+    box-shadow: 0 10px 28px rgba(94, 117, 72, 0.45);
     z-index: 200; transition: transform 0.3s;
   }
   .wa-float:hover{ transform: scale(1.1); }
@@ -884,6 +898,10 @@
 </section>
 
 <!-- A MEDIDA -->
+<div class="sep-hilo" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M5.5 9.5c4 1 8 3.5 11 6.6M8 4.8c3 2.6 6 6.2 8 10.2M5.4 14.6c3-2.6 6.2-6.2 8.6-9.8"/></svg>
+</div>
+
 <section class="custom" id="a-medida">
   <div class="custom-inner">
     <span class="label">A medida</span>

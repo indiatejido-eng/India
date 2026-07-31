@@ -355,7 +355,7 @@
   .piece.con-fondo:hover .piece-img img{ transform: scale(1.03); }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
-    margin: 0;
+    margin: 13px 0 0;
     background: none; border: none; padding: 0 0 2px;
     font-family: inherit; font-size: 0.92rem; font-weight: 500;
     color: var(--accent-deep); cursor: pointer;
@@ -366,13 +366,13 @@
   .ver-fotos svg{ width: 16px; height: 16px; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
-    font-size: 1.62rem; font-weight: 400; line-height: 1.15;
-    margin-bottom: 5px;
+    font-size: 1.15rem; font-weight: 400; line-height: 1.25;
+    margin-bottom: 3px;
   }
   .piece-info .desc{
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 0.98rem; color: var(--muted);
+    font-size: 0.9rem; color: var(--muted);
     margin-bottom: 0;
   }
   .piece-actions{
@@ -391,7 +391,7 @@
   .piece-cta svg{ width: 14px; height: 14px; }
   /* "Otros tejidos" (anteriores): texto centrado */
   .grid-anteriores .piece{ text-align: center; align-items: center; }
-  .grid-anteriores .piece-actions{ justify-content: center; }
+  .grid-anteriores .ver-fotos{ margin-left: auto; margin-right: auto; }
   @media(max-width: 767px){
     .grid{ gap: 40px; }
     .gallery{ padding: 40px 16px 50px; }
@@ -1198,11 +1198,11 @@
   });
   window.openLightbox = openLightbox;
 
-  // Link de texto "Ver más fotos" (claro para cualquiera), solo si el chaleco tiene 2+ fotos.
+  // Link "Ver la pieza": abre el visor (fotos + consulta). Aparece si hay al menos 1 foto.
   function verFotos(it, i){
     const n = Array.isArray(it.fotos) ? it.fotos.filter(f => f && f.url).length : (it.foto ? 1 : 0);
-    if (n <= 1) return '';
-    return `<button class="ver-fotos" type="button" data-idx="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Ver más fotos</button>`;
+    if (n < 1) return '';
+    return `<button class="ver-fotos" type="button" data-idx="${i}">Ver la pieza<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>`;
   }
   function renderDisponibles(items){
     const grid = document.getElementById('grid-disponibles');
@@ -1220,20 +1220,13 @@
     grid.innerHTML = items.map((it, i) => {
       const nombre = escapeHtml(it.nombre || 'Chaleco tejido a mano');
       const desc = escapeHtml(it.desc || '');
-      const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece${it.conFondo ? ' con-fondo' : ''}">
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
-            <div class="piece-actions">
-              ${verFotos(it, i)}
-              <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
-                Consultar
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-              </a>
-            </div>
+            ${verFotos(it, i)}
           </div>
         </article>`;
     }).join('');
@@ -1264,7 +1257,7 @@
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
-            <div class="piece-actions">${verFotos(it, i)}</div>
+            ${verFotos(it, i)}
           </div>
         </article>`;
     }).join('');

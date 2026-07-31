@@ -331,17 +331,17 @@
   }
   .piece{
     display: flex; flex-direction: column;
-    align-items: center; text-align: center;
-    gap: 22px;
+    align-items: stretch; text-align: left;
+    gap: 20px;
   }
   .piece-img{
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 3 / 4;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     background: #f7f0e3;
-    border-radius: 14px;
+    border-radius: 2px;
     box-shadow: inset 0 0 0 1px rgba(120, 100, 70, 0.10);
   }
   .piece-img img{
@@ -353,12 +353,12 @@
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   /* Chaleco "con fondo": foto ambientada en cuadrado (el chaleco manda), texto debajo como las demás */
-  .piece.con-fondo .piece-img{ aspect-ratio: 1 / 1; height: auto; border-radius: 16px; overflow: hidden; display: block; }
-  .piece.con-fondo .piece-img img{ width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; object-position: center; filter: none; display: block; }
-  .piece.con-fondo:hover .piece-img img{ transform: scale(1.04); }
+  .piece.con-fondo .piece-img{ border-radius: 2px; overflow: hidden; }
+  .piece.con-fondo .piece-img img{ width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; filter: none; }
+  .piece.con-fondo:hover .piece-img img{ transform: scale(1.03); }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
-    margin: 4px auto 16px;
+    margin: 0;
     background: none; border: none; padding: 0 0 2px;
     font-family: inherit; font-size: 0.92rem; font-weight: 500;
     color: var(--accent-deep); cursor: pointer;
@@ -370,24 +370,28 @@
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.62rem; font-weight: 400; line-height: 1.15;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
   }
   .piece-info .desc{
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 0.95rem; color: var(--muted);
-    margin-bottom: 16px;
+    font-size: 0.98rem; color: var(--muted);
+    margin-bottom: 0;
+  }
+  .piece-actions{
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin-top: 16px;
   }
   .piece-cta{
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
     background: none; color: var(--ink);
-    padding: 4px 0; border-radius: 0;
+    padding: 9px 18px; border-radius: 2px;
+    border: 1.5px solid var(--ink);
     font-family: 'Fraunces', serif;
-    font-size: 1rem; font-weight: 500; letter-spacing: 0.01em;
-    border-bottom: 1.5px solid var(--ink);
-    transition: gap 0.3s, opacity 0.3s;
+    font-size: 0.95rem; font-weight: 500; letter-spacing: 0.01em;
+    transition: background 0.3s, color 0.3s, gap 0.3s;
   }
-  .piece-cta:hover{ gap: 13px; opacity: 0.65; }
+  .piece-cta:hover{ background: var(--ink); color: var(--cream); gap: 12px; }
   .piece-cta svg{ width: 13px; height: 13px; fill: currentColor; }
   @media(max-width: 767px){
     .grid{ gap: 40px; }
@@ -1224,11 +1228,13 @@
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
-            ${verFotos(it, i)}
-            <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
-              Reservar
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-            </a>
+            <div class="piece-actions">
+              ${verFotos(it, i)}
+              <a class="piece-cta" href="${waLink(msg)}" target="_blank" rel="noopener">
+                Reservar
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              </a>
+            </div>
           </div>
         </article>`;
     }).join('');
@@ -1259,7 +1265,7 @@
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
-            ${verFotos(it, i)}
+            <div class="piece-actions">${verFotos(it, i)}</div>
           </div>
         </article>`;
     }).join('');

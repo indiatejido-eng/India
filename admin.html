@@ -277,6 +277,12 @@
   }
   .chart-f:hover{ border-color: var(--accent); color: var(--accent); }
   .chart-f.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chart-controls{ display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; margin: 8px 2px 10px; }
+  .chart-modo{ display: inline-flex; gap: 6px; }
+  .chart-m{ font-family: inherit; font-size: 0.78rem; font-weight: 600; padding: 6px 14px; border: 1px solid var(--line); border-radius: 100px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .chart-m:hover{ border-color: var(--accent); color: var(--accent); }
+  .chart-m.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
+  .stats-chart + .stats-chart{ margin-top: 10px; }
   .chart-wrap{ position: relative; }
   .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; overflow: visible; touch-action: pan-y; }
   .chart-bar{
@@ -656,17 +662,24 @@
       </div>
     </section>
 
+    <div class="chart-controls">
+      <div class="chart-modo">
+        <button type="button" class="chart-m active" data-modo="dia">Por día</button>
+        <button type="button" class="chart-m" data-modo="mes">Por mes</button>
+      </div>
+      <div class="chart-filters" id="chart-rango">
+        <button type="button" class="chart-f" data-dias="14">14 días</button>
+        <button type="button" class="chart-f active" data-dias="30">30 días</button>
+        <button type="button" class="chart-f" data-dias="90">90 días</button>
+        <button type="button" class="chart-f" data-dias="0">Todo</button>
+      </div>
+    </div>
+
     <section class="stats-chart">
       <div class="chart-head">
         <div>
-          <div class="stats-detail-title">Visitantes nuevos por día</div>
+          <div class="stats-detail-title">Visitantes nuevos</div>
           <div class="chart-sub" id="chart-sub">—</div>
-        </div>
-        <div class="chart-filters">
-          <button type="button" class="chart-f" data-dias="14">14 días</button>
-          <button type="button" class="chart-f active" data-dias="30">30 días</button>
-          <button type="button" class="chart-f" data-dias="90">90 días</button>
-          <button type="button" class="chart-f" data-dias="0">Todo</button>
         </div>
       </div>
       <div class="chart-wrap">
@@ -674,6 +687,20 @@
         <div class="chart-tip" id="chart-tip"></div>
       </div>
       <div class="chart-axis" id="chart-axis"></div>
+    </section>
+
+    <section class="stats-chart">
+      <div class="chart-head">
+        <div>
+          <div class="stats-detail-title">Clicks en WhatsApp</div>
+          <div class="chart-sub" id="chart-sub-clicks">—</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart" id="chart-bars-clicks"><div class="chart-empty">Todavía sin datos por día (arranca ahora).</div></div>
+        <div class="chart-tip" id="chart-tip-clicks"></div>
+      </div>
+      <div class="chart-axis" id="chart-axis-clicks"></div>
     </section>
 
     <section class="stats-detail">
@@ -1001,82 +1028,112 @@ async function cargarAnalytics() {
     renderTopList('top-referrers', topN(visits, 'referrer', 6));
     renderTopList('top-devices', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
-    renderVisitasPorDia(visits);
+    // Clicks fechados por día (docs stats/clicks_dia_YYYY-MM-DD)
+    let clicks = [];
+    try {
+      const sc = await getDocs(collection(db, 'stats'));
+      clicks = sc.docs.filter(d => d.id.startsWith('clicks_dia_'))
+        .map(d => ({ fecha: d.data().fecha || d.id.replace('clicks_dia_', ''), count: d.data().count || 0 }));
+    } catch (e) { clicks = []; }
+    initCharts(visits, clicks);
   } catch (err) {
     console.warn('No se pudo cargar analytics:', err);
   }
 }
 
-// ===== GRÁFICO: visitantes nuevos por día (desde visits.primera_visita) =====
-let VISITAS_SERIE = [], CHART_DIAS = 30, chartInit = false;
+// ===== GRÁFICOS por día/mes: visitantes nuevos (visits.primera_visita) y clicks (stats/clicks_dia_*) =====
+let CHART_MODO = 'dia';   // 'dia' | 'mes'
+let CHART_DIAS = 30;      // rango en modo día (0 = todo)
+let VISITS_RAW = [], CLICKS_RAW = [], chartInit = false;
 const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-const fmtDiaCorto = k => { const p = k.split('-'); return p[2] + '/' + p[1]; };
-function construirSerieVisitas(visits){
-  const porDia = {};
-  for (const v of visits) {
-    const s = v.primera_visita && v.primera_visita.seconds;
-    if (!s) continue;
-    const k = claveDia(new Date(s * 1000));
-    porDia[k] = (porDia[k] || 0) + 1;
-  }
-  const claves = Object.keys(porDia).sort();
+const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2] + '/' + p[1] : MESES[parseInt(p[1],10)-1] + ' ' + p[0].slice(2); };
+
+function serieContinua(porClave, modo){
+  const claves = Object.keys(porClave).sort();
   if (!claves.length) return [];
   const serie = [];
-  const cur = new Date(claves[0] + 'T00:00:00');
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  while (cur <= hoy) {
-    const k = claveDia(cur);
-    serie.push({ fecha: k, count: porDia[k] || 0 });
-    cur.setDate(cur.getDate() + 1);
+  if (modo === 'mes') {
+    const a = claves[0].split('-');
+    const cur = new Date(+a[0], +a[1]-1, 1);
+    const fin = new Date(); fin.setDate(1); fin.setHours(0,0,0,0);
+    while (cur <= fin) { const k = claveMes(cur); serie.push({ clave: k, count: porClave[k] || 0 }); cur.setMonth(cur.getMonth()+1); }
+  } else {
+    const cur = new Date(claves[0] + 'T00:00:00');
+    const fin = new Date(); fin.setHours(0,0,0,0);
+    while (cur <= fin) { const k = claveDia(cur); serie.push({ clave: k, count: porClave[k] || 0 }); cur.setDate(cur.getDate()+1); }
   }
   return serie;
 }
-function dibujarChart(){
-  const cont = $('chart-bars'), axis = $('chart-axis'), sub = $('chart-sub');
-  if (!cont) return;
-  if (!VISITAS_SERIE.length) { cont.innerHTML = '<div class="chart-empty">Todavía no hay visitas registradas.</div>'; axis.innerHTML = ''; sub.textContent = ''; return; }
-  let serie = VISITAS_SERIE;
-  if (CHART_DIAS > 0) serie = serie.slice(-CHART_DIAS);
-  const max = Math.max.apply(null, serie.map(d => d.count).concat(1));
-  cont.innerHTML = serie.map(d => {
-    const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
-    const noun = d.count === 1 ? 'visitante nuevo' : 'visitantes nuevos';
-    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" data-label="${fmtDiaCorto(d.fecha)} · ${d.count} ${noun}"></div>`;
-  }).join('');
-  axis.innerHTML = `<span>${fmtDiaCorto(serie[0].fecha)}</span><span>${fmtDiaCorto(serie[Math.floor(serie.length/2)].fecha)}</span><span>${fmtDiaCorto(serie[serie.length-1].fecha)}</span>`;
-  const totalR = serie.reduce((a, d) => a + d.count, 0);
-  const pico = serie.reduce((m, d) => d.count > m.count ? d : m, serie[0]);
-  const prom = totalR / serie.length;
-  sub.textContent = `${fmtNum(totalR)} nuevos · ${prom.toFixed(1)}/día promedio · pico ${pico.count} el ${fmtDiaCorto(pico.fecha)}`;
+function mapaVisitas(modo){
+  const m = {};
+  for (const v of VISITS_RAW) {
+    const s = v.primera_visita && v.primera_visita.seconds;
+    if (!s) continue;
+    const k = modo === 'mes' ? claveMes(new Date(s*1000)) : claveDia(new Date(s*1000));
+    m[k] = (m[k] || 0) + 1;
+  }
+  return m;
 }
-function renderVisitasPorDia(visits){
-  VISITAS_SERIE = construirSerieVisitas(visits);
+function mapaClicks(modo){
+  const m = {};
+  for (const c of CLICKS_RAW) {
+    if (!c.fecha) continue;
+    const k = modo === 'mes' ? c.fecha.slice(0,7) : c.fecha;
+    m[k] = (m[k] || 0) + (c.count || 0);
+  }
+  return m;
+}
+function pintarChart(serie, contId, axisId, subId, uno, varios){
+  const cont = $(contId), axis = $(axisId), sub = $(subId);
+  if (!cont) return;
+  if (!serie.length) { cont.innerHTML = '<div class="chart-empty">Todavía no hay datos.</div>'; if (axis) axis.innerHTML = ''; if (sub) sub.textContent = ''; return; }
+  const rango = (CHART_MODO === 'dia' && CHART_DIAS > 0) ? serie.slice(-CHART_DIAS) : serie;
+  const max = Math.max.apply(null, rango.map(d => d.count).concat(1));
+  cont.innerHTML = rango.map(d => {
+    const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
+    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" data-label="${fmtClave(d.clave)} · ${d.count} ${d.count === 1 ? uno : varios}"></div>`;
+  }).join('');
+  if (axis) axis.innerHTML = `<span>${fmtClave(rango[0].clave)}</span><span>${fmtClave(rango[Math.floor(rango.length/2)].clave)}</span><span>${fmtClave(rango[rango.length-1].clave)}</span>`;
+  if (sub) {
+    const total = rango.reduce((a, d) => a + d.count, 0);
+    const pico = rango.reduce((mx, d) => d.count > mx.count ? d : mx, rango[0]);
+    sub.textContent = `${fmtNum(total)} en el período · pico ${pico.count} (${fmtClave(pico.clave)})`;
+  }
+}
+function redibujarCharts(){
+  pintarChart(serieContinua(mapaVisitas(CHART_MODO), CHART_MODO), 'chart-bars', 'chart-axis', 'chart-sub', 'visitante', 'visitantes');
+  pintarChart(serieContinua(mapaClicks(CHART_MODO), CHART_MODO), 'chart-bars-clicks', 'chart-axis-clicks', 'chart-sub-clicks', 'click', 'clicks');
+}
+function initCharts(visits, clicks){
+  VISITS_RAW = visits; CLICKS_RAW = clicks;
   if (!chartInit) {
     chartInit = true;
+    document.querySelectorAll('.chart-m').forEach(b => b.addEventListener('click', () => {
+      CHART_MODO = b.dataset.modo;
+      document.querySelectorAll('.chart-m').forEach(x => x.classList.toggle('active', x === b));
+      const rango = document.getElementById('chart-rango'); if (rango) rango.style.display = CHART_MODO === 'mes' ? 'none' : '';
+      redibujarCharts();
+    }));
     document.querySelectorAll('.chart-f').forEach(b => b.addEventListener('click', () => {
       CHART_DIAS = parseInt(b.dataset.dias, 10) || 0;
-      document.querySelectorAll('.chart-f').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      dibujarChart();
+      document.querySelectorAll('.chart-f').forEach(x => x.classList.toggle('active', x === b));
+      redibujarCharts();
     }));
-    // Tooltip propio: hover en la compu + tocar la barra en el teléfono
-    const bars = $('chart-bars'), tip = $('chart-tip');
-    const mostrarTip = bar => {
-      if (!tip || !bar.dataset.label) return;
-      tip.textContent = bar.dataset.label;
-      tip.style.left = (bar.offsetLeft + bar.offsetWidth / 2) + 'px';
-      tip.style.top = bar.offsetTop + 'px';
-      tip.classList.add('show');
-    };
-    const ocultarTip = () => { if (tip) tip.classList.remove('show'); };
-    if (bars && tip) {
-      bars.addEventListener('pointermove', e => { const b = e.target.closest('.chart-bar'); if (b) mostrarTip(b); });
-      bars.addEventListener('pointerdown', e => { const b = e.target.closest('.chart-bar'); if (b) mostrarTip(b); });
-      bars.addEventListener('pointerleave', ocultarTip);
-      document.addEventListener('pointerdown', e => { if (!e.target.closest('#chart-bars')) ocultarTip(); });
-    }
+    // Tooltip propio (hover en compu, tocar en teléfono) para cada gráfico
+    [['chart-bars','chart-tip'], ['chart-bars-clicks','chart-tip-clicks']].forEach(([bid, tid]) => {
+      const bars = $(bid), tip = $(tid);
+      if (!bars || !tip) return;
+      const mostrar = bar => { if (!bar.dataset.label) return; tip.textContent = bar.dataset.label; tip.style.left = (bar.offsetLeft + bar.offsetWidth/2) + 'px'; tip.style.top = bar.offsetTop + 'px'; tip.classList.add('show'); };
+      const ocultar = () => tip.classList.remove('show');
+      bars.addEventListener('pointermove', e => { const b = e.target.closest('.chart-bar'); if (b) mostrar(b); });
+      bars.addEventListener('pointerdown', e => { const b = e.target.closest('.chart-bar'); if (b) mostrar(b); });
+      bars.addEventListener('pointerleave', ocultar);
+      document.addEventListener('pointerdown', e => { if (!e.target.closest('#' + bid)) ocultar(); });
+    });
   }
-  dibujarChart();
+  redibujarCharts();
 }
 
 // ===== SUSCRIPCIÓN A FIRESTORE =====

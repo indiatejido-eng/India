@@ -345,7 +345,7 @@
   .piece-img{
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 5 / 7;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
@@ -359,7 +359,7 @@
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   /* Chaleco "con fondo": foto ambientada en cuadrado (el chaleco manda), texto debajo como las demás */
   .piece.con-fondo .piece-img{ border-radius: 2px; overflow: hidden; }
-  .piece.con-fondo .piece-img img{ width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; filter: none; }
+  .piece.con-fondo .piece-img img{ width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; filter: none; }
   .piece.con-fondo:hover .piece-img img{ transform: scale(1.03); }
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
@@ -402,9 +402,9 @@
   .grid-anteriores .ver-fotos{ margin-left: auto; margin-right: auto; }
   .grid-anteriores .piece-img{ aspect-ratio: 4 / 5; }
   @media(max-width: 767px){
-    .grid{ gap: 28px 10px; }
-    .grid.grid-anteriores{ gap: 24px 8px; }
-    .gallery{ padding: 40px 10px 50px; }
+    .grid{ gap: 24px 6px; }
+    .grid.grid-anteriores{ gap: 22px 8px; }
+    .gallery{ padding: 40px 4px 50px; }
     .gallery-head{ margin-bottom: 36px; }
   }
 

@@ -337,13 +337,13 @@
   .piece-img{
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 4 / 5;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
   .piece-img img{
     position: relative; z-index: 1;
-    max-height: 92%; max-width: 92%;
+    max-height: 86%; max-width: 86%;
     width: auto; height: auto; object-fit: contain;
     filter: drop-shadow(0 16px 22px rgba(60, 40, 20, 0.14));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
@@ -389,6 +389,9 @@
   }
   .piece-cta:hover{ gap: 11px; color: var(--wa); }
   .piece-cta svg{ width: 14px; height: 14px; }
+  /* "Otros tejidos" (anteriores): texto centrado */
+  .grid-anteriores .piece{ text-align: center; align-items: center; }
+  .grid-anteriores .piece-actions{ justify-content: center; }
   @media(max-width: 767px){
     .grid{ gap: 40px; }
     .gallery{ padding: 40px 16px 50px; }

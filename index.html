@@ -351,7 +351,7 @@
   }
   .piece-img img{
     position: relative; z-index: 1;
-    max-height: 100%; max-width: 100%;
+    max-height: 92%; max-width: 92%;
     width: auto; height: auto; object-fit: contain;
     filter: drop-shadow(0 16px 22px rgba(60, 40, 20, 0.14));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
@@ -1038,10 +1038,11 @@
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
   // Cloudinary AI background removal: detecta el chaleco como objeto y borra todo lo demás (sombras, color spill, cualquier fondo).
+  // e_trim recorta el PNG al contorno del chaleco → todas las piezas recortadas se escalan al mismo tamaño, sin importar el encuadre de la foto.
   // La primera carga puede tardar 3-5s mientras Cloudinary procesa la imagen, después queda cacheada.
   const fotoUrl = (url, w = 1100) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
-    return url.replace('/image/upload/', `/image/upload/e_background_removal,f_auto,q_auto,w_${w},c_limit/`);
+    return url.replace('/image/upload/', `/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_${w},c_limit/`);
   };
   // Igual que fotoUrl pero SIN recorte de fondo: para fotos de clientes (opiniones).
   const fotoPlain = (url, w = 1100) => {

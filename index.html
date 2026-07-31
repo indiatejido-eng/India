@@ -330,8 +330,8 @@
   @media(min-width: 768px){
     .grid.grid-1{ grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
     .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 800px; margin-inline: auto; }
-    .grid.grid-3{ grid-template-columns: repeat(3, 1fr); }
-    .grid.grid-many{ grid-template-columns: repeat(3, 1fr); }
+    .grid.grid-3{ grid-template-columns: repeat(2, 1fr); max-width: 760px; margin-inline: auto; }
+    .grid.grid-many{ grid-template-columns: repeat(2, 1fr); max-width: 760px; margin-inline: auto; }
     .grid.grid-anteriores.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 520px; margin-inline: auto; }
     .grid.grid-anteriores.grid-3{ grid-template-columns: repeat(3, 1fr); }
     .grid.grid-anteriores.grid-many{ grid-template-columns: repeat(4, 1fr); }
@@ -812,14 +812,9 @@
     font-weight: 400;
   }
 
-  /* Trabajos anteriores: piezas más compactas, sin botón de consultar (la grilla la maneja .grid.grid-N) */
-  .grid-anteriores .piece-img{ height: 280px; }
-  .grid-anteriores .piece-info h3{ font-size: 1.1rem; }
-  .grid-anteriores .piece-info .desc{ font-size: 0.85rem; margin-bottom: 0; }
-  .grid-anteriores .piece-cta{ display: none; }
-  @media(max-width: 767px){
-    .grid-anteriores .piece-img{ height: 260px; }
-  }
+  /* Trabajos anteriores: mismo sistema que disponibles (aspect-ratio), tipografía un toque más chica */
+  .grid-anteriores .piece-info h3{ font-size: 1.05rem; }
+  .grid-anteriores .piece-info .desc{ font-size: 0.85rem; }
   /* ===== Opiniones ===== */
   .op-rating{ display:flex; align-items:center; justify-content:center; gap:9px; margin-top:14px; flex-wrap:wrap; }
   .op-rating-stars{ color:#C2873E; letter-spacing:2px; font-size:1.15rem; }

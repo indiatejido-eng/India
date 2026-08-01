@@ -818,6 +818,8 @@
   .grid-anteriores .piece-info h3{ font-size: 1.05rem; }
   .grid-anteriores .piece-info .desc{ font-size: 0.85rem; }
   /* ===== Opiniones ===== */
+  /* offset para que el nav sticky no tape el título al saltar por ancla (#opiniones, etc.) */
+  #chalecos, #anteriores, #a-medida, #opiniones{ scroll-margin-top: 84px; }
   .op-rating{ display:flex; align-items:center; justify-content:center; gap:9px; margin-top:14px; flex-wrap:wrap; }
   .op-rating-stars{ color:#C2873E; letter-spacing:2px; font-size:1.15rem; }
   .op-rating-num{ font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:1.25rem; color:var(--ink); }
@@ -1441,6 +1443,34 @@
   const opNav = document.getElementById('op-navlink');
   let opScrolled = false;
   const ocultarOp = () => { opSection.style.display = 'none'; if (opNav) opNav.style.display = 'none'; };
+
+  // Deep-link robusto a #opiniones: las reseñas Y las grillas de arriba cargan async y van
+  // empujando el layout, así que un scroll único queda corto. Re-anclamos la posición a medida
+  // que cargan las imágenes y con algunos reintentos, hasta que el usuario haga scroll a mano.
+  const opWanted = (location.hash || '').toLowerCase() === '#opiniones';
+  let opUserMoved = false;
+  const anchorOp = (smooth) => {
+    if (!opWanted || opUserMoved || !opSection || opSection.style.display === 'none') return;
+    opSection.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+  };
+  if (opWanted) {
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev =>
+      window.addEventListener(ev, () => { opUserMoved = true; }, { passive: true }));
+    // cada imagen que termina de cargar corre el layout: reancla (captura porque 'load' de img no burbujea)
+    document.addEventListener('load', e => { if (e.target && e.target.tagName === 'IMG') anchorOp(false); }, true);
+    window.addEventListener('load', () => anchorOp(false));
+    [250, 600, 1100, 1800, 2600].forEach(t => setTimeout(() => anchorOp(false), t));
+    // el desplazamiento más grande es cuando las grillas de arriba se rellenan (vacío -> tarjetas):
+    // reanclamos ante cualquier cambio del DOM, coalescido por frame, por unos segundos.
+    let opRaf = 0;
+    const opMo = new MutationObserver(() => {
+      if (opRaf) return;
+      opRaf = requestAnimationFrame(() => { opRaf = 0; anchorOp(false); });
+    });
+    opMo.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => opMo.disconnect(), 4000);
+  }
+
   const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'));
   onSnapshot(qOp, snap => {
     const items = snap.docs.map(d => d.data())
@@ -1448,10 +1478,10 @@
     if (!items.length) { ocultarOp(); return; }
     opSection.style.display = '';
     if (opNav) opNav.style.display = '';
-    // Si entraron con el link directo #opiniones, bajar hasta acá (la sección recién ahora existe).
-    if (!opScrolled && location.hash === '#opiniones') {
+    // recién ahora existe la sección: si entraron por el link, bajamos (anchorOp afina después)
+    if (opWanted && !opScrolled) {
       opScrolled = true;
-      requestAnimationFrame(() => opSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      requestAnimationFrame(() => anchorOp(true));
     }
     const avg = items.reduce((a, r) => a + (Number(r.estrellas) || 0), 0) / items.length;
     document.getElementById('op-rating').style.display = 'flex';

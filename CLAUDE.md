@@ -55,6 +55,12 @@ Colección `chalecos`, cada doc:
 - Bugfix o cambio chico: ejecutás directo y reportás en 1-2 líneas qué hiciste.
 - **Cuando arregles un bug, buscá si el mismo patrón existe en otros archivos del proyecto y arreglalo en TODOS los lugares en un solo commit.** No hacer que Justo pida el mismo fix dos veces. (Caso fundacional: el fix de `where + orderBy` en `admin.html` también aplicaba a `index.html` y debió ir junto.)
 
+## Diseño → usar Google Stitch (MCP)
+
+- **Para TODO trabajo de diseño/UI** (rediseñar una página, un componente, el layout, la estética, una landing nueva) **consultá SIEMPRE primero el MCP de Google Stitch.** Es la herramienta de diseño del proyecto — generá el diseño ahí antes de maquetar a mano.
+- **Adaptá su output al stack:** Stitch suele devolver React/Tailwind, y acá va **HTML + JS estático puro, sin frameworks** (ver Reglas duras). Portealo a vanilla respetando la estética (Fraunces, crema/marrón) y sin romper Firebase/Cloudinary. **NUNCA pegar el código de Stitch tal cual si trae frameworks o build.**
+- El MCP `stitch` se carga al arrancar Claude Code. Si no aparece en tus tools, decile a Justo que reinicie — no asumas que no existe.
+
 ## Reglas duras (NO negociables sin pedido explícito)
 
 - **NUNCA tocar `firebase-config.js`.** Las claves reales ya están bien configuradas.

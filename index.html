@@ -91,7 +91,7 @@
 
   /* NAV */
   nav{
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    position: sticky; top: 0; z-index: 100;
     background: transparent;
     border-bottom: 1px solid transparent;
     transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
@@ -206,7 +206,7 @@
   .hero{
     position: relative;
     min-height: 100vh;
-    margin: 0; max-width: none; padding: 0;
+    margin: calc(-1 * var(--nav-h, 86px)) 0 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
     background-image: url('/hero-desktop.jpg');
@@ -1327,8 +1327,11 @@
     if (el) spy.observe(el);
   });
 
-  // Barra: se compacta al scrollear
+  // Barra: transparente sobre el hero, sólida al bajar; la foto sube por detrás (--nav-h = alto real de la barra)
   const navEl = document.querySelector('nav');
+  const setNavH = () => { if (navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px'); };
+  setNavH();
+  window.addEventListener('resize', setNavH);
   const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > window.innerHeight - 90); };
   window.addEventListener('scroll', onNavScroll, { passive: true });
   onNavScroll();

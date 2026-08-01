@@ -1031,10 +1031,13 @@
 <script type="module">
   import { firebaseConfig } from './firebase-config.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-  import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, setDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { getFirestore, initializeFirestore, collection, query, where, orderBy, onSnapshot, doc, setDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  // Long-polling autodetectado: en navegadores in-app (Instagram/Facebook) el canal
+  // WebSocket de Firestore suele fallar y no cargan chalecos/opiniones. Con esto el SDK
+  // usa long-polling solo donde hace falta, sin frenar a los navegadores normales.
+  const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 
   const PHONE = '543456268401';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

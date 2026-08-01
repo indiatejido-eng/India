@@ -91,19 +91,27 @@
 
   /* NAV */
   nav{
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(243, 236, 224, 0.88);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(139, 101, 53, 0.12);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
   }
   nav.scrolled{
     background: rgba(243, 236, 224, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom-color: rgba(139, 101, 53, 0.12);
     box-shadow: 0 6px 24px -14px rgba(60, 40, 20, 0.4);
   }
   nav.scrolled .nav-inner{ padding-top: 9px; padding-bottom: 9px; }
   nav.scrolled .brand-logo{ height: 46px; }
+  /* Sobre el hero el nav es transparente con texto claro; al scrollear vuelve a los colores de marca */
+  nav .brand-text, nav .nav-links a{ color: #fff; }
+  nav .brand-tag{ color: rgba(255, 255, 255, 0.82); }
+  nav .nav-links a{ text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4); }
+  nav.scrolled .brand-text{ color: var(--ink); }
+  nav.scrolled .brand-tag{ color: var(--muted); }
+  nav.scrolled .nav-links a{ color: var(--ink-soft); text-shadow: none; }
   .nav-inner{
     max-width: 1400px; margin: 0 auto;
     padding: 14px 24px;
@@ -197,15 +205,29 @@
   /* HERO */
   .hero{
     position: relative;
-    max-width: 1300px; margin: 0 auto;
-    padding: 40px 24px 60px;
-    display: grid; grid-template-columns: 1.05fr 1fr;
-    gap: 40px; align-items: center;
+    min-height: 100vh;
+    margin: 0; max-width: none; padding: 0;
+    display: flex; align-items: flex-end;
+    overflow: hidden; isolation: isolate;
+    background-image: url('/hero-desktop.jpg');
+    background-size: cover; background-position: center 30%;
   }
-  /* foto de fondo + overlay: SOLO en celular (ver media query de abajo) */
-  .hero-bg{ display: none; }
-  .hero::after{ display: none; }
-  .hero-content{ position: relative; z-index: 1; }
+  .hero::after{
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(18,12,5,0.55) 0%, rgba(18,12,5,0) 26%),
+      linear-gradient(to top, rgba(18,12,5,0.92) 0%, rgba(18,12,5,0.44) 30%, rgba(18,12,5,0.08) 60%, rgba(18,12,5,0) 100%);
+  }
+  .hero-content{
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1400px; margin: 0 auto;
+    padding: 0 40px 76px; color: #fff;
+  }
+  .hero-content h1{ color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.4); }
+  .hero-content .hero-lead{ color: rgba(255,255,255,0.92); text-shadow: 0 1px 16px rgba(0,0,0,0.4); }
+  .hero-content .hero-perk{ color: rgba(255,255,255,0.85); }
+  /* Anclas: compensar el nav fijo para que los links no queden tapados */
+  section[id]{ scroll-margin-top: 74px; }
   .hero h1{
     font-size: clamp(4.8rem, 16vw, 11rem);
     font-weight: 600;
@@ -269,31 +291,12 @@
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
   /* círculo decorativo detrás */
   @media(max-width: 800px){
-    .hero{
-      display: flex; align-items: flex-end;
-      max-width: none; margin: 0; padding: 0;
-      min-height: 86vh; overflow: hidden; isolation: isolate;
-    }
-    .hero-bg{
-      display: block;
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 42%;
-      filter: saturate(1.16) contrast(1.06); z-index: -2;
-    }
-    .hero::after{
-      display: block; content: ""; position: absolute; inset: 0; z-index: -1;
-      background:
-        radial-gradient(135% 110% at 50% 40%, transparent 46%, rgba(12,8,3,0.52) 100%),
-        linear-gradient(to top, rgba(20,13,6,0.90) 0%, rgba(20,13,6,0.46) 28%, rgba(20,13,6,0.10) 54%, rgba(20,13,6,0) 100%);
-    }
-    .hero-content{ width: 100%; padding: 0 22px 46px; color: #fff; }
-    .hero-content h1{ color: #fff; text-shadow: 0 2px 40px rgba(0,0,0,0.35); }
-    .hero-content .hero-lead{ color: rgba(255,255,255,0.92); text-shadow: 0 1px 16px rgba(0,0,0,0.40); max-width: none; }
-    .hero-content .hero-perk{ color: rgba(255,255,255,0.85); }
+    .hero{ background-image: url('/hero-portada.jpg'); background-position: center 42%; }
+    .hero-content{ max-width: none; padding: 0 22px 54px; }
+    .hero-content .hero-lead{ max-width: none; }
     .hero h1{ font-size: clamp(56px, 17vw, 96px); margin: 0 0 8px; }
     .hero-lead{ font-size: 1.05rem; margin-bottom: 26px; }
     .hero-cta{ padding: 15px 26px; font-size: 0.95rem; }
-    .hero-img{ display: none; }
   }
 
   /* GALERIA */
@@ -858,7 +861,6 @@
 
 <!-- HERO -->
 <section class="hero">
-  <img class="hero-bg" src="/hero-portada.jpg" alt="Chalecos de lana hilada a mano con etiqueta de cuero India" loading="eager">
   <div class="hero-content reveal d1">
       <h1 class="display">India.</h1>
       <p class="hero-lead">Chalecos de lana hilada a medida.</p>
@@ -871,9 +873,6 @@
       </a>
       <p class="hero-perk">Envío gratis a todo el país</p>
       </div>
-    </div>
-    <div class="hero-img reveal d2">
-      <img id="hero-img" src="https://res.cloudinary.com/dgl2mizsf/image/upload/e_background_removal,f_auto,q_auto/v1778812279/hero-ovillos.jpg" alt="Ovillos de lana hilada a mano" data-retries="0" onerror="retryImg(this)">
     </div>
 </section>
 
@@ -1330,7 +1329,7 @@
 
   // Barra: se compacta al scrollear
   const navEl = document.querySelector('nav');
-  const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > 24); };
+  const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > window.innerHeight - 80); };
   window.addEventListener('scroll', onNavScroll, { passive: true });
   onNavScroll();
 

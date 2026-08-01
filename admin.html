@@ -282,6 +282,8 @@
   .periodo-b{ font-family: inherit; font-size: 0.82rem; font-weight: 600; padding: 7px 16px; border: 1px solid var(--line); border-radius: 100px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
   .periodo-b:hover{ border-color: var(--accent); color: var(--accent); }
   .periodo-b.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
+  .periodo-nota{ font-size: 0.76rem; color: var(--muted); line-height: 1.45; margin: -8px 2px 16px; }
+  .periodo-nota:empty{ display: none; }
   .stats-chart + .stats-chart{ margin-top: 10px; }
   .chart-wrap{ position: relative; }
   .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; overflow: visible; touch-action: pan-y; }
@@ -627,6 +629,7 @@
       <button type="button" class="periodo-b" data-periodo="mes">Este mes</button>
       <button type="button" class="periodo-b active" data-periodo="total">Total</button>
     </div>
+    <div class="periodo-nota" id="periodo-nota"></div>
 
     <section class="stats" aria-label="Estadísticas de la página">
       <div class="stat-card">
@@ -980,12 +983,6 @@ const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,
 const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2]+'/'+p[1] : MESES[parseInt(p[1],10)-1]+' '+p[0].slice(2); };
-const METRICAS = [
-  { dia: 'visitas', total: 'visitas', card: 'stat-visitas' },
-  { dia: 'clicks', total: 'clicks_whatsapp', card: 'stat-wa' },
-  { dia: 'entrada_chalecos', total: 'entrada_chalecos', card: 'stat-entrada-chalecos' },
-  { dia: 'entrada_opiniones', total: 'entrada_opiniones', card: 'stat-entrada-opiniones' },
-];
 // Contadores totales en vivo (public read) → se guardan; las tarjetas se pintan según el período elegido.
 [['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones']].forEach(([docId, key]) => {
   onSnapshot(doc(db, 'stats', docId), snap => { STATS_TOTAL[key] = snap.data()?.count ?? 0; refrescarTarjetas(); }, () => { refrescarTarjetas(); });
@@ -1049,18 +1046,24 @@ function sumaMetrica(dia){
   return s;
 }
 function refrescarTarjetas(){
-  for (const m of METRICAS) {
-    const el = $(m.card); if (!el) continue;
-    el.textContent = PERIODO === 'total' ? fmtNum(STATS_TOTAL[m.total] ?? 0) : fmtNum(sumaMetrica(m.dia));
-  }
-  const vis = (PERIODO === 'total') ? VISITS_RAW : VISITS_RAW.filter(v => {
+  const esTotal = PERIODO === 'total';
+  // Visitantes del período (desde visits.primera_visita — tiene historial completo)
+  const vis = esTotal ? VISITS_RAW : VISITS_RAW.filter(v => {
     const s = v.primera_visita && v.primera_visita.seconds;
     return s && fechaEnPeriodo(claveDia(new Date(s*1000)));
   });
   const rec = vis.filter(v => (v.count ?? 0) > 1).length;
+  // Visitas a la página: total = contador global; período = page views de esos visitantes (suma de sus count) → nunca da menos que los únicos.
+  if ($('stat-visitas')) $('stat-visitas').textContent = fmtNum(esTotal ? (STATS_TOTAL['visitas'] ?? 0) : vis.reduce((a, v) => a + (v.count ?? 1), 0));
+  // Clicks y entradas: total = contador; período = suma de docs por día (el detalle por fecha arranca hoy)
+  if ($('stat-wa')) $('stat-wa').textContent = fmtNum(esTotal ? (STATS_TOTAL['clicks_whatsapp'] ?? 0) : sumaMetrica('clicks'));
+  if ($('stat-entrada-chalecos')) $('stat-entrada-chalecos').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_chalecos'] ?? 0) : sumaMetrica('entrada_chalecos'));
+  if ($('stat-entrada-opiniones')) $('stat-entrada-opiniones').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_opiniones'] ?? 0) : sumaMetrica('entrada_opiniones'));
   if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(vis.length - rec);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
+  const nota = $('periodo-nota');
+  if (nota) nota.textContent = esTotal ? '' : 'Ojo: los clicks y las entradas por link recién arrancan a registrarse por fecha hoy, así que en Hoy/Este mes van a estar bajos hasta que se acumulen. Visitas y visitantes tienen todo el historial.';
 }
 function mapaVisitasChart(modo){
   const m = {};

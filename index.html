@@ -210,7 +210,7 @@
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
     background-image: url('/hero-desktop.jpg');
-    background-size: cover; background-position: center 30%;
+    background-size: cover; background-position: center 72%;
   }
   .hero::after{
     content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
@@ -1443,34 +1443,35 @@
   const starsR = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
   const opSection = document.getElementById('opiniones');
   const opNav = document.getElementById('op-navlink');
-  let opScrolled = false;
   const ocultarOp = () => { opSection.style.display = 'none'; if (opNav) opNav.style.display = 'none'; };
 
-  // Deep-link robusto a #opiniones: las reseñas Y las grillas de arriba cargan async y van
-  // empujando el layout, así que un scroll único queda corto. Re-anclamos la posición a medida
-  // que cargan las imágenes y con algunos reintentos, hasta que el usuario haga scroll a mano.
+  // Deep-link robusto a #opiniones. En el navegador in-app de Instagram la página carga lenta:
+  // los chalecos y las reseñas van apareciendo de a poco y empujan el layout, así que un scroll
+  // único no alcanza. Esperamos a que la sección exista (aunque tarde hasta 30s), la anclamos
+  // arriba y corregimos los saltos de layout ~6s. Solo cancela un scroll REAL del usuario
+  // (touchmove/wheel/tecla); un simple toque al abrir NO cancela (ese era el bug en IG).
   const opWanted = (location.hash || '').toLowerCase() === '#opiniones';
-  let opUserMoved = false;
-  const anchorOp = (smooth) => {
-    if (!opWanted || opUserMoved || !opSection || opSection.style.display === 'none') return;
-    opSection.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-  };
   if (opWanted) {
-    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev =>
-      window.addEventListener(ev, () => { opUserMoved = true; }, { passive: true }));
-    // cada imagen que termina de cargar corre el layout: reancla (captura porque 'load' de img no burbujea)
-    document.addEventListener('load', e => { if (e.target && e.target.tagName === 'IMG') anchorOp(false); }, true);
-    window.addEventListener('load', () => anchorOp(false));
-    [250, 600, 1100, 1800, 2600].forEach(t => setTimeout(() => anchorOp(false), t));
-    // el desplazamiento más grande es cuando las grillas de arriba se rellenan (vacío -> tarjetas):
-    // reanclamos ante cualquier cambio del DOM, coalescido por frame, por unos segundos.
-    let opRaf = 0;
-    const opMo = new MutationObserver(() => {
-      if (opRaf) return;
-      opRaf = requestAnimationFrame(() => { opRaf = 0; anchorOp(false); });
-    });
-    opMo.observe(document.body, { childList: true, subtree: true });
-    setTimeout(() => opMo.disconnect(), 4000);
+    let opCancel = false, opAppeared = 0;
+    const anchorOp = () => {
+      if (opCancel || !opSection || opSection.style.display === 'none') return;
+      opSection.scrollIntoView({ block: 'start' });
+    };
+    ['wheel', 'keydown', 'touchmove'].forEach(ev =>
+      window.addEventListener(ev, () => { opCancel = true; }, { passive: true }));
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      const now = Date.now();
+      if (opCancel || now - t0 > 30000) { clearInterval(iv); return; }
+      if (!opSection || opSection.style.display === 'none') return;   // todavía no cargó la sección
+      if (!opAppeared) opAppeared = now;                             // recién aparece
+      anchorOp();
+      if (now - opAppeared > 6000) clearInterval(iv);                // ya asentó el layout
+    }, 250);
+    // apenas carga cada imagen (arriba o en las reseñas) corre el layout: reancla al instante
+    document.addEventListener('load', e => {
+      if (opAppeared && Date.now() - opAppeared < 6000 && e.target && e.target.tagName === 'IMG') anchorOp();
+    }, true);
   }
 
   const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'));
@@ -1480,11 +1481,6 @@
     if (!items.length) { ocultarOp(); return; }
     opSection.style.display = '';
     if (opNav) opNav.style.display = '';
-    // recién ahora existe la sección: si entraron por el link, bajamos (anchorOp afina después)
-    if (opWanted && !opScrolled) {
-      opScrolled = true;
-      requestAnimationFrame(() => anchorOp(true));
-    }
     const avg = items.reduce((a, r) => a + (Number(r.estrellas) || 0), 0) / items.length;
     document.getElementById('op-rating').style.display = 'flex';
     document.getElementById('op-avg-stars').textContent = starsR(Math.round(avg));

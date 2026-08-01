@@ -277,11 +277,11 @@
   }
   .chart-f:hover{ border-color: var(--accent); color: var(--accent); }
   .chart-f.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
-  .chart-controls{ display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; margin: 8px 2px 10px; }
-  .chart-modo{ display: inline-flex; gap: 6px; }
-  .chart-m{ font-family: inherit; font-size: 0.78rem; font-weight: 600; padding: 6px 14px; border: 1px solid var(--line); border-radius: 100px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-  .chart-m:hover{ border-color: var(--accent); color: var(--accent); }
-  .chart-m.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
+  .periodo-filtro{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 2px 16px; }
+  .periodo-label{ font-size: 0.8rem; color: var(--muted); margin-right: 2px; }
+  .periodo-b{ font-family: inherit; font-size: 0.82rem; font-weight: 600; padding: 7px 16px; border: 1px solid var(--line); border-radius: 100px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .periodo-b:hover{ border-color: var(--accent); color: var(--accent); }
+  .periodo-b.active{ background: var(--accent); color: #fff; border-color: var(--accent); }
   .stats-chart + .stats-chart{ margin-top: 10px; }
   .chart-wrap{ position: relative; }
   .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; overflow: visible; touch-action: pan-y; }
@@ -621,6 +621,13 @@
       </div>
     </div>
 
+    <div class="periodo-filtro">
+      <span class="periodo-label">Mostrar:</span>
+      <button type="button" class="periodo-b" data-periodo="hoy">Hoy</button>
+      <button type="button" class="periodo-b" data-periodo="mes">Este mes</button>
+      <button type="button" class="periodo-b active" data-periodo="total">Total</button>
+    </div>
+
     <section class="stats" aria-label="Estadísticas de la página">
       <div class="stat-card">
         <div class="stat-label">Visitas a la página</div>
@@ -661,19 +668,6 @@
         <div class="stat-hint">Los que llegan con el link .../#opiniones</div>
       </div>
     </section>
-
-    <div class="chart-controls">
-      <div class="chart-modo">
-        <button type="button" class="chart-m active" data-modo="dia">Por día</button>
-        <button type="button" class="chart-m" data-modo="mes">Por mes</button>
-      </div>
-      <div class="chart-filters" id="chart-rango">
-        <button type="button" class="chart-f" data-dias="14">14 días</button>
-        <button type="button" class="chart-f active" data-dias="30">30 días</button>
-        <button type="button" class="chart-f" data-dias="90">90 días</button>
-        <button type="button" class="chart-f" data-dias="0">Todo</button>
-      </div>
-    </div>
 
     <section class="stats-chart">
       <div class="chart-head">
@@ -979,18 +973,23 @@ document.querySelectorAll('.tab').forEach(t => {
 
 // ===== SUSCRIPCIÓN A STATS (independiente del login, public read) =====
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-AR');
-onSnapshot(doc(db, 'stats', 'visitas'), snap => {
-  $('stat-visitas').textContent = fmtNum(snap.data()?.count);
-}, () => { $('stat-visitas').textContent = '0'; });
-onSnapshot(doc(db, 'stats', 'clicks_whatsapp'), snap => {
-  $('stat-wa').textContent = fmtNum(snap.data()?.count);
-}, () => { $('stat-wa').textContent = '0'; });
-onSnapshot(doc(db, 'stats', 'entrada_chalecos'), snap => {
-  $('stat-entrada-chalecos').textContent = fmtNum(snap.data()?.count);
-}, () => { $('stat-entrada-chalecos').textContent = '0'; });
-onSnapshot(doc(db, 'stats', 'entrada_opiniones'), snap => {
-  $('stat-entrada-opiniones').textContent = fmtNum(snap.data()?.count);
-}, () => { $('stat-entrada-opiniones').textContent = '0'; });
+
+// ===== FILTRO DE PERÍODO (Hoy / Este mes / Total) — estado global compartido por tarjetas y gráficos =====
+let PERIODO = 'total', VISITS_RAW = [], STATS_DIA = {}, STATS_TOTAL = {}, filtroInit = false;
+const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2]+'/'+p[1] : MESES[parseInt(p[1],10)-1]+' '+p[0].slice(2); };
+const METRICAS = [
+  { dia: 'visitas', total: 'visitas', card: 'stat-visitas' },
+  { dia: 'clicks', total: 'clicks_whatsapp', card: 'stat-wa' },
+  { dia: 'entrada_chalecos', total: 'entrada_chalecos', card: 'stat-entrada-chalecos' },
+  { dia: 'entrada_opiniones', total: 'entrada_opiniones', card: 'stat-entrada-opiniones' },
+];
+// Contadores totales en vivo (public read) → se guardan; las tarjetas se pintan según el período elegido.
+[['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones']].forEach(([docId, key]) => {
+  onSnapshot(doc(db, 'stats', docId), snap => { STATS_TOTAL[key] = snap.data()?.count ?? 0; refrescarTarjetas(); }, () => { refrescarTarjetas(); });
+});
 
 // ===== ANALYTICS DETALLADO (visits/*) — se carga al login porque requiere auth =====
 function topN(visits, key, n) {
@@ -1019,109 +1018,114 @@ async function cargarAnalytics() {
   try {
     const snap = await getDocs(collection(db, 'visits'));
     const visits = snap.docs.map(d => d.data());
-    const total = visits.length;
-    const recurrentes = visits.filter(v => (v.count ?? 0) > 1).length;
-    $('stat-unicos').textContent = fmtNum(total);
-    $('stat-nuevos').textContent = fmtNum(total - recurrentes);
-    $('stat-recurrentes').textContent = fmtNum(recurrentes);
     renderTopList('top-countries', topN(visits, 'country', 6));
     renderTopList('top-referrers', topN(visits, 'referrer', 6));
     renderTopList('top-devices', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
-    // Clicks fechados por día (docs stats/clicks_dia_YYYY-MM-DD)
-    let clicks = [];
+    // Stats por día: todos los docs stats/{metrica}_dia_YYYY-MM-DD → STATS_DIA[metrica][fecha] = count
+    STATS_DIA = {};
     try {
       const sc = await getDocs(collection(db, 'stats'));
-      clicks = sc.docs.filter(d => d.id.startsWith('clicks_dia_'))
-        .map(d => ({ fecha: d.data().fecha || d.id.replace('clicks_dia_', ''), count: d.data().count || 0 }));
-    } catch (e) { clicks = []; }
-    initCharts(visits, clicks);
+      sc.docs.forEach(d => {
+        const mm = d.id.match(/^(.+)_dia_(\d{4}-\d{2}-\d{2})$/);
+        if (mm) { (STATS_DIA[mm[1]] = STATS_DIA[mm[1]] || {})[mm[2]] = d.data().count || 0; }
+      });
+    } catch (e) {}
+    initFiltro(visits);
   } catch (err) {
     console.warn('No se pudo cargar analytics:', err);
   }
 }
 
-// ===== GRÁFICOS por día/mes: visitantes nuevos (visits.primera_visita) y clicks (stats/clicks_dia_*) =====
-let CHART_MODO = 'dia';   // 'dia' | 'mes'
-let CHART_DIAS = 30;      // rango en modo día (0 = todo)
-let VISITS_RAW = [], CLICKS_RAW = [], chartInit = false;
-const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2] + '/' + p[1] : MESES[parseInt(p[1],10)-1] + ' ' + p[0].slice(2); };
-
+// ===== FILTRO: cálculo y pintado (usa PERIODO, STATS_DIA, STATS_TOTAL, VISITS_RAW de arriba) =====
+function fechaEnPeriodo(k){
+  if (PERIODO === 'hoy') return k === claveDia(new Date());
+  if (PERIODO === 'mes') return k.startsWith(claveMes(new Date()));
+  return true;
+}
+function sumaMetrica(dia){
+  const mapa = STATS_DIA[dia] || {}; let s = 0;
+  for (const k in mapa) if (fechaEnPeriodo(k)) s += mapa[k];
+  return s;
+}
+function refrescarTarjetas(){
+  for (const m of METRICAS) {
+    const el = $(m.card); if (!el) continue;
+    el.textContent = PERIODO === 'total' ? fmtNum(STATS_TOTAL[m.total] ?? 0) : fmtNum(sumaMetrica(m.dia));
+  }
+  const vis = (PERIODO === 'total') ? VISITS_RAW : VISITS_RAW.filter(v => {
+    const s = v.primera_visita && v.primera_visita.seconds;
+    return s && fechaEnPeriodo(claveDia(new Date(s*1000)));
+  });
+  const rec = vis.filter(v => (v.count ?? 0) > 1).length;
+  if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
+  if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(vis.length - rec);
+  if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
+}
+function mapaVisitasChart(modo){
+  const m = {};
+  for (const v of VISITS_RAW) {
+    const s = v.primera_visita && v.primera_visita.seconds; if (!s) continue;
+    const d = new Date(s*1000); const k = modo === 'mes' ? claveMes(d) : claveDia(d);
+    m[k] = (m[k] || 0) + 1;
+  }
+  return m;
+}
+function mapaClicksChart(modo){
+  const m = {}; const mapa = STATS_DIA['clicks'] || {};
+  for (const fk in mapa) { const k = modo === 'mes' ? fk.slice(0,7) : fk; m[k] = (m[k] || 0) + mapa[fk]; }
+  return m;
+}
 function serieContinua(porClave, modo){
   const claves = Object.keys(porClave).sort();
   if (!claves.length) return [];
   const serie = [];
   if (modo === 'mes') {
-    const a = claves[0].split('-');
-    const cur = new Date(+a[0], +a[1]-1, 1);
+    const a = claves[0].split('-'); const cur = new Date(+a[0], +a[1]-1, 1);
     const fin = new Date(); fin.setDate(1); fin.setHours(0,0,0,0);
     while (cur <= fin) { const k = claveMes(cur); serie.push({ clave: k, count: porClave[k] || 0 }); cur.setMonth(cur.getMonth()+1); }
   } else {
-    const cur = new Date(claves[0] + 'T00:00:00');
-    const fin = new Date(); fin.setHours(0,0,0,0);
+    const cur = new Date(claves[0] + 'T00:00:00'); const fin = new Date(); fin.setHours(0,0,0,0);
     while (cur <= fin) { const k = claveDia(cur); serie.push({ clave: k, count: porClave[k] || 0 }); cur.setDate(cur.getDate()+1); }
   }
   return serie;
 }
-function mapaVisitas(modo){
-  const m = {};
-  for (const v of VISITS_RAW) {
-    const s = v.primera_visita && v.primera_visita.seconds;
-    if (!s) continue;
-    const k = modo === 'mes' ? claveMes(new Date(s*1000)) : claveDia(new Date(s*1000));
-    m[k] = (m[k] || 0) + 1;
-  }
-  return m;
-}
-function mapaClicks(modo){
-  const m = {};
-  for (const c of CLICKS_RAW) {
-    if (!c.fecha) continue;
-    const k = modo === 'mes' ? c.fecha.slice(0,7) : c.fecha;
-    m[k] = (m[k] || 0) + (c.count || 0);
-  }
-  return m;
+function rangoPeriodo(serie){
+  if (PERIODO === 'mes') { const mk = claveMes(new Date()); return serie.filter(d => d.clave.startsWith(mk)); }
+  if (PERIODO === 'hoy') return serie.slice(-14);
+  return serie;
 }
 function pintarChart(serie, contId, axisId, subId, uno, varios){
   const cont = $(contId), axis = $(axisId), sub = $(subId);
   if (!cont) return;
-  if (!serie.length) { cont.innerHTML = '<div class="chart-empty">Todavía no hay datos.</div>'; if (axis) axis.innerHTML = ''; if (sub) sub.textContent = ''; return; }
-  const rango = (CHART_MODO === 'dia' && CHART_DIAS > 0) ? serie.slice(-CHART_DIAS) : serie;
-  const max = Math.max.apply(null, rango.map(d => d.count).concat(1));
-  cont.innerHTML = rango.map(d => {
+  if (!serie.length) { cont.innerHTML = '<div class="chart-empty">Sin datos en este período.</div>'; if (axis) axis.innerHTML = ''; if (sub) sub.textContent = ''; return; }
+  const max = Math.max.apply(null, serie.map(d => d.count).concat(1));
+  cont.innerHTML = serie.map(d => {
     const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
     return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" data-label="${fmtClave(d.clave)} · ${d.count} ${d.count === 1 ? uno : varios}"></div>`;
   }).join('');
-  if (axis) axis.innerHTML = `<span>${fmtClave(rango[0].clave)}</span><span>${fmtClave(rango[Math.floor(rango.length/2)].clave)}</span><span>${fmtClave(rango[rango.length-1].clave)}</span>`;
+  if (axis) axis.innerHTML = `<span>${fmtClave(serie[0].clave)}</span><span>${fmtClave(serie[Math.floor(serie.length/2)].clave)}</span><span>${fmtClave(serie[serie.length-1].clave)}</span>`;
   if (sub) {
-    const total = rango.reduce((a, d) => a + d.count, 0);
-    const pico = rango.reduce((mx, d) => d.count > mx.count ? d : mx, rango[0]);
-    sub.textContent = `${fmtNum(total)} en el período · pico ${pico.count} (${fmtClave(pico.clave)})`;
+    const total = serie.reduce((a, d) => a + d.count, 0);
+    const pico = serie.reduce((mx, d) => d.count > mx.count ? d : mx, serie[0]);
+    sub.textContent = `${fmtNum(total)} en total · pico ${pico.count} (${fmtClave(pico.clave)})`;
   }
 }
 function redibujarCharts(){
-  pintarChart(serieContinua(mapaVisitas(CHART_MODO), CHART_MODO), 'chart-bars', 'chart-axis', 'chart-sub', 'visitante', 'visitantes');
-  pintarChart(serieContinua(mapaClicks(CHART_MODO), CHART_MODO), 'chart-bars-clicks', 'chart-axis-clicks', 'chart-sub-clicks', 'click', 'clicks');
+  const modo = PERIODO === 'total' ? 'mes' : 'dia';
+  pintarChart(rangoPeriodo(serieContinua(mapaVisitasChart(modo), modo)), 'chart-bars', 'chart-axis', 'chart-sub', 'visitante', 'visitantes');
+  pintarChart(rangoPeriodo(serieContinua(mapaClicksChart(modo), modo)), 'chart-bars-clicks', 'chart-axis-clicks', 'chart-sub-clicks', 'click', 'clicks');
 }
-function initCharts(visits, clicks){
-  VISITS_RAW = visits; CLICKS_RAW = clicks;
-  if (!chartInit) {
-    chartInit = true;
-    document.querySelectorAll('.chart-m').forEach(b => b.addEventListener('click', () => {
-      CHART_MODO = b.dataset.modo;
-      document.querySelectorAll('.chart-m').forEach(x => x.classList.toggle('active', x === b));
-      const rango = document.getElementById('chart-rango'); if (rango) rango.style.display = CHART_MODO === 'mes' ? 'none' : '';
-      redibujarCharts();
+function aplicarPeriodo(){ refrescarTarjetas(); redibujarCharts(); }
+function initFiltro(visits){
+  VISITS_RAW = visits;
+  if (!filtroInit) {
+    filtroInit = true;
+    document.querySelectorAll('.periodo-b').forEach(b => b.addEventListener('click', () => {
+      PERIODO = b.dataset.periodo;
+      document.querySelectorAll('.periodo-b').forEach(x => x.classList.toggle('active', x === b));
+      aplicarPeriodo();
     }));
-    document.querySelectorAll('.chart-f').forEach(b => b.addEventListener('click', () => {
-      CHART_DIAS = parseInt(b.dataset.dias, 10) || 0;
-      document.querySelectorAll('.chart-f').forEach(x => x.classList.toggle('active', x === b));
-      redibujarCharts();
-    }));
-    // Tooltip propio (hover en compu, tocar en teléfono) para cada gráfico
     [['chart-bars','chart-tip'], ['chart-bars-clicks','chart-tip-clicks']].forEach(([bid, tid]) => {
       const bars = $(bid), tip = $(tid);
       if (!bars || !tip) return;
@@ -1133,7 +1137,7 @@ function initCharts(visits, clicks){
       document.addEventListener('pointerdown', e => { if (!e.target.closest('#' + bid)) ocultar(); });
     });
   }
-  redibujarCharts();
+  aplicarPeriodo();
 }
 
 // ===== SUSCRIPCIÓN A FIRESTORE =====

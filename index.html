@@ -1037,6 +1037,13 @@
   const PHONE = '543456268401';
   const escapeHtml = (s='') => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const waLink = (text) => `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`;
+  // Incrementa el contador total de una métrica Y su versión por día (stats/{metrica}_dia_YYYY-MM-DD) → habilita el filtro Hoy/Mes/Total del admin.
+  const claveHoy = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
+  const bumpStat = (contador, metrica) => {
+    const dia = claveHoy();
+    setDoc(doc(db, 'stats', contador), { count: increment(1) }, { merge: true }).catch(() => {});
+    setDoc(doc(db, 'stats', metrica + '_dia_' + dia), { count: increment(1), fecha: dia }, { merge: true }).catch(() => {});
+  };
   // Cloudinary AI background removal: detecta el chaleco como objeto y borra todo lo demás (sombras, color spill, cualquier fondo).
   // e_trim recorta el PNG al contorno del chaleco → todas las piezas recortadas se escalan al mismo tamaño, sin importar el encuadre de la foto.
   // La primera carga puede tardar 3-5s mientras Cloudinary procesa la imagen, después queda cacheada.
@@ -1376,12 +1383,12 @@
     if (Date.now() - last < COOLDOWN) return;
     localStorage.setItem(KEY, Date.now().toString());
 
-    // Contador global de visitas (cada page view cuenta)
-    setDoc(doc(db, 'stats', 'visitas'), { count: increment(1) }, { merge: true }).catch(() => {});
+    // Contador global de visitas (cada page view cuenta) + fechado por día
+    bumpStat('visitas', 'visitas');
 
     // Entradas por link: cuenta cuántos llegan con el link a "Disponibles" (#chalecos) o "Opiniones" (#opiniones)
-    if (entryHash === '#chalecos') setDoc(doc(db, 'stats', 'entrada_chalecos'), { count: increment(1) }, { merge: true }).catch(() => {});
-    else if (entryHash === '#opiniones') setDoc(doc(db, 'stats', 'entrada_opiniones'), { count: increment(1) }, { merge: true }).catch(() => {});
+    if (entryHash === '#chalecos') bumpStat('entrada_chalecos', 'entrada_chalecos');
+    else if (entryHash === '#opiniones') bumpStat('entrada_opiniones', 'entrada_opiniones');
 
     // Doc por visitor: count y ultima_visita siempre se actualizan; los demás solo la primera vez
     const updates = {
@@ -1404,11 +1411,7 @@
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href*="wa.me"]');
     if (!a) return;
-    setDoc(doc(db, 'stats', 'clicks_whatsapp'), { count: increment(1) }, { merge: true }).catch(() => {});
-    // Fechado por día → permite ver clicks por día/mes en el admin. Usa la colección stats (misma regla pública), doc por día.
-    const h = new Date();
-    const claveDia = h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
-    setDoc(doc(db, 'stats', 'clicks_dia_' + claveDia), { count: increment(1), fecha: claveDia }, { merge: true }).catch(() => {});
+    bumpStat('clicks_whatsapp', 'clicks');
   });
 
   // Suscribirse a Firestore en tiempo real

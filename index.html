@@ -91,19 +91,27 @@
 
   /* NAV */
   nav{
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(243, 236, 224, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(139, 101, 53, 0.12);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
   }
   nav.scrolled{
     background: rgba(243, 236, 224, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom-color: rgba(139, 101, 53, 0.12);
     box-shadow: 0 6px 24px -14px rgba(60, 40, 20, 0.4);
   }
   nav.scrolled .nav-inner{ padding-top: 9px; padding-bottom: 9px; }
   nav.scrolled .brand-logo{ height: 46px; }
+  /* Sobre la foto: sin fondo, solo logo + letras en blanco. Al bajar, la barra vuelve sólida y legible. */
+  nav .brand-text, nav .nav-links a{ color: #fff; }
+  nav .brand-tag{ color: rgba(255, 255, 255, 0.85); }
+  nav .nav-links a{ text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+  nav.scrolled .brand-text{ color: var(--ink); }
+  nav.scrolled .brand-tag{ color: var(--muted); }
+  nav.scrolled .nav-links a{ color: var(--ink-soft); text-shadow: none; }
   .nav-inner{
     max-width: 1400px; margin: 0 auto;
     padding: 14px 24px;
@@ -197,7 +205,7 @@
   /* HERO */
   .hero{
     position: relative;
-    min-height: calc(100vh - 90px);
+    min-height: 100vh;
     margin: 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
@@ -206,7 +214,9 @@
   }
   .hero::after{
     content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-    background: linear-gradient(to top, rgba(18,12,5,0.92) 0%, rgba(18,12,5,0.44) 30%, rgba(18,12,5,0.08) 60%, rgba(18,12,5,0) 100%);
+    background:
+      linear-gradient(to bottom, rgba(18,12,5,0.5) 0%, rgba(18,12,5,0) 22%),
+      linear-gradient(to top, rgba(18,12,5,0.92) 0%, rgba(18,12,5,0.44) 30%, rgba(18,12,5,0.08) 60%, rgba(18,12,5,0) 100%);
   }
   .hero-content{
     position: relative; z-index: 1;
@@ -1319,7 +1329,7 @@
 
   // Barra: se compacta al scrollear
   const navEl = document.querySelector('nav');
-  const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > 24); };
+  const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > window.innerHeight - 90); };
   window.addEventListener('scroll', onNavScroll, { passive: true });
   onNavScroll();
 

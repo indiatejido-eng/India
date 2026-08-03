@@ -20,9 +20,12 @@
   .tag{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--ink);color:var(--cream);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;text-align:center;padding:6px;font-weight:600}
 
   .am{ display:flex; align-items:stretch; min-height:100vh; }
+
   /* Columna foto */
   .am-foto{ position:relative; width:50%; overflow:hidden; background:var(--cream-soft); }
   .am-foto img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .am-hero-text{ display:none; }   /* solo se usa en el hero mobile */
+
   /* Columna contenido */
   .am-body{ width:50%; display:flex; align-items:center; justify-content:center; padding:110px 7vw; }
   .am-inner{ width:100%; max-width:530px; }
@@ -43,35 +46,53 @@
   .am-cta:hover{ background:var(--forest-dark); border-color:var(--forest-dark); }
   .am-cta svg{ width:16px; height:16px; fill:currentColor; flex-shrink:0; }
 
+  /* ===================== CELULAR: hero con foto + título encima ===================== */
   @media(max-width:880px){
     .am{ flex-direction:column; min-height:0; }
-    .am-foto{ width:100%; height:42vh; min-height:288px; }
-    .am-body{ width:100%; padding:38px 22px 50px; }
-    .am-inner{ max-width:520px; margin:0 auto; }
-    .am-title{ font-size:2.5rem; line-height:1.06; margin-bottom:18px; }
-    .am-lead{ font-size:.97rem; }
-    .am-steps{ margin:26px 0 28px; }
-    .am-step{ padding:16px 0; }
-    .am-step h3{ font-size:1.3rem; margin-bottom:5px; }
-    .am-step p{ font-size:.94rem; }
-    .am-cta{ width:100%; justify-content:center; padding:15px 24px; }
+
+    /* La foto pasa a ser un hero con el título encima */
+    .am-foto{ width:100%; height:68vh; min-height:440px; }
+    .am-foto::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.86) 0%, rgba(28,22,14,.45) 34%, rgba(28,22,14,0) 62%); }
+    .am-hero-text{ display:flex; flex-direction:column; position:absolute; left:0; right:0; bottom:0; z-index:2; padding:0 24px 34px; }
+    .am-hero-text .am-eyebrow{ color:rgba(245,240,232,.82); margin-bottom:16px; }
+    .am-hero-text .am-title{ color:var(--cream); font-size:2.6rem; margin-bottom:0; }
+    .am-hero-text .am-title em{ color:#e7d6b4; }
+
+    /* En el celu el título de arriba (columna derecha) se oculta: ya está sobre la foto */
+    .am-body .am-head{ display:none; }
+    .am-body{ width:100%; padding:36px 24px 48px; }
+    .am-lead{ display:none; }   /* corto y simple: el título del hero ya dice la idea */
+
+    .am-steps{ margin:0 0 30px; }
+    .am-step{ padding:18px 0; }
+    .am-step:first-child{ border-top:none; }
+    .am-step h3{ font-size:1.34rem; margin-bottom:5px; }
+    .am-step p{ font-size:.95rem; }
+
+    .am-cta{ width:100%; justify-content:center; padding:16px 24px; }
   }
 </style>
 </head>
 <body>
-<div class="tag">Prueba — A medida (Stitch portado a la marca)</div>
+<div class="tag">Prueba — A medida (rediseño celu)</div>
 
 <section class="am">
-  <!-- Foto: detalle del tejido + etiqueta de cuero -->
+  <!-- Foto: detalle del tejido + etiqueta de cuero. En el celu, hero con título encima -->
   <div class="am-foto">
     <img src="img/am-textura.webp" alt="Detalle del tejido de lana hecho a mano con la etiqueta de cuero India" loading="eager">
+    <div class="am-hero-text">
+      <span class="am-eyebrow">A medida</span>
+      <h2 class="am-title">Decinos qué <em>imaginás.</em><br>Lo tejemos para vos.</h2>
+    </div>
   </div>
 
   <!-- Contenido -->
   <div class="am-body">
     <div class="am-inner">
-      <span class="am-eyebrow">A medida</span>
-      <h2 class="am-title">Decinos qué <em>imaginás.</em><br>Lo tejemos para vos.</h2>
+      <div class="am-head">
+        <span class="am-eyebrow">A medida</span>
+        <h2 class="am-title">Decinos qué <em>imaginás.</em><br>Lo tejemos para vos.</h2>
+      </div>
       <p class="am-lead">¿Querés un chaleco con trenzas en particular? ¿En tu talle exacto? Lo hacemos. Contanos tu idea y lo tejemos solo para vos.</p>
 
       <div class="am-steps">

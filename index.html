@@ -406,83 +406,53 @@
     .gallery-head{ margin-bottom: 36px; }
   }
 
-  /* A MEDIDA */
-  .custom{
-    background: var(--ink); color: var(--cream);
-    padding: 100px 24px;
-    position: relative; overflow: hidden;
-  }
-  .custom-bg{
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover; object-position: center 42%;
-    filter: blur(2px) brightness(0.62);
-    transform: scale(1.05);
-    z-index: 0;
-  }
-  .custom::after{
-    content: ""; position: absolute; inset: 0; z-index: 0;
-    background: linear-gradient(rgba(20,14,9,0.72), rgba(20,14,9,0.86));
-    pointer-events: none;
-  }
-  .custom-inner{
-    max-width: 1100px; margin: 0 auto;
-    position: relative; z-index: 1;
-  }
-  .custom .label{ color: rgba(212, 175, 130, 0.7); }
-  .custom h2{
-    font-size: clamp(2.3rem, 6.5vw, 5rem);
-    margin: 16px 0 24px; max-width: 900px;
-    font-variation-settings: "SOFT" 80;
-  }
-  .custom h2 .it{ color: #d4af82; }
-  .custom-lead{
-    font-family: 'Fraunces', serif;
-    font-size: 1.15rem;
-    max-width: 620px;
-    color: rgba(250,245,234,0.78);
-    line-height: 1.55;
-    margin-bottom: 50px;
-  }
-  .custom-grid{
-    display: flex; flex-direction: column;
-    max-width: 620px; margin-bottom: 46px;
-  }
-  .custom-step{
-    display: flex; align-items: baseline; gap: 20px;
-    border-top: 1px solid rgba(212, 175, 130, 0.22);
-    padding: 20px 0;
-  }
-  .custom-step .step-num{
-    font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 2.1rem; color: #d4af82; font-weight: 300;
-    line-height: 1; flex: none; width: 40px;
-  }
-  .custom-step .step-body{ flex: 1; }
-  .custom-step h4{
-    font-family: 'Fraunces', serif;
-    font-size: 1.22rem; font-weight: 400;
-    margin-bottom: 5px;
-  }
-  .custom-step p{
-    font-size: 0.98rem; color: rgba(250, 245, 234, 0.72);
-    line-height: 1.55; margin: 0;
-  }
-  .custom-cta{
-    display: inline-flex; align-items: center; gap: 12px;
-    background: var(--wa); color: #fff;
-    padding: 18px 32px; border-radius: 100px;
-    font-weight: 500; font-size: 1rem;
-    transition: all 0.3s;
-    box-shadow: 0 18px 40px -15px rgba(94, 117, 72, 0.5);
-  }
-  .custom-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); }
-  .custom-cta svg{ width: 20px; height: 20px; fill: currentColor; }
-  @media(max-width: 767px){
-    .custom{ padding: 50px 16px; }
-    .custom-grid{ margin-bottom: 30px; }
-    .custom h2{ font-size: clamp(1.8rem, 7vw, 2.6rem); margin: 12px 0 18px; }
-    .custom-lead{ font-size: 1rem; margin-bottom: 32px; }
+  /* A MEDIDA — editorial bespoke (foto + pasos numerados) */
+  .am{ --forest:#2f3a24; --forest-dark:#26301d;
+       display:flex; align-items:stretch; min-height:100vh; background:var(--bg); }
+
+  /* Columna foto */
+  .am-foto{ position:relative; width:50%; overflow:hidden; background:var(--bg-soft); }
+  .am-foto img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .am-hero-text{ display:none; }   /* solo se usa en el hero mobile */
+
+  /* Columna contenido */
+  .am-body{ width:50%; display:flex; align-items:center; justify-content:center; padding:110px 7vw; }
+  .am-inner{ width:100%; max-width:530px; }
+
+  .am-eyebrow{ display:block; font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:26px; }
+  .am-title{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.35rem,4vw,3.55rem); line-height:1.08; letter-spacing:-.02em; color:var(--ink); margin-bottom:26px; }
+  .am-title em{ font-style:italic; font-weight:300; color:var(--forest); }
+  .am-lead{ font-family:'DM Sans',sans-serif; font-size:1.02rem; line-height:1.68; color:var(--ink-soft); max-width:45ch; }
+
+  .am-steps{ margin:44px 0 42px; }
+  .am-step{ border-top:1px solid var(--line); padding:26px 0; }
+  .am-step:last-child{ border-bottom:1px solid var(--line); }
+  .am-step h3{ font-family:'Fraunces',serif; font-weight:400; font-size:1.5rem; line-height:1.25; letter-spacing:-.01em; color:var(--ink); margin-bottom:9px; }
+  .am-step h3 .num{ color:var(--forest); font-style:italic; font-weight:300; margin-right:.55rem; }
+  .am-step p{ font-size:.97rem; line-height:1.6; color:var(--ink-soft); max-width:44ch; }
+
+  .am-cta{ display:inline-flex; align-items:center; gap:11px; padding:16px 34px; background:var(--forest); border:1px solid var(--forest); color:var(--cream); font-size:.72rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; transition:background .3s, border-color .3s; }
+  .am-cta:hover{ background:var(--forest-dark); border-color:var(--forest-dark); }
+  .am-cta svg{ width:16px; height:16px; fill:currentColor; flex-shrink:0; }
+
+  /* Celular: hero con foto + título encima */
+  @media(max-width:880px){
+    .am{ flex-direction:column; min-height:0; }
+    .am-foto{ width:100%; height:68vh; min-height:440px; }
+    .am-foto::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.86) 0%, rgba(28,22,14,.45) 34%, rgba(28,22,14,0) 62%); }
+    .am-hero-text{ display:flex; flex-direction:column; position:absolute; left:0; right:0; bottom:0; z-index:2; padding:0 24px 34px; }
+    .am-hero-text .am-eyebrow{ color:rgba(250,245,234,.82); margin-bottom:16px; }
+    .am-hero-text .am-title{ color:var(--cream); font-size:2.6rem; margin-bottom:0; }
+    .am-hero-text .am-title em{ color:#e7d6b4; }
+    .am-body .am-head{ display:none; }
+    .am-body{ width:100%; padding:36px 24px 48px; }
+    .am-lead{ display:none; }
+    .am-steps{ margin:0 0 30px; }
+    .am-step{ padding:18px 0; }
+    .am-step:first-child{ border-top:none; }
+    .am-step h3{ font-size:1.34rem; margin-bottom:5px; }
+    .am-step p{ font-size:.95rem; }
+    .am-cta{ width:100%; justify-content:center; padding:16px 24px; }
   }
 
   /* CARE */
@@ -917,48 +887,47 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M5.5 9.5c4 1 8 3.5 11 6.6M8 4.8c3 2.6 6 6.2 8 10.2M5.4 14.6c3-2.6 6.2-6.2 8.6-9.8"/></svg>
 </div>
 
-<section class="custom" id="a-medida">
-  <img class="custom-bg" src="/proceso-amedida.jpg" alt="" aria-hidden="true" loading="lazy">
-  <div class="custom-inner">
-    <span class="label">A medida</span>
-    <h2 class="display">
-      Decinos qué <span class="it">imaginás.</span><br>
-      Lo tejemos para vos.
-    </h2>
-    <p class="custom-lead">
-      ¿Querés un chaleco con trenzas en particular? ¿En tu talle exacto? Lo hacemos. Mandanos tu idea por WhatsApp.
-    </p>
+<section class="am" id="a-medida">
+  <!-- Foto: canasto con el chaleco tejiéndose. En el celu, hero con el título encima -->
+  <div class="am-foto">
+    <img src="/amedida.webp" alt="Canasto con asas de cuero, un chaleco de lana marrón tejiéndose y las agujas, en el campo" loading="lazy">
+    <div class="am-hero-text">
+      <span class="am-eyebrow">A medida</span>
+      <h2 class="am-title">Lo tejemos <em>para vos.</em></h2>
+    </div>
+  </div>
 
-    <div class="custom-grid">
-      <div class="custom-step">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <h4>Contanos qué querés</h4>
+  <!-- Contenido -->
+  <div class="am-body">
+    <div class="am-inner">
+      <div class="am-head">
+        <span class="am-eyebrow">A medida</span>
+        <h2 class="am-title">Decinos qué <em>imaginás.</em><br>Lo tejemos para vos.</h2>
+      </div>
+      <p class="am-lead">¿Querés un chaleco con trenzas en particular? ¿En tu talle exacto? Lo hacemos. Contanos tu idea y lo tejemos solo para vos.</p>
+
+      <div class="am-steps">
+        <div class="am-step">
+          <h3><span class="num">I.</span>Contanos qué querés</h3>
           <p>Nos pasás tus medidas y elegís la lana, el color y el dibujo.</p>
         </div>
-      </div>
-      <div class="custom-step">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <h4>Arrancamos a tejer</h4>
-          <p>Con una seña empezamos a tejer tu chaleco, hecho solo para vos.</p>
+        <div class="am-step">
+          <h3><span class="num">II.</span>Arrancamos a tejer</h3>
+          <p>Con una seña empezamos a tejer tu chaleco, hecho a mano solo para vos.</p>
         </div>
-      </div>
-      <div class="custom-step">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <h4>Recibís tu chaleco</h4>
+        <div class="am-step">
+          <h3><span class="num">III.</span>Recibís tu chaleco</h3>
           <p>Te avisamos cuando esté listo y te lo enviamos gratis a tu casa.</p>
         </div>
       </div>
-    </div>
 
-    <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20encargar%20un%20chaleco%20con%20trenzas..." target="_blank" rel="noopener" class="custom-cta">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
-      </svg>
-      Pedir el mío a medida
-    </a>
+      <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20encargar%20un%20chaleco%20a%20medida..." target="_blank" rel="noopener" class="am-cta">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+        </svg>
+        Pedir el mío a medida
+      </a>
+    </div>
   </div>
 </section>
 
@@ -1518,7 +1487,7 @@
 </script>
 
 <script>
-  // Animaciones de los custom-step (estáticos)
+  // Animaciones de los pasos de "A medida" (fade-up al entrar en viewport)
   const ioStatic = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if(e.isIntersecting){
@@ -1527,7 +1496,7 @@
       }
     });
   }, { threshold: 0.1 });
-  document.querySelectorAll('.custom-step').forEach(el => {
+  document.querySelectorAll('.am-step').forEach(el => {
     el.style.opacity = '0';
     ioStatic.observe(el);
   });

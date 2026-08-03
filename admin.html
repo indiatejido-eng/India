@@ -700,6 +700,14 @@
       <div class="chart-axis" id="chart-axis-clicks"></div>
     </section>
 
+    <!-- Clicks por chaleco (respeta el filtro Hoy / Este mes / Total de arriba) -->
+    <section class="stats-detail" style="grid-template-columns:1fr">
+      <div class="stats-detail-card">
+        <div class="stats-detail-title">Clicks por chaleco</div>
+        <div class="stats-list" id="clicks-chalecos"><div class="stats-empty">Sin datos todavía</div></div>
+      </div>
+    </section>
+
     <section class="stats-detail">
       <div class="stats-detail-card">
         <div class="stats-detail-title">Top países</div>
@@ -978,7 +986,7 @@ document.querySelectorAll('.tab').forEach(t => {
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-AR');
 
 // ===== FILTRO DE PERÍODO (Hoy / Este mes / Total) — estado global compartido por tarjetas y gráficos =====
-let PERIODO = 'total', VISITS_RAW = [], STATS_DIA = {}, STATS_TOTAL = {}, filtroInit = false;
+let PERIODO = 'total', VISITS_RAW = [], STATS_DIA = {}, STATS_TOTAL = {}, CHALECO_TOTAL = {}, filtroInit = false;
 const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1020,12 +1028,13 @@ async function cargarAnalytics() {
     renderTopList('top-devices', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
     // Stats por día: todos los docs stats/{metrica}_dia_YYYY-MM-DD → STATS_DIA[metrica][fecha] = count
-    STATS_DIA = {};
+    STATS_DIA = {}; CHALECO_TOTAL = {};
     try {
       const sc = await getDocs(collection(db, 'stats'));
       sc.docs.forEach(d => {
         const mm = d.id.match(/^(.+)_dia_(\d{4}-\d{2}-\d{2})$/);
         if (mm) { (STATS_DIA[mm[1]] = STATS_DIA[mm[1]] || {})[mm[2]] = d.data().count || 0; }
+        else if (d.id.startsWith('chaleco_')) { CHALECO_TOTAL[d.id.slice(8)] = d.data().count || 0; }  // 'chaleco_'.length === 8
       });
     } catch (e) {}
     initFiltro(visits);
@@ -1064,6 +1073,21 @@ function refrescarTarjetas(){
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
   const nota = $('periodo-nota');
   if (nota) nota.textContent = esTotal ? '' : 'Ojo: los clicks y las entradas por link recién arrancan a registrarse por fecha hoy, así que en Hoy/Este mes van a estar bajos hasta que se acumulen. Visitas y visitantes tienen todo el historial.';
+  refrescarClicksChalecos();
+}
+
+// Lista "Clicks por chaleco": cruza los contadores stats/chaleco_{id} con el catálogo (nombres) y respeta el período.
+function refrescarClicksChalecos(){
+  const el = $('clicks-chalecos');
+  if (!el) return;
+  const nombre = {};
+  [...dataDisp, ...dataAnt].forEach(c => { if (c.id) nombre[c.id] = c.nombre || 'Sin nombre'; });
+  const esTotal = PERIODO === 'total';
+  const entries = Object.keys(nombre)
+    .map(id => [nombre[id], esTotal ? (CHALECO_TOTAL[id] || 0) : sumaMetrica('chaleco_' + id)])
+    .filter(e => e[1] > 0)
+    .sort((a, b) => b[1] - a[1]);
+  renderTopList('clicks-chalecos', entries);
 }
 function mapaVisitasChart(modo){
   const m = {};
@@ -1157,6 +1181,7 @@ function suscribir(){
       .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('disponible', dataDisp);
     $('count-disp').textContent = dataDisp.length;
+    refrescarClicksChalecos();
   });
 
   const qA = query(collection(db, 'chalecos'), where('estado', '==', 'anterior'));
@@ -1165,6 +1190,7 @@ function suscribir(){
       .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('anterior', dataAnt);
     $('count-ant').textContent = dataAnt.length;
+    refrescarClicksChalecos();
   });
 }
 

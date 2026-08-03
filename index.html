@@ -818,20 +818,41 @@
   /* ===== Opiniones ===== */
   /* offset para que el nav sticky no tape el título al saltar por ancla (#opiniones, etc.) */
   #chalecos, #anteriores, #a-medida, #opiniones{ scroll-margin-top: 84px; }
-  .op-rating{ display:flex; align-items:center; justify-content:center; gap:9px; margin-top:14px; flex-wrap:wrap; }
-  .op-rating-stars{ color:#C2873E; letter-spacing:2px; font-size:1.15rem; }
-  .op-rating-num{ font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:1.25rem; color:var(--ink); }
-  .op-rating-count{ color:var(--muted); font-size:0.92rem; }
-  .op-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:66px 76px; max-width:960px; margin:60px auto 0; }
-  .op-card{ display:flex; flex-direction:column; align-items:center; text-align:center; }
-  .op-foto{ width:92px; height:92px; object-fit:cover; border-radius:2px; margin-bottom:22px; background:var(--bg-soft); cursor:pointer; transition:transform .5s cubic-bezier(.2,.8,.2,1); }
-  .op-foto:hover{ transform:scale(1.04); }
-  .op-quote{ font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:3.2rem; line-height:.4; color:rgba(139,101,53,.24); margin:6px 0 20px; }
-  .op-stars{ color:#C2873E; letter-spacing:3px; font-size:.9rem; margin-bottom:18px; }
-  .op-text{ font-family:'Fraunces', serif; font-style:italic; font-weight:300; font-size:1.16rem; color:var(--ink); line-height:1.62; margin:0 0 20px; max-width:36ch; white-space:pre-wrap; }
-  .op-who{ font-family:'Fraunces', serif; font-style:normal; font-weight:500; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
-  .op-who b{ color:var(--ink); font-weight:500; }
-  @media(max-width:820px){ .op-grid{ grid-template-columns:1fr; gap:56px; max-width:500px; } }
+  .op-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-bottom:1px solid var(--line); padding-bottom:26px; margin-bottom:52px; text-align:left; }
+  .op-head .display{ margin:0 0 16px; }
+  .op-rating{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin:0; }
+  .op-rating-num{ font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:1.4rem; color:var(--ink); }
+  .op-rating-stars{ color:#c2873e; letter-spacing:2px; font-size:1.15rem; }
+  .op-rating-count{ color:var(--muted); font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; }
+
+  .op-featured{ display:grid; grid-template-columns:minmax(0,400px) 1fr; gap:52px; align-items:center; margin-bottom:54px; }
+  .op-featured.no-foto{ grid-template-columns:1fr; max-width:720px; }
+  .op-fimg{ aspect-ratio:1/1; overflow:hidden; border-radius:2px; background:var(--bg-soft); cursor:pointer; }
+  .op-fimg img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .8s cubic-bezier(.2,.8,.2,1); }
+  .op-fimg:hover img{ transform:scale(1.04); }
+  .op-fstars{ color:#c2873e; letter-spacing:3px; font-size:1rem; margin-bottom:18px; }
+  .op-fquote{ font-family:'Fraunces', serif; font-style:italic; font-weight:300; font-size:clamp(1.4rem,2.5vw,1.95rem); line-height:1.32; color:var(--ink); margin:0 0 22px; }
+  .op-fwho{ font-size:.76rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .op-fwho b{ color:var(--ink); font-weight:600; }
+
+  .op-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:34px; align-items:stretch; }
+  .op-card{ display:flex; flex-direction:column; }
+  .op-card.tipografico{ background:#efe8dc; border:1px solid var(--line); padding:32px 30px; justify-content:center; }
+  .op-cimg{ aspect-ratio:1/1; overflow:hidden; border-radius:2px; background:var(--bg-soft); margin-bottom:20px; cursor:pointer; }
+  .op-cimg img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .8s cubic-bezier(.2,.8,.2,1); }
+  .op-cimg:hover img{ transform:scale(1.04); }
+  .op-cstars{ color:#c2873e; letter-spacing:2px; font-size:.85rem; margin-bottom:14px; }
+  .op-ctext{ font-family:'Fraunces', serif; font-style:italic; font-weight:300; font-size:1rem; line-height:1.58; color:var(--ink-soft); margin:0 0 16px; white-space:pre-wrap; }
+  .op-card.tipografico .op-ctext{ font-size:1.24rem; line-height:1.36; color:var(--ink); }
+  .op-cwho{ margin-top:auto; font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .op-cwho b{ color:var(--ink); font-weight:600; }
+
+  @media(max-width:860px){
+    .op-head{ flex-direction:column; align-items:flex-start; }
+    .op-featured{ grid-template-columns:1fr; gap:26px; max-width:440px; margin-left:auto; margin-right:auto; }
+    .op-fimg{ max-width:400px; }
+    .op-grid{ grid-template-columns:1fr; gap:26px; max-width:440px; margin:0 auto; }
+  }
 </style>
 </head>
 <body>
@@ -951,15 +972,17 @@
 
 <!-- OPINIONES -->
 <section class="gallery" id="opiniones" style="display:none;">
-  <div class="gallery-head">
-    <span class="label">Lo que dicen</span>
-    <h2 class="display"><span class="it">Opiniones.</span></h2>
-    <div class="op-rating" id="op-rating" style="display:none;">
-      <span class="op-rating-stars" id="op-avg-stars"></span>
-      <span class="op-rating-num" id="op-avg-num"></span>
-      <span class="op-rating-count" id="op-count"></span>
+  <div class="op-head">
+    <div>
+      <h2 class="display">Opiniones</h2>
+      <div class="op-rating" id="op-rating" style="display:none;">
+        <span class="op-rating-num" id="op-avg-num"></span>
+        <span class="op-rating-stars" id="op-avg-stars"></span>
+        <span class="op-rating-count" id="op-count"></span>
+      </div>
     </div>
   </div>
+  <div class="op-featured" id="op-featured"></div>
   <div class="op-grid" id="op-grid"></div>
 </section>
 
@@ -1485,19 +1508,28 @@
     document.getElementById('op-avg-stars').textContent = starsR(Math.round(avg));
     document.getElementById('op-avg-num').textContent = avg.toFixed(1).replace('.', ',');
     document.getElementById('op-count').textContent = `· ${items.length} ${items.length === 1 ? 'opinión' : 'opiniones'}`;
-    document.getElementById('op-grid').innerHTML = items.map(r => {
-      const nom = escR(r.nombre || '') + (r.apellido ? ' ' + escR(r.apellido) : '');
-      const foto = r.fotoURL
-        ? `<img class="op-foto" src="${fotoPlain(r.fotoURL, 400)}" data-full="${escR(r.fotoURL)}" alt="" loading="lazy">`
-        : `<div class="op-quote" aria-hidden="true">“</div>`;
-      const ciudad = escR(r.ciudad || '');
-      return `<div class="op-card">${foto}`
-        + `<div class="op-stars">${starsR(Number(r.estrellas) || 0)}</div>`
-        + `<p class="op-text">${escR(r.texto || '')}</p>`
-        + `<div class="op-who"><b>${nom}</b>${ciudad ? ' · ' + ciudad : ''}</div></div>`;
+    const nomOf = r => escR(r.nombre || '') + (r.apellido ? ' ' + escR(r.apellido) : '');
+    const feat = items[0], resto = items.slice(1);
+    const featEl = document.getElementById('op-featured');
+    if (feat) {
+      const c = escR(feat.ciudad || '');
+      const fimg = feat.fotoURL ? `<div class="op-fimg" data-full="${escR(feat.fotoURL)}"><img src="${fotoPlain(feat.fotoURL, 700)}" alt="" loading="lazy"></div>` : '';
+      featEl.className = 'op-featured' + (feat.fotoURL ? '' : ' no-foto');
+      featEl.innerHTML = fimg
+        + `<div class="op-fbody"><div class="op-fstars">${starsR(Number(feat.estrellas) || 0)}</div>`
+        + `<blockquote class="op-fquote">“${escR(feat.texto || '')}”</blockquote>`
+        + `<div class="op-fwho"><b>${nomOf(feat)}</b>${c ? ' · ' + c : ''}</div></div>`;
+    } else { featEl.innerHTML = ''; }
+    document.getElementById('op-grid').innerHTML = resto.map(r => {
+      const c = escR(r.ciudad || '');
+      const stars = `<div class="op-cstars">${starsR(Number(r.estrellas) || 0)}</div>`;
+      const text = `<p class="op-ctext">“${escR(r.texto || '')}”</p>`;
+      const who = `<div class="op-cwho"><b>${nomOf(r)}</b>${c ? ' · ' + c : ''}</div>`;
+      if (r.fotoURL) return `<div class="op-card"><div class="op-cimg" data-full="${escR(r.fotoURL)}"><img src="${fotoPlain(r.fotoURL, 500)}" alt="" loading="lazy"></div>${stars}${text}${who}</div>`;
+      return `<div class="op-card tipografico">${stars}${text}${who}</div>`;
     }).join('');
-    document.querySelectorAll('#op-grid .op-foto').forEach(img => {
-      img.addEventListener('click', () => openLightbox({ fotos: [{ url: img.dataset.full }] }, { hideCta: true, plain: true }));
+    document.querySelectorAll('#op-featured .op-fimg, #op-grid .op-cimg').forEach(el => {
+      el.addEventListener('click', () => openLightbox({ fotos: [{ url: el.dataset.full }] }, { hideCta: true, plain: true }));
     });
   }, err => {
     console.error('Error cargando opiniones:', err);

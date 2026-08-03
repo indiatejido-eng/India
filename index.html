@@ -834,9 +834,10 @@
   .op-slide{ display:none; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:600px; margin:0 auto; }
   .op-slide.active{ display:flex; animation:opFade .55s ease; }
   @keyframes opFade{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
-  .op-sfoto{ width:172px; height:172px; object-fit:cover; border-radius:2px; background:var(--bg-soft); margin-bottom:28px; cursor:pointer; }
+  .op-sfoto{ width:208px; height:208px; object-fit:cover; border-radius:2px; background:var(--bg-soft); margin-bottom:28px; cursor:pointer; }
   .op-sstars{ color:#c2873e; letter-spacing:4px; font-size:.92rem; margin-bottom:22px; }
   .op-squote{ font-family:'Fraunces', serif; font-style:normal; font-weight:400; font-size:clamp(1.3rem,2.5vw,1.8rem); line-height:1.42; color:var(--ink); margin:0 0 26px; }
+  .op-slide.con-foto .op-squote{ font-size:clamp(1.12rem,1.9vw,1.48rem); line-height:1.5; }
   .op-swho{ font-size:.75rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
   .op-swho b{ color:var(--ink); font-weight:600; }
   .op-dots{ display:flex; justify-content:center; gap:9px; margin-top:38px; }
@@ -1513,8 +1514,8 @@
     const dotsEl = document.getElementById('op-dots');
     stageEl.innerHTML = items.map((r, i) => {
       const c = escR(r.ciudad || '');
-      const foto = r.fotoURL ? `<img class="op-sfoto" src="${fotoPlain(r.fotoURL, 320)}" data-full="${escR(r.fotoURL)}" alt="" loading="lazy">` : '';
-      return `<div class="op-slide${i === 0 ? ' active' : ''}" data-i="${i}">`
+      const foto = r.fotoURL ? `<img class="op-sfoto" src="${fotoPlain(r.fotoURL, 460)}" data-full="${escR(r.fotoURL)}" alt="" loading="lazy">` : '';
+      return `<div class="op-slide${i === 0 ? ' active' : ''}${r.fotoURL ? ' con-foto' : ''}" data-i="${i}">`
         + foto
         + `<div class="op-sstars">${starsR(Number(r.estrellas) || 0)}</div>`
         + `<blockquote class="op-squote">“${escR(r.texto || '')}”</blockquote>`

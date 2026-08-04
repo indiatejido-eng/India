@@ -1,1 +1,5 @@
 node_modules/
+
+# Bóveda de Obsidian: cerebro del negocio (números, clientes, teléfonos).
+# NO se sube — el repo se publica en Vercel. El respaldo lo da OneDrive.
+Boveda/

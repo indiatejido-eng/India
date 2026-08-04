@@ -2,6 +2,15 @@
 
 > Este archivo manda. Si una instrucción del chat contradice algo de acá sin justificar el cambio, preguntá antes de romper la regla.
 
+## El cerebro del negocio: la bóveda
+
+**Antes de trabajar, leé `Boveda/India/Panorama.md` y `Boveda/India/index.md`.** Es la wiki de Obsidian donde vive TODO lo del negocio: marca, producto, precios, clientes, anuncios, ventas, operaciones. **Reemplaza al brief que se pegaba a mano en cada chat.**
+
+- Cómo mantenerla: `Boveda/India/CLAUDE.md` (el esquema — estructura, convenciones, ingesta/consulta/revisión).
+- **Cualquier cosa que Justo cuente del negocio va ahí**, no se queda en el chat. Después de cargar algo, actualizar `index.md` y `log.md`.
+- La bóveda está en `.gitignore` a propósito: tiene clientes, teléfonos y números, y este repo se publica en Vercel. **No la subas.**
+- Este archivo manda sobre el **código**; la bóveda es la verdad sobre el **negocio**.
+
 ## Contexto
 
 - **Quién dirige:** Justo (18, Concordia, Entre Ríos). Hablale en español rioplatense con voseo, sin formalismos, directo al grano. Si ves un enfoque mejor, decílo — no le des la razón solo para agradar.

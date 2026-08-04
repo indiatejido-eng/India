@@ -629,6 +629,11 @@
       <button type="button" class="periodo-b" data-periodo="mes">Este mes</button>
       <button type="button" class="periodo-b active" data-periodo="total">Total</button>
     </div>
+    <div class="periodo-filtro">
+      <span class="periodo-label">Este celular/compu:</span>
+      <button type="button" class="periodo-b" id="btn-interno">—</button>
+      <span class="periodo-label" id="interno-hint"></span>
+    </div>
     <div class="periodo-nota" id="periodo-nota"></div>
 
     <section class="stats" aria-label="Estadísticas de la página">
@@ -951,10 +956,33 @@ async function doLogin(){
 
 $('btn-logout').addEventListener('click', () => signOut(auth));
 
+// ===== DISPOSITIVO INTERNO =====
+// Si entrás al admin desde este dispositivo, sos vos o Bárbara: index.html lee localStorage.india_interno
+// (mismo dominio → mismo localStorage) y deja de contar sus visitas y clicks. El botón permite revertirlo.
+function pintarInterno(){
+  const b = $('btn-interno'); if (!b) return;
+  const on = localStorage.getItem('india_interno') === '1';
+  b.classList.toggle('active', on);
+  b.textContent = on ? 'No cuenta' : 'Sí cuenta';
+  const h = $('interno-hint');
+  if (h) h.textContent = on ? 'Tus visitas y clicks no entran en las estadísticas.'
+                            : 'Tus visitas y clicks se están sumando a las estadísticas.';
+}
+if ($('btn-interno')) $('btn-interno').addEventListener('click', () => {
+  if (localStorage.getItem('india_interno') === '1') localStorage.removeItem('india_interno');
+  else localStorage.setItem('india_interno', '1');
+  pintarInterno();
+});
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     $('login').style.display = 'none';
     $('admin').classList.add('active');
+    if (!localStorage.getItem('india_interno_visto')) {  // primera vez en este dispositivo: se marca solo
+      localStorage.setItem('india_interno', '1');
+      localStorage.setItem('india_interno_visto', '1');
+    }
+    pintarInterno();
     suscribir();
     cargarAnalytics();
     cargarResenas();
@@ -1056,23 +1084,24 @@ function sumaMetrica(dia){
 }
 function refrescarTarjetas(){
   const esTotal = PERIODO === 'total';
-  // Visitantes del período (desde visits.primera_visita — tiene historial completo)
-  const vis = esTotal ? VISITS_RAW : VISITS_RAW.filter(v => {
-    const s = v.primera_visita && v.primera_visita.seconds;
-    return s && fechaEnPeriodo(claveDia(new Date(s*1000)));
-  });
-  const rec = vis.filter(v => (v.count ?? 0) > 1).length;
-  // Visitas a la página: total = contador global; período = page views de esos visitantes (suma de sus count) → nunca da menos que los únicos.
-  if ($('stat-visitas')) $('stat-visitas').textContent = fmtNum(esTotal ? (STATS_TOTAL['visitas'] ?? 0) : vis.reduce((a, v) => a + (v.count ?? 1), 0));
+  const enPeriodo = (ts) => { const s = ts && ts.seconds; return !!s && fechaEnPeriodo(claveDia(new Date(s*1000))); };
+  // Presentes = quién ESTUVO en el período (ultima_visita), no quién nació en él. Nuevos = los que además
+  // entraron por primera vez en el período. Recurrentes = los que ya te conocían y volvieron.
+  const vis = esTotal ? VISITS_RAW : VISITS_RAW.filter(v => enPeriodo(v.ultima_visita));
+  const nuevos = esTotal ? VISITS_RAW.filter(v => (v.count ?? 0) <= 1).length
+                         : vis.filter(v => enPeriodo(v.primera_visita)).length;
+  const rec = vis.length - nuevos;
+  // Visitas a la página: total = contador global; período = contador por día (stats/visitas_dia_*), la misma fuente que clicks y entradas.
+  if ($('stat-visitas')) $('stat-visitas').textContent = fmtNum(esTotal ? (STATS_TOTAL['visitas'] ?? 0) : sumaMetrica('visitas'));
   // Clicks y entradas: total = contador; período = suma de docs por día (el detalle por fecha arranca hoy)
   if ($('stat-wa')) $('stat-wa').textContent = fmtNum(esTotal ? (STATS_TOTAL['clicks_whatsapp'] ?? 0) : sumaMetrica('clicks'));
   if ($('stat-entrada-chalecos')) $('stat-entrada-chalecos').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_chalecos'] ?? 0) : sumaMetrica('entrada_chalecos'));
   if ($('stat-entrada-opiniones')) $('stat-entrada-opiniones').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_opiniones'] ?? 0) : sumaMetrica('entrada_opiniones'));
   if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
-  if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(vis.length - rec);
+  if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
   const nota = $('periodo-nota');
-  if (nota) nota.textContent = esTotal ? '' : 'Ojo: los clicks y las entradas por link recién arrancan a registrarse por fecha hoy, así que en Hoy/Este mes van a estar bajos hasta que se acumulen. Visitas y visitantes tienen todo el historial.';
+  if (nota) nota.textContent = esTotal ? '' : 'Ojo: el desglose por fecha arrancó a guardarse hace poco, así que en Hoy/Este mes los números van a estar bajos hasta que se acumulen. El total tiene todo el historial.';
   refrescarClicksChalecos();
 }
 

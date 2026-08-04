@@ -623,6 +623,15 @@
       </div>
     </div>
 
+    <div class="tabs">
+      <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
+      <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
+      <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
+      <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
+      <button class="tab" data-tab="stats">Estadísticas</button>
+    </div>
+
+    <div class="tab-panel" id="panel-stats">
     <div class="periodo-filtro">
       <span class="periodo-label">Mostrar:</span>
       <button type="button" class="periodo-b" data-periodo="hoy">Hoy</button>
@@ -674,6 +683,19 @@
         <div class="stat-label">Entran por link "Opiniones"</div>
         <div class="stat-num" id="stat-entrada-opiniones">—</div>
         <div class="stat-hint">Los que llegan con el link .../#opiniones</div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Entradas por red social" style="margin-top:4px">
+      <div class="stat-card">
+        <div class="stat-label">Entran desde Instagram</div>
+        <div class="stat-num" id="stat-entrada-instagram">—</div>
+        <div class="stat-hint">Link del perfil: …/?ref=instagram</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Entran desde Facebook</div>
+        <div class="stat-num" id="stat-entrada-facebook">—</div>
+        <div class="stat-hint">Link de Facebook: …/?ref=facebook</div>
       </div>
     </section>
 
@@ -731,13 +753,7 @@
         <div class="stats-list" id="top-browsers"><div class="stats-empty">Sin datos todavía</div></div>
       </div>
     </section>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
-      <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
-      <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
-      <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
-    </div>
+    </div><!-- /panel-stats -->
 
     <div class="tab-panel active" id="panel-disponible">
       <div class="grid-admin" id="grid-disponible"></div>
@@ -1020,7 +1036,7 @@ const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2]+'/'+p[1] : MESES[parseInt(p[1],10)-1]+' '+p[0].slice(2); };
 // Contadores totales en vivo (public read) → se guardan; las tarjetas se pintan según el período elegido.
-[['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones']].forEach(([docId, key]) => {
+[['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones'], ['entrada_instagram','entrada_instagram'], ['entrada_facebook','entrada_facebook']].forEach(([docId, key]) => {
   onSnapshot(doc(db, 'stats', docId), snap => { STATS_TOTAL[key] = snap.data()?.count ?? 0; refrescarTarjetas(); }, () => { refrescarTarjetas(); });
 });
 
@@ -1097,6 +1113,8 @@ function refrescarTarjetas(){
   if ($('stat-wa')) $('stat-wa').textContent = fmtNum(esTotal ? (STATS_TOTAL['clicks_whatsapp'] ?? 0) : sumaMetrica('clicks'));
   if ($('stat-entrada-chalecos')) $('stat-entrada-chalecos').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_chalecos'] ?? 0) : sumaMetrica('entrada_chalecos'));
   if ($('stat-entrada-opiniones')) $('stat-entrada-opiniones').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_opiniones'] ?? 0) : sumaMetrica('entrada_opiniones'));
+  if ($('stat-entrada-instagram')) $('stat-entrada-instagram').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_instagram'] ?? 0) : sumaMetrica('entrada_instagram'));
+  if ($('stat-entrada-facebook')) $('stat-entrada-facebook').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_facebook'] ?? 0) : sumaMetrica('entrada_facebook'));
   if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);

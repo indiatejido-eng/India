@@ -1382,6 +1382,11 @@
     if (entryHash === '#chalecos') bumpStat('entrada_chalecos', 'entrada_chalecos');
     else if (entryHash === '#opiniones') bumpStat('entrada_opiniones', 'entrada_opiniones');
 
+    // Entradas por red social: link de la bio de Instagram (?ref=instagram) o de Facebook (?ref=facebook)
+    const refRed = (new URLSearchParams(location.search).get('ref') || '').toLowerCase();
+    if (refRed === 'instagram' || refRed === 'ig') bumpStat('entrada_instagram', 'entrada_instagram');
+    else if (refRed === 'facebook' || refRed === 'fb') bumpStat('entrada_facebook', 'entrada_facebook');
+
     // Doc por visitor: count y ultima_visita siempre se actualizan; los demás solo la primera vez
     const updates = {
       count: increment(1),

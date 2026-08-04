@@ -115,8 +115,7 @@
   nav .nav-links a.active{ color: #fff; }
   nav.scrolled .nav-links a.active{ color: var(--accent-deep); }
   .nav-inner{
-    max-width: 1400px; margin: 0 auto;
-    padding: 14px 24px;
+    padding: 14px 34px;
     display: flex; align-items: center; justify-content: space-between;
     gap: 16px;
     transition: padding 0.3s ease;
@@ -330,9 +329,9 @@
     .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 800px; margin-inline: auto; }
     .grid.grid-3{ grid-template-columns: repeat(2, 1fr); max-width: 760px; margin-inline: auto; }
     .grid.grid-many{ grid-template-columns: repeat(2, 1fr); max-width: 760px; margin-inline: auto; }
-    .grid.grid-anteriores.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 520px; margin-inline: auto; }
-    .grid.grid-anteriores.grid-3{ grid-template-columns: repeat(3, 1fr); }
-    .grid.grid-anteriores.grid-many{ grid-template-columns: repeat(4, 1fr); }
+    .grid.grid-anteriores.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 560px; margin-inline: auto; gap: 50px 48px; }
+    .grid.grid-anteriores.grid-3{ grid-template-columns: repeat(3, 1fr); gap: 50px 46px; }
+    .grid.grid-anteriores.grid-many{ grid-template-columns: repeat(4, 1fr); gap: 50px 40px; }
   }
   .piece{
     display: flex; flex-direction: column;
@@ -349,8 +348,8 @@
   }
   .piece-img img{
     position: relative; z-index: 1;
-    max-height: 92%; max-width: 92%;
-    width: auto; height: auto; object-fit: contain;
+    height: 92%; width: auto; max-width: 100%;
+    object-fit: contain;
     filter: drop-shadow(0 16px 22px rgba(60, 40, 20, 0.14));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   }

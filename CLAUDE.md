@@ -75,7 +75,9 @@ Colección `chalecos`, cada doc:
 - **NUNCA tocar `firebase-config.js`.** Las claves reales ya están bien configuradas.
 - **NUNCA hardcodear claves nuevas.** Si necesitás un valor de configuración, pedíselo a Justo.
 - **NUNCA agregar frameworks pesados** (React, Vue, Next, Svelte, etc.). El sitio es HTML+JS estático puro y debe seguir así.
-- **Mantener la estética actual:** paleta beige/marrón, tipografía serif (Fraunces), tagline "Lana, agujas y tiempo".
+- **Mantener la estética actual:** paleta beige/marrón, tipografía serif (Fraunces). (El tagline "Lana, agujas y tiempo" quedó en revisión: no aparece en Foundations. Ver `Boveda/India/Registro de decisiones.md`.)
+- **La identidad de marca la define `Boveda/India/Fuentes/Foundations v1.1.md`** — manda sobre cualquier texto o decisión visual. Antes de escribir copy, leé `Boveda/India/Marca/Voz y tono.md` y `Boveda/India/Marca/Principios.md`.
+- **Palabras prohibidas en el sitio:** "disponible" (va **"listos para enviar"**), "jaspeado" (va "veteado"), "taller artesanal", "confeccionamos", "piezas exclusivas de alta calidad".
 
 ## Lo que NO quiero
 

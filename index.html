@@ -1024,13 +1024,31 @@
   if (paramInterno === '1') localStorage.setItem('india_interno', '1');
   else if (paramInterno === '0') localStorage.removeItem('india_interno');
   const ES_INTERNO = localStorage.getItem('india_interno') === '1';
-  // Incrementa el contador total de una métrica Y su versión por día (stats/{metrica}_dia_YYYY-MM-DD) → habilita el filtro Hoy/Mes/Total del admin.
-  const claveHoy = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
+  // Fecha/hora SIEMPRE en horario de Argentina, no en el del visitante: si alguien mira desde
+  // España a la noche, allá ya es el día siguiente y su visita caería en el día equivocado.
+  const TZ_AR = 'America/Argentina/Buenos_Aires';
+  const ahoraAR = () => {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: TZ_AR, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(new Date());
+    const g = t => p.find(x => x.type === t).value;
+    const fecha = `${g('year')}-${g('month')}-${g('day')}`;
+    return { fecha, mes: fecha.slice(0, 7), hora: parseInt(g('hour'), 10) % 24, dow: new Date(fecha + 'T12:00:00').getDay() };
+  };
+  // Incrementa el contador total de una métrica + su versión por día y por mes.
+  // Por día (stats/{metrica}_dia_YYYY-MM-DD) → filtro Hoy/Este mes del admin.
+  // Por mes (stats/{metrica}_mes_YYYY-MM) → gráfico del Total sin tener que leer todos los días.
   const bumpStat = (contador, metrica) => {
     if (ES_INTERNO) return;
-    const dia = claveHoy();
+    const { fecha, mes } = ahoraAR();
     setDoc(doc(db, 'stats', contador), { count: increment(1) }, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'stats', metrica + '_dia_' + dia), { count: increment(1), fecha: dia }, { merge: true }).catch(() => {});
+    setDoc(doc(db, 'stats', metrica + '_dia_' + fecha), { count: increment(1), fecha }, { merge: true }).catch(() => {});
+    setDoc(doc(db, 'stats', metrica + '_mes_' + mes), { count: increment(1), mes }, { merge: true }).catch(() => {});
+  };
+  // Patrón horario: dos documentos fijos (nunca crecen), un campo por hora y por día de la semana.
+  const bumpCuando = () => {
+    if (ES_INTERNO) return;
+    const { hora, dow } = ahoraAR();
+    setDoc(doc(db, 'stats', 'horarios'), { ['h' + hora]: increment(1) }, { merge: true }).catch(() => {});
+    setDoc(doc(db, 'stats', 'semana'), { ['d' + dow]: increment(1) }, { merge: true }).catch(() => {});
   };
   // Cloudinary AI background removal: detecta el chaleco como objeto y borra todo lo demás (sombras, color spill, cualquier fondo).
   // e_trim recorta el PNG al contorno del chaleco → todas las piezas recortadas se escalan al mismo tamaño, sin importar el encuadre de la foto.
@@ -1383,6 +1401,7 @@
     // Visitas: un page view por dispositivo por hora, para no inflar el contador al recargar.
     if (!pasoCooldown('india_last_visita')) return;
     bumpStat('visitas', 'visitas');
+    bumpCuando();  // a qué hora y qué día de la semana fue esta visita
 
     // visitor_id persistente (UUID) — distingue personas, sobrevive a recargas. Se genera recién acá:
     // si se generara antes del debounce, un visitante nuevo cortado por el cooldown quedaría marcado

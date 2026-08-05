@@ -739,6 +739,36 @@
       <div class="chart-axis" id="chart-axis-clicks"></div>
     </section>
 
+    <!-- Cuándo entran: patrón acumulado de todo el historial, NO respeta el filtro de arriba -->
+    <section class="stats-chart">
+      <div class="chart-head">
+        <div>
+          <div class="stats-detail-title">A qué hora entran</div>
+          <div class="chart-sub" id="chart-sub-horas">—</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart" id="chart-bars-horas"><div class="chart-empty">Todavía sin datos (arranca ahora).</div></div>
+        <div class="chart-tip" id="chart-tip-horas"></div>
+      </div>
+      <div class="chart-axis" id="chart-axis-horas"></div>
+    </section>
+
+    <section class="stats-chart">
+      <div class="chart-head">
+        <div>
+          <div class="stats-detail-title">Qué días entran</div>
+          <div class="chart-sub" id="chart-sub-semana">—</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart" id="chart-bars-semana"><div class="chart-empty">Todavía sin datos (arranca ahora).</div></div>
+        <div class="chart-tip" id="chart-tip-semana"></div>
+      </div>
+      <div class="chart-axis" id="chart-axis-semana"></div>
+      <div class="periodo-nota" style="margin:14px 0 0">Estos dos son de todo el historial y en horario de Argentina: no cambian con el filtro de arriba, porque sirven para ver el patrón, no el día suelto.</div>
+    </section>
+
     <!-- Clicks por chaleco (respeta el filtro Hoy / Este mes / Total de arriba) -->
     <section class="stats-detail" style="grid-template-columns:1fr">
       <div class="stats-detail-card">
@@ -914,7 +944,7 @@
 import { firebaseConfig, cloudinaryConfig } from './firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, orderBy, onSnapshot, getDocs, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, query, where, orderBy, onSnapshot, getDocs, getDoc, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -1057,7 +1087,7 @@ document.querySelectorAll('.tab').forEach(t => {
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-AR');
 
 // ===== FILTRO DE PERÍODO (Hoy / Este mes / Total) — estado global compartido por tarjetas y gráficos =====
-let PERIODO = 'total', VISITS_RAW = [], STATS_DIA = {}, STATS_TOTAL = {}, CHALECO_TOTAL = {}, filtroInit = false;
+let PERIODO = 'total', VISITS_RAW = [], STATS_DIA = {}, STATS_MES = {}, STATS_TOTAL = {}, CHALECO_TOTAL = {}, CUANDO = { horas: {}, semana: {} }, filtroInit = false;
 const claveDia = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1098,16 +1128,35 @@ async function cargarAnalytics() {
     renderTopList('top-referrers', topN(visits, 'referrer', 6));
     renderTopList('top-devices', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
-    // Stats por día: todos los docs stats/{metrica}_dia_YYYY-MM-DD → STATS_DIA[metrica][fecha] = count
-    STATS_DIA = {}; CHALECO_TOTAL = {};
+    // La colección stats acumula un documento por métrica y día para siempre, así que leerla
+    // entera se vuelve más lenta y cara cada mes. Se leen solo los tramos que se usan: los últimos
+    // 40 días (Hoy y Este mes nunca necesitan más) y los documentos mensuales, para el Total.
+    STATS_DIA = {}; STATS_MES = {}; CHALECO_TOTAL = {};
+    const desde = new Date(); desde.setDate(desde.getDate() - 40);
     try {
-      const sc = await getDocs(collection(db, 'stats'));
-      sc.docs.forEach(d => {
+      const [porDia, porMes] = await Promise.all([
+        getDocs(query(collection(db, 'stats'), where('fecha', '>=', claveDia(desde)))),
+        getDocs(query(collection(db, 'stats'), where('mes', '>=', '2000-01'))),
+      ]);
+      porDia.docs.forEach(d => {
         const mm = d.id.match(/^(.+)_dia_(\d{4}-\d{2}-\d{2})$/);
-        if (mm) { (STATS_DIA[mm[1]] = STATS_DIA[mm[1]] || {})[mm[2]] = d.data().count || 0; }
-        else if (d.id.startsWith('chaleco_')) { CHALECO_TOTAL[d.id.slice(8)] = d.data().count || 0; }  // 'chaleco_'.length === 8
+        if (mm) (STATS_DIA[mm[1]] = STATS_DIA[mm[1]] || {})[mm[2]] = d.data().count || 0;
       });
+      porMes.docs.forEach(d => {
+        const mm = d.id.match(/^(.+)_mes_(\d{4}-\d{2})$/);
+        if (mm) (STATS_MES[mm[1]] = STATS_MES[mm[1]] || {})[mm[2]] = d.data().count || 0;
+      });
+    } catch (e) { console.warn('No se pudieron leer las stats por fecha:', e); }
+    cargarChalecoTotales();  // el catálogo llega por onSnapshot, puede no estar todavía
+    // Patrón horario: dos documentos fijos con un campo por hora / por día de la semana.
+    try {
+      const [hs, sem] = await Promise.all([
+        getDoc(doc(db, 'stats', 'horarios')),
+        getDoc(doc(db, 'stats', 'semana')),
+      ]);
+      CUANDO = { horas: hs.exists() ? hs.data() : {}, semana: sem.exists() ? sem.data() : {} };
     } catch (e) {}
+    pintarCuando();
     initFiltro(visits);
   } catch (err) {
     console.warn('No se pudo cargar analytics:', err);
@@ -1151,9 +1200,23 @@ function refrescarTarjetas(){
 }
 
 // Lista "Clicks por chaleco": cruza los contadores stats/chaleco_{id} con el catálogo (nombres) y respeta el período.
+// Clicks totales por chaleco: un getDoc por chaleco del catálogo (son pocos y se piden una sola vez)
+// en vez de barrer la colección entera. El catálogo llega por onSnapshot, así que se completa cuando llega.
+const chalecoPedidos = new Set();
+async function cargarChalecoTotales(){
+  const ids = [...dataDisp, ...dataAnt].map(c => c.id).filter(id => id && !chalecoPedidos.has(id));
+  if (!ids.length) return;
+  ids.forEach(id => chalecoPedidos.add(id));
+  try {
+    const docs = await Promise.all(ids.map(id => getDoc(doc(db, 'stats', 'chaleco_' + id))));
+    docs.forEach((d, i) => { CHALECO_TOTAL[ids[i]] = d.exists() ? (d.data().count || 0) : 0; });
+    refrescarClicksChalecos();
+  } catch (e) {}
+}
 function refrescarClicksChalecos(){
   const el = $('clicks-chalecos');
   if (!el) return;
+  cargarChalecoTotales();
   const nombre = {};
   [...dataDisp, ...dataAnt].forEach(c => { if (c.id) nombre[c.id] = c.nombre || 'Sin nombre'; });
   const esTotal = PERIODO === 'total';
@@ -1173,8 +1236,16 @@ function mapaVisitasChart(modo){
   return m;
 }
 function mapaClicksChart(modo){
-  const m = {}; const mapa = STATS_DIA['clicks'] || {};
-  for (const fk in mapa) { const k = modo === 'mes' ? fk.slice(0,7) : fk; m[k] = (m[k] || 0) + mapa[fk]; }
+  // Por mes se leen los documentos mensuales (stats/clicks_mes_*): así el Total no depende
+  // de tener todos los días cargados, que es justamente lo que se dejó de leer.
+  if (modo !== 'mes') return { ...(STATS_DIA['clicks'] || {}) };
+  const m = { ...(STATS_MES['clicks'] || {}) };
+  // Los documentos mensuales arrancan recién ahora: mientras no existan, el mes se reconstruye
+  // sumando los días que sí están cargados, para no dejar el gráfico vacío.
+  const porDia = {};
+  const dias = STATS_DIA['clicks'] || {};
+  for (const fk in dias) { const k = fk.slice(0, 7); porDia[k] = (porDia[k] || 0) + dias[fk]; }
+  for (const k in porDia) if (!(k in m)) m[k] = porDia[k];
   return m;
 }
 function serieContinua(porClave, modo){
@@ -1209,9 +1280,41 @@ function pintarChart(serie, contId, axisId, subId, uno, varios){
   if (sub) {
     const total = serie.reduce((a, d) => a + d.count, 0);
     const pico = serie.reduce((mx, d) => d.count > mx.count ? d : mx, serie[0]);
-    sub.textContent = `${fmtNum(total)} en total · pico ${pico.count} (${fmtClave(pico.clave)})`;
+    sub.textContent = `${RANGO_TXT()} · ${fmtNum(total)} en total · pico ${pico.count} (${fmtClave(pico.clave)})`;
   }
 }
+// ===== CUÁNDO ENTRAN (patrón acumulado: horas del día y días de la semana) =====
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+// Igual que pintarChart pero con etiquetas libres (horas, días) en vez de fechas.
+function pintarBarras(barsId, axisId, subId, items, ejeCada, textoSub){
+  const cont = $(barsId), axis = $(axisId), sub = $(subId);
+  if (!cont) return;
+  const total = items.reduce((a, d) => a + d.count, 0);
+  if (!total) return;  // deja el mensaje de "todavía sin datos"
+  const max = Math.max.apply(null, items.map(d => d.count).concat(1));
+  cont.innerHTML = items.map(d => {
+    const h = d.count > 0 ? Math.max(Math.round(d.count / max * 100), 5) : 2;
+    return `<div class="chart-bar${d.count === 0 ? ' zero' : ''}" style="height:${h}%" data-label="${d.label} · ${d.count} ${d.count === 1 ? 'visita' : 'visitas'}"></div>`;
+  }).join('');
+  // Un span por barra (flex:1) para que la etiqueta quede centrada bajo su barra; se escriben salteadas.
+  if (axis) axis.innerHTML = items.map((d, i) =>
+    `<span style="flex:1;text-align:center;min-width:0">${i % ejeCada === 0 ? d.eje : ''}</span>`).join('');
+  const pico = items.reduce((mx, d) => d.count > mx.count ? d : mx, items[0]);
+  if (sub) sub.textContent = pico.count ? textoSub(pico, total) : '';
+}
+function pintarCuando(){
+  const horas = Array.from({ length: 24 }, (_, h) => ({ label: h + ':00 a ' + h + ':59', eje: h + 'h', count: CUANDO.horas['h' + h] || 0 }));
+  const semana = Array.from({ length: 7 }, (_, d) => ({ label: DIAS_SEMANA[d], eje: DIAS_CORTOS[d], count: CUANDO.semana['d' + d] || 0 }));
+  pintarBarras('chart-bars-horas', 'chart-axis-horas', 'chart-sub-horas', horas, 3,
+    (p, t) => `El horario fuerte es a las ${p.eje} · ${fmtNum(p.count)} de ${fmtNum(t)} visitas`);
+  pintarBarras('chart-bars-semana', 'chart-axis-semana', 'chart-sub-semana', semana, 1,
+    (p, t) => `El día fuerte es el ${p.label.toLowerCase()} · ${fmtNum(p.count)} de ${fmtNum(t)} visitas`);
+}
+
+// Qué rango está mostrando cada gráfico. En "Hoy" un gráfico de un solo día no dice nada, así que
+// muestra las últimas dos semanas: hay que aclararlo o el número de abajo parece contradecir la tarjeta.
+const RANGO_TXT = () => PERIODO === 'hoy' ? 'Últimos 14 días' : (PERIODO === 'mes' ? 'Este mes' : 'Mes a mes');
 function redibujarCharts(){
   const modo = PERIODO === 'total' ? 'mes' : 'dia';
   pintarChart(rangoPeriodo(serieContinua(mapaVisitasChart(modo), modo)), 'chart-bars', 'chart-axis', 'chart-sub', 'visitante', 'visitantes');
@@ -1227,7 +1330,7 @@ function initFiltro(visits){
       document.querySelectorAll('.periodo-b').forEach(x => x.classList.toggle('active', x === b));
       aplicarPeriodo();
     }));
-    [['chart-bars','chart-tip'], ['chart-bars-clicks','chart-tip-clicks']].forEach(([bid, tid]) => {
+    [['chart-bars','chart-tip'], ['chart-bars-clicks','chart-tip-clicks'], ['chart-bars-horas','chart-tip-horas'], ['chart-bars-semana','chart-tip-semana']].forEach(([bid, tid]) => {
       const bars = $(bid), tip = $(tid);
       if (!bars || !tip) return;
       const mostrar = bar => { if (!bar.dataset.label) return; tip.textContent = bar.dataset.label; tip.style.left = (bar.offsetLeft + bar.offsetWidth/2) + 'px'; tip.style.top = bar.offsetTop + 'px'; tip.classList.add('show'); };

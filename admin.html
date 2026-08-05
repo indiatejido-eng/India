@@ -714,6 +714,20 @@
     <section class="stats-chart">
       <div class="chart-head">
         <div>
+          <div class="stats-detail-title">Visitas a la página</div>
+          <div class="chart-sub" id="chart-sub-visitas">—</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart" id="chart-bars-visitas"><div class="chart-empty">Cargando…</div></div>
+        <div class="chart-tip" id="chart-tip-visitas"></div>
+      </div>
+      <div class="chart-axis" id="chart-axis-visitas"></div>
+    </section>
+
+    <section class="stats-chart">
+      <div class="chart-head">
+        <div>
           <div class="stats-detail-title">Visitantes nuevos</div>
           <div class="chart-sub" id="chart-sub">—</div>
         </div>
@@ -1120,8 +1134,40 @@ function renderTopList(elId, entries) {
     </div>`;
   }).join('');
 }
+// ===== CONSOLIDAR EL HISTORIAL POR MES =====
+// Los contadores mensuales (stats/{metrica}_mes_YYYY-MM) son nuevos, así que los meses anteriores
+// no los tienen. Esto los arma sumando los documentos por día que YA existen: nada se borra ni se
+// recalcula desde cero, se rellena lo que faltaba. Lee la colección entera, pero una sola vez en
+// la vida del panel; después queda marcado en stats/_meta y no se repite.
+// Es idempotente: escribe el total del mes (no suma), así que correrlo de nuevo da lo mismo.
+const BACKFILL_MES = 1;
+async function consolidarMeses(){
+  try {
+    const meta = await getDoc(doc(db, 'stats', '_meta'));
+    if (meta.exists() && (meta.data().backfill_mes || 0) >= BACKFILL_MES) return false;
+    const sc = await getDocs(collection(db, 'stats'));
+    const porMes = {};
+    sc.docs.forEach(d => {
+      const mm = d.id.match(/^(.+)_dia_(\d{4}-\d{2})-\d{2}$/);
+      if (mm) porMes[mm[1] + '_mes_' + mm[2]] = (porMes[mm[1] + '_mes_' + mm[2]] || 0) + (d.data().count || 0);
+    });
+    const entradas = Object.entries(porMes);
+    for (let i = 0; i < entradas.length; i += 400) {   // el batch de Firestore aguanta 500 operaciones
+      const batch = writeBatch(db);
+      entradas.slice(i, i + 400).forEach(([id, count]) => {
+        batch.set(doc(db, 'stats', id), { count, mes: id.slice(id.lastIndexOf('_mes_') + 5) }, { merge: true });
+      });
+      await batch.commit();
+    }
+    await setDoc(doc(db, 'stats', '_meta'), { backfill_mes: BACKFILL_MES }, { merge: true });
+    console.info('Historial consolidado por mes: ' + entradas.length + ' documentos.');
+    return true;
+  } catch (e) { console.warn('No se pudo consolidar el historial por mes:', e); return false; }
+}
+
 async function cargarAnalytics() {
   try {
+    await consolidarMeses();   // antes de leer, para que el gráfico mes a mes tenga todo el historial
     const snap = await getDocs(collection(db, 'visits'));
     const visits = snap.docs.map(d => d.data());
     renderTopList('top-countries', topN(visits, 'country', 6));
@@ -1195,7 +1241,9 @@ function refrescarTarjetas(){
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
   const nota = $('periodo-nota');
-  if (nota) nota.textContent = esTotal ? '' : 'Ojo: el desglose por fecha se guarda desde el 31/7 (Instagram y Facebook, desde el 4/8), así que en Hoy y Este mes los números arrancan de ahí. El Total tiene todo el historial.';
+  if (nota) nota.textContent = esTotal
+    ? 'Total acumulado desde que arrancó el sitio. Los contadores solo suman: nada se borra ni se reinicia.'
+    : 'Ojo: el desglose por fecha se guarda desde el 31/7 (Instagram y Facebook, desde el 4/8), así que en Hoy y Este mes los números arrancan de ahí. El Total tiene todo el historial.';
   refrescarClicksChalecos();
 }
 
@@ -1235,15 +1283,14 @@ function mapaVisitasChart(modo){
   }
   return m;
 }
-function mapaClicksChart(modo){
-  // Por mes se leen los documentos mensuales (stats/clicks_mes_*): así el Total no depende
+function mapaMetricaChart(metrica, modo){
+  // Por mes se leen los documentos mensuales (stats/{metrica}_mes_*): así el Total no depende
   // de tener todos los días cargados, que es justamente lo que se dejó de leer.
-  if (modo !== 'mes') return { ...(STATS_DIA['clicks'] || {}) };
-  const m = { ...(STATS_MES['clicks'] || {}) };
-  // Los documentos mensuales arrancan recién ahora: mientras no existan, el mes se reconstruye
-  // sumando los días que sí están cargados, para no dejar el gráfico vacío.
+  if (modo !== 'mes') return { ...(STATS_DIA[metrica] || {}) };
+  const m = { ...(STATS_MES[metrica] || {}) };
+  // Red de seguridad por si algún mes quedó sin consolidar: se reconstruye sumando sus días.
   const porDia = {};
-  const dias = STATS_DIA['clicks'] || {};
+  const dias = STATS_DIA[metrica] || {};
   for (const fk in dias) { const k = fk.slice(0, 7); porDia[k] = (porDia[k] || 0) + dias[fk]; }
   for (const k in porDia) if (!(k in m)) m[k] = porDia[k];
   return m;
@@ -1317,8 +1364,9 @@ function pintarCuando(){
 const RANGO_TXT = () => PERIODO === 'hoy' ? 'Últimos 14 días' : (PERIODO === 'mes' ? 'Este mes' : 'Mes a mes');
 function redibujarCharts(){
   const modo = PERIODO === 'total' ? 'mes' : 'dia';
+  pintarChart(rangoPeriodo(serieContinua(mapaMetricaChart('visitas', modo), modo)), 'chart-bars-visitas', 'chart-axis-visitas', 'chart-sub-visitas', 'visita', 'visitas');
   pintarChart(rangoPeriodo(serieContinua(mapaVisitasChart(modo), modo)), 'chart-bars', 'chart-axis', 'chart-sub', 'visitante', 'visitantes');
-  pintarChart(rangoPeriodo(serieContinua(mapaClicksChart(modo), modo)), 'chart-bars-clicks', 'chart-axis-clicks', 'chart-sub-clicks', 'click', 'clicks');
+  pintarChart(rangoPeriodo(serieContinua(mapaMetricaChart('clicks', modo), modo)), 'chart-bars-clicks', 'chart-axis-clicks', 'chart-sub-clicks', 'click', 'clicks');
 }
 function aplicarPeriodo(){ refrescarTarjetas(); redibujarCharts(); }
 function initFiltro(visits){
@@ -1330,7 +1378,7 @@ function initFiltro(visits){
       document.querySelectorAll('.periodo-b').forEach(x => x.classList.toggle('active', x === b));
       aplicarPeriodo();
     }));
-    [['chart-bars','chart-tip'], ['chart-bars-clicks','chart-tip-clicks'], ['chart-bars-horas','chart-tip-horas'], ['chart-bars-semana','chart-tip-semana']].forEach(([bid, tid]) => {
+    [['chart-bars','chart-tip'], ['chart-bars-visitas','chart-tip-visitas'], ['chart-bars-clicks','chart-tip-clicks'], ['chart-bars-horas','chart-tip-horas'], ['chart-bars-semana','chart-tip-semana']].forEach(([bid, tid]) => {
       const bars = $(bid), tip = $(tid);
       if (!bars || !tip) return;
       const mostrar = bar => { if (!bar.dataset.label) return; tip.textContent = bar.dataset.label; tip.style.left = (bar.offsetLeft + bar.offsetWidth/2) + 'px'; tip.style.top = bar.offsetTop + 'px'; tip.classList.add('show'); };

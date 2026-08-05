@@ -1356,11 +1356,37 @@
     } catch { return null; }
   }
 
+  // Debounce genérico: deja pasar como máximo un evento por hora y por clave.
+  const COOLDOWN = 3600000;
+  const pasoCooldown = (key) => {
+    const last = parseInt(localStorage.getItem(key) || '0', 10);
+    if (Date.now() - last < COOLDOWN) return false;
+    localStorage.setItem(key, Date.now().toString());
+    return true;
+  };
+
   (async function track(){
     if (ES_INTERNO) return;  // dispositivo de la casa: no cuenta ni como visita ni como visitante
-    // Link de entrada: qué sección venía en el enlace por el que llegó (para medir desde qué link entran).
+
+    // De dónde llegó: el hash del link (#chalecos / #opiniones) y el ?ref= de la bio de la red social.
+    // Cada origen tiene SU PROPIO debounce, separado del de visitas: si alguien ya entró hace 20' y
+    // ahora vuelve por el link de Instagram, esa entrada igual tiene que contarse (es lo que se mide).
     const entryHash = (location.hash || '').toLowerCase();
-    // visitor_id persistente (UUID) — distingue personas, sobrevive a recargas
+    const refRed = (new URLSearchParams(location.search).get('ref') || '').toLowerCase();
+    const origenes = [];
+    if (entryHash === '#chalecos') origenes.push('entrada_chalecos');
+    else if (entryHash === '#opiniones') origenes.push('entrada_opiniones');
+    if (refRed === 'instagram' || refRed === 'ig') origenes.push('entrada_instagram');
+    else if (refRed === 'facebook' || refRed === 'fb') origenes.push('entrada_facebook');
+    origenes.forEach(o => { if (pasoCooldown('india_last_' + o)) bumpStat(o, o); });
+
+    // Visitas: un page view por dispositivo por hora, para no inflar el contador al recargar.
+    if (!pasoCooldown('india_last_visita')) return;
+    bumpStat('visitas', 'visitas');
+
+    // visitor_id persistente (UUID) — distingue personas, sobrevive a recargas. Se genera recién acá:
+    // si se generara antes del debounce, un visitante nuevo cortado por el cooldown quedaría marcado
+    // como conocido y nunca se guardarían su país, dispositivo y navegador.
     let visitorId = localStorage.getItem('india_visitor_id');
     const isNew = !visitorId;
     if (isNew) {
@@ -1368,24 +1394,6 @@
                   (Date.now() + '-' + Math.random().toString(36).slice(2));
       localStorage.setItem('india_visitor_id', visitorId);
     }
-    // Debounce de 1h por dispositivo para no inflar contadores al recargar
-    const KEY = 'india_last_visita';
-    const COOLDOWN = 3600000;
-    const last = parseInt(localStorage.getItem(KEY) || '0', 10);
-    if (Date.now() - last < COOLDOWN) return;
-    localStorage.setItem(KEY, Date.now().toString());
-
-    // Contador global de visitas (cada page view cuenta) + fechado por día
-    bumpStat('visitas', 'visitas');
-
-    // Entradas por link: cuenta cuántos llegan con el link a "Disponibles" (#chalecos) o "Opiniones" (#opiniones)
-    if (entryHash === '#chalecos') bumpStat('entrada_chalecos', 'entrada_chalecos');
-    else if (entryHash === '#opiniones') bumpStat('entrada_opiniones', 'entrada_opiniones');
-
-    // Entradas por red social: link de la bio de Instagram (?ref=instagram) o de Facebook (?ref=facebook)
-    const refRed = (new URLSearchParams(location.search).get('ref') || '').toLowerCase();
-    if (refRed === 'instagram' || refRed === 'ig') bumpStat('entrada_instagram', 'entrada_instagram');
-    else if (refRed === 'facebook' || refRed === 'fb') bumpStat('entrada_facebook', 'entrada_facebook');
 
     // Doc por visitor: count y ultima_visita siempre se actualizan; los demás solo la primera vez
     const updates = {

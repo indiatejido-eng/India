@@ -175,6 +175,14 @@
     font-style: italic;
     margin-top: 8px;
   }
+  /* Botón "copiar link": el link publicado tiene que ser EXACTO o el contador de esa tarjeta no suma. */
+  .copy-link{
+    font-family: inherit; font-size: 0.74rem; font-weight: 600; font-style: normal;
+    margin-top: 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 100px;
+    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .copy-link:hover{ border-color: var(--accent); color: var(--accent); }
+  .copy-link.ok{ background: var(--accent); color: #fff; border-color: var(--accent); }
   @media(max-width: 640px){
     .stats{ grid-template-columns: 1fr; }
     .stat-num{ font-size: 2.1rem; }
@@ -678,11 +686,13 @@
         <div class="stat-label">Entran por link "Disponibles"</div>
         <div class="stat-num" id="stat-entrada-chalecos">—</div>
         <div class="stat-hint">Los que llegan con el link .../#chalecos</div>
+        <button type="button" class="copy-link" data-suffix="/#chalecos">Copiar link</button>
       </div>
       <div class="stat-card">
         <div class="stat-label">Entran por link "Opiniones"</div>
         <div class="stat-num" id="stat-entrada-opiniones">—</div>
         <div class="stat-hint">Los que llegan con el link .../#opiniones</div>
+        <button type="button" class="copy-link" data-suffix="/#opiniones">Copiar link</button>
       </div>
     </section>
 
@@ -691,11 +701,13 @@
         <div class="stat-label">Entran desde Instagram</div>
         <div class="stat-num" id="stat-entrada-instagram">—</div>
         <div class="stat-hint">Link del perfil: …/?ref=instagram</div>
+        <button type="button" class="copy-link" data-suffix="/?ref=instagram">Copiar link</button>
       </div>
       <div class="stat-card">
         <div class="stat-label">Entran desde Facebook</div>
         <div class="stat-num" id="stat-entrada-facebook">—</div>
         <div class="stat-hint">Link de Facebook: …/?ref=facebook</div>
+        <button type="button" class="copy-link" data-suffix="/?ref=facebook">Copiar link</button>
       </div>
     </section>
 
@@ -990,6 +1002,21 @@ if ($('btn-interno')) $('btn-interno').addEventListener('click', () => {
   pintarInterno();
 });
 
+// Copiar el link exacto de cada origen. Si el link se arma a mano y queda mal (por ejemplo
+// /#opiniones?ref=instagram, con el ?ref adentro del hash), esa tarjeta no cuenta nunca.
+document.querySelectorAll('.copy-link').forEach(b => b.addEventListener('click', async () => {
+  const url = location.origin + b.dataset.suffix;
+  try { await navigator.clipboard.writeText(url); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  const txt = b.textContent;
+  b.textContent = '✓ Copiado'; b.classList.add('ok');
+  setTimeout(() => { b.textContent = txt; b.classList.remove('ok'); }, 1600);
+}));
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     $('login').style.display = 'none';
@@ -1119,7 +1146,7 @@ function refrescarTarjetas(){
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
   const nota = $('periodo-nota');
-  if (nota) nota.textContent = esTotal ? '' : 'Ojo: el desglose por fecha arrancó a guardarse hace poco, así que en Hoy/Este mes los números van a estar bajos hasta que se acumulen. El total tiene todo el historial.';
+  if (nota) nota.textContent = esTotal ? '' : 'Ojo: el desglose por fecha se guarda desde el 31/7 (Instagram y Facebook, desde el 4/8), así que en Hoy y Este mes los números arrancan de ahí. El Total tiene todo el historial.';
   refrescarClicksChalecos();
 }
 

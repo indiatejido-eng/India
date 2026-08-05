@@ -145,6 +145,7 @@
     </div>
     <div class="sp"></div>
     <input class="search" id="search" placeholder="Buscar cliente…">
+    <button class="btn btn-ghost btn-sm" id="brefresh" title="Recargar">↻ Recargar</button>
     <button class="btn btn-ghost btn-sm" id="bexport">Exportar CSV</button>
     <button class="btn btn-ghost btn-sm" id="bout">Salir</button>
   </div>
@@ -354,6 +355,10 @@ document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click',()=>{
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   t.classList.add('on'); $('v-'+t.dataset.view).classList.add('on');
 }));
+
+// recargar (manual + auto cada 40s)
+$('brefresh').addEventListener('click', async ()=>{ await cargar(); if(sel) abrir(sel); toast('Actualizado'); });
+setInterval(()=>{ if(document.visibilityState==='visible' && auth.currentUser) cargar(); }, 40000);
 
 $('bexport').addEventListener('click', async ()=>{
   try{ toast('Preparando CSV…');

@@ -4,12 +4,30 @@
 
 ## El cerebro del negocio: la bóveda
 
-**Antes de trabajar, leé `Boveda/India/Panorama.md` y `Boveda/India/index.md`.** Es la wiki de Obsidian donde vive TODO lo del negocio: marca, producto, precios, clientes, anuncios, ventas, operaciones. **Reemplaza al brief que se pegaba a mano en cada chat.**
+**Al arrancar, leé `Boveda/India/Panorama.md` y `Boveda/India/index.md`.** Es la wiki de Obsidian donde vive TODO lo del negocio: marca, producto, precios, clientes, anuncios, ventas, operaciones. **Reemplaza al brief que se pegaba a mano en cada chat.** Cómo se mantiene: `Boveda/India/CLAUDE.md` (el esquema).
 
-- Cómo mantenerla: `Boveda/India/CLAUDE.md` (el esquema — estructura, convenciones, ingesta/consulta/revisión).
-- **Cualquier cosa que Justo cuente del negocio va ahí**, no se queda en el chat. Después de cargar algo, actualizar `index.md` y `log.md`.
-- La bóveda está en `.gitignore` a propósito: tiene clientes, teléfonos y números, y este repo se publica en Vercel. **No la subas.**
-- Este archivo manda sobre el **código**; la bóveda es la verdad sobre el **negocio**.
+### Reparto — una sola fuente de verdad por tema
+
+| | Este archivo (`CLAUDE.md`) | La bóveda |
+|---|---|---|
+| **De qué habla** | Cómo tocar el CÓDIGO: stack, reglas duras, workflow de commits | El NEGOCIO: marca, producto, precios, clientes, números, operaciones |
+| **Cada cuánto cambia** | Casi nunca. Solo si cambia una regla de código | En cada conversación |
+| **Cómo se lee** | Se carga solo en cada sesión | Hay que abrirla — por eso este archivo apunta a ella |
+
+**NUNCA copies contenido de la bóveda acá.** Ni palabras prohibidas, ni precios, ni datos de marca. Duplicar = dos verdades que en dos semanas se contradicen. Acá van **punteros**, no copias.
+
+### Regla dura del cierre
+
+**Al final de CADA conversación, antes de dar por terminado:**
+
+1. ¿Salió algo del negocio en este chat (un dato, una decisión, un número, una preferencia)? → escribilo en la página que corresponda de la bóveda.
+2. Actualizá `Boveda/India/index.md` si cambió el catálogo de páginas.
+3. Agregá la entrada en `Boveda/India/log.md` con el formato `## [YYYY-MM-DD] tipo | título`.
+4. Este `CLAUDE.md` se toca **solo** si cambió una regla de código.
+
+Si la conversación fue puramente de código y no salió nada del negocio, alcanza con la entrada en el log.
+
+**La bóveda está en `.gitignore` a propósito:** tiene clientes, teléfonos y números, y este repo se publica en Vercel. **No la subas.**
 
 ## Contexto
 
@@ -75,9 +93,8 @@ Colección `chalecos`, cada doc:
 - **NUNCA tocar `firebase-config.js`.** Las claves reales ya están bien configuradas.
 - **NUNCA hardcodear claves nuevas.** Si necesitás un valor de configuración, pedíselo a Justo.
 - **NUNCA agregar frameworks pesados** (React, Vue, Next, Svelte, etc.). El sitio es HTML+JS estático puro y debe seguir así.
-- **Mantener la estética actual:** paleta beige/marrón, tipografía serif (Fraunces). (El tagline "Lana, agujas y tiempo" quedó en revisión: no aparece en Foundations. Ver `Boveda/India/Registro de decisiones.md`.)
-- **La identidad de marca la define `Boveda/India/Fuentes/Foundations v1.1.md`** — manda sobre cualquier texto o decisión visual. Antes de escribir copy, leé `Boveda/India/Marca/Voz y tono.md` y `Boveda/India/Marca/Principios.md`.
-- **Palabras prohibidas en el sitio:** "disponible" (va **"listos para enviar"**), "jaspeado" (va "veteado"), "taller artesanal", "confeccionamos", "piezas exclusivas de alta calidad".
+- **Mantener la estética actual:** paleta beige/marrón, tipografía serif (Fraunces).
+- **Antes de escribir cualquier copy o tocar algo visual, leé en la bóveda:** `Marca/Voz y tono.md`, `Marca/Principios.md` y `Marca/Dirección artística.md`. La identidad la define `Fuentes/Foundations v1.1.md` y manda sobre cualquier texto o decisión visual. **Las palabras prohibidas y el tono viven ahí, no acá.**
 
 ## Lo que NO quiero
 

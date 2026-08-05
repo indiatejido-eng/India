@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manifiesto (prueba) · India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=DM+Sans:opsz,wght@9..40,300..500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F0E8; --ink:#3A2E1F; --muted:#7A6852;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--ink);color:var(--cream);-webkit-font-smoothing:antialiased}
+  .tag{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--ink);color:var(--cream);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;text-align:center;padding:6px;font-weight:600;opacity:.9}
+
+  /* Contexto: una banda de la home antes y después, para que se vea el respiro */
+  .ctx{ min-height:44vh; display:flex; align-items:center; justify-content:center; background:#f3ece0; color:var(--muted); }
+  .ctx span{ font-family:'Fraunces',serif; font-style:italic; font-size:1rem; letter-spacing:.02em; }
+
+  /* El momento manifiesto */
+  .mf{ position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .mf img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .mf::after{
+    content:''; position:absolute; inset:0;
+    background:
+      radial-gradient(120% 90% at 50% 50%, rgba(20,14,9,.20) 0%, rgba(20,14,9,.48) 100%),
+      linear-gradient(to bottom, rgba(20,14,9,.34) 0%, rgba(20,14,9,.12) 40%, rgba(20,14,9,.42) 100%);
+  }
+  .mf-inner{ position:relative; z-index:2; text-align:center; padding:0 26px; max-width:900px; }
+  .mf-line{
+    font-family:'Fraunces',serif; font-weight:300;
+    font-size:clamp(1.75rem, 4vw, 3.2rem); line-height:1.28;
+    letter-spacing:-.01em; color:var(--cream);
+    text-shadow:0 2px 30px rgba(0,0,0,.45);
+  }
+  .mf-line em{ font-style:italic; font-weight:300; }
+
+  @media(max-width:700px){
+    .mf-line{ font-size:1.9rem; line-height:1.3; }
+    .ctx{ min-height:34vh; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">Prueba — momento "manifiesto" (va después de la portada)</div>
+
+<!-- lo de arriba sería la portada -->
+<section class="ctx"><span>↑ acá termina la portada</span></section>
+
+<!-- EL MOMENTO -->
+<section class="mf">
+  <img src="img/am-teje.webp" alt="Un chaleco de lana marrón tejiéndose a mano con las agujas, en el campo">
+  <div class="mf-inner">
+    <p class="mf-line">Cada chaleco se teje<br>para una <em>sola persona.</em></p>
+  </div>
+</section>
+
+<!-- lo de abajo seguiría con los chalecos -->
+<section class="ctx"><span>↓ acá siguen los chalecos</span></section>
+</body>
+</html>

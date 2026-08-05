@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India · Clientes</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=DM+Sans:opsz,wght@9..40,400..600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f0e8; --panel:#faf6ee; --panel2:#efe8db; --ink:#22190f; --soft:#4a3a2a;
+    --muted:#8a7558; --line:#d8cbb2; --line2:#e7ddca;
+    --green:#2e3a24; --green-soft:#e7ecdf; --tan:#7a6852; --accent:#8b6535;
+    --in:#ffffff; --out:#e7ecdf;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+  .fr{font-family:'Fraunces',Georgia,serif;font-weight:400}
+  .it{font-style:italic}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+  .label{text-transform:uppercase;letter-spacing:.14em;font-size:.66rem;font-weight:600;color:var(--muted)}
+
+  /* LOGIN */
+  #login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .loginbox{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);padding:40px 34px;border-radius:6px}
+  .loginbox h1{font-size:2rem;margin-bottom:2px}
+  .loginbox .sub{color:var(--muted);font-style:italic;font-family:'Fraunces',serif;margin-bottom:26px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.8rem;color:var(--soft);margin-bottom:5px}
+  .field input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:4px;background:#fff}
+  .field input:focus{outline:none;border-color:var(--green)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:4px;background:var(--green);color:#f5f0e8;font-weight:500;transition:background .15s,transform .15s}
+  .btn:hover{background:#20291a}
+  .btn-full{width:100%;padding:13px}
+  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+  .btn-ghost:hover{background:var(--panel2)}
+  .btn-sm{padding:6px 11px;font-size:.8rem}
+  .err{background:#f7e4e1;color:#9c3527;padding:9px 12px;border-radius:4px;font-size:.85rem;margin-bottom:14px;display:none}
+  .err.show{display:block}
+
+  /* APP */
+  #app{display:none;height:100dvh;flex-direction:column}
+  #app.on{display:flex}
+  .top{display:flex;align-items:center;gap:18px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .brand{font-family:'Fraunces',serif;font-size:1.15rem;letter-spacing:.16em;text-transform:uppercase}
+  .brand .it{font-size:.62rem;letter-spacing:.1em;display:block;color:var(--muted)}
+  .tabs{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:100px}
+  .tab{padding:7px 18px;border-radius:100px;font-weight:500;color:var(--soft);font-size:.88rem}
+  .tab.on{background:var(--green);color:#f5f0e8}
+  .top .sp{flex:1}
+  .top input.search{padding:9px 13px;border:1.5px solid var(--line);border-radius:4px;background:#fff;width:230px}
+  .top input.search:focus{outline:none;border-color:var(--green)}
+
+  .view{flex:1;min-height:0;display:none}
+  .view.on{display:flex}
+
+  /* CHATS */
+  .side{width:210px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:14px 10px}
+  .side .label{padding:0 8px 8px}
+  .catrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:5px;cursor:pointer;font-size:.9rem}
+  .catrow:hover{background:var(--panel2)}
+  .catrow.on{background:var(--green-soft)}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--muted)}
+  .catrow .cnt{margin-left:auto;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .side .addcat{margin-top:8px;padding:8px 10px;font-size:.82rem;color:var(--accent)}
+
+  .list{width:340px;flex-shrink:0;border-right:1px solid var(--line);overflow-y:auto;background:var(--bg)}
+  .cli{display:flex;flex-direction:column;gap:3px;padding:12px 16px;border-bottom:1px solid var(--line2);cursor:pointer}
+  .cli:hover{background:var(--panel)}
+  .cli.on{background:var(--green-soft)}
+  .cli-top{display:flex;align-items:baseline;gap:8px}
+  .cli-name{font-weight:600;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cli-date{margin-left:auto;font-size:.72rem;color:var(--muted);flex-shrink:0}
+  .cli-last{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cli-tags{display:flex;gap:6px;align-items:center;margin-top:2px}
+  .tag{font-size:.66rem;padding:2px 8px;border-radius:100px;color:#fff;font-weight:600}
+  .noteic{font-size:.7rem;color:var(--tan)}
+
+  .conv{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+  .conv-head{padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:10px}
+  .conv-head .row1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .conv-name{font-family:'Fraunces',serif;font-size:1.2rem}
+  .conv-num{font-size:.78rem;color:var(--muted)}
+  .catsel{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .catpick{font-size:.72rem;padding:4px 10px;border-radius:100px;border:1.5px solid var(--line);color:var(--soft)}
+  .catpick.on{color:#fff;border-color:transparent}
+  .nota{width:100%;border:1.5px solid var(--line);border-radius:5px;padding:8px 10px;background:#fff;resize:vertical;min-height:38px;font-size:.85rem}
+  .nota:focus{outline:none;border-color:var(--green)}
+  .thread{flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:8px}
+  .msg{max-width:74%;padding:8px 12px;border-radius:10px;font-size:.9rem;line-height:1.4;white-space:pre-wrap;word-wrap:break-word}
+  .msg .t{display:block;font-size:.64rem;color:var(--muted);margin-top:3px}
+  .msg.ent{align-self:flex-start;background:var(--in);border:1px solid var(--line2);border-bottom-left-radius:3px}
+  .msg.sal{align-self:flex-end;background:var(--out);border-bottom-right-radius:3px}
+  .empty{margin:auto;color:var(--muted);font-family:'Fraunces',serif;font-style:italic;text-align:center;padding:40px}
+
+  /* TABLERO */
+  #tablero{padding:16px;overflow-x:auto;gap:14px;align-items:flex-start}
+  .col{width:270px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;max-height:100%}
+  .col-h{padding:11px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem}
+  .col-h .cnt{margin-left:auto;font-size:.75rem;color:var(--muted)}
+  .col-body{padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:60px;flex:1}
+  .col-body.drag{background:var(--green-soft)}
+  .card{background:#fff;border:1px solid var(--line2);border-radius:5px;padding:9px 11px;cursor:grab}
+  .card:active{cursor:grabbing}
+  .card .cn{font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .cl{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .card.dragging{opacity:.4}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--green);color:#f5f0e8;padding:10px 20px;border-radius:100px;font-size:.88rem;transition:transform .25s;z-index:99}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .load{margin:auto;color:var(--muted);font-style:italic}
+  @media(max-width:900px){ .side{display:none} .list{width:100%} .conv{display:none} .conv.on{display:flex;position:fixed;inset:0;z-index:20} }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="loginbox">
+    <h1 class="fr">India <span class="it" style="color:var(--accent)">clientes</span></h1>
+    <p class="sub">Panel de ventas</p>
+    <div class="err" id="lerr"></div>
+    <div class="field"><label>Usuario</label><input id="u" autocomplete="username"></div>
+    <div class="field"><label>Contraseña</label><input id="p" type="password" autocomplete="current-password"></div>
+    <button class="btn btn-full" id="blogin">Entrar</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="top">
+    <div class="brand">India <span class="it">clientes</span></div>
+    <div class="tabs">
+      <button class="tab on" data-view="chats">Chats</button>
+      <button class="tab" data-view="tablero">Tablero</button>
+    </div>
+    <div class="sp"></div>
+    <input class="search" id="search" placeholder="Buscar cliente…">
+    <button class="btn btn-ghost btn-sm" id="bexport">Exportar CSV</button>
+    <button class="btn btn-ghost btn-sm" id="bout">Salir</button>
+  </div>
+
+  <div class="view on" id="v-chats">
+    <div class="side" id="side"></div>
+    <div class="list" id="list"><div class="load">Cargando…</div></div>
+    <div class="conv" id="conv">
+      <div class="empty">Elegí un cliente para ver la conversación.</div>
+    </div>
+  </div>
+
+  <div class="view" id="v-tablero" style="flex-direction:row">
+    <div id="tablero" style="display:flex;flex:1"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { firebaseConfig } from './firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+
+const API = 'https://indiatejidos.ddns.net/api';
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const $ = id => document.getElementById(id);
+const esc = (s='') => (s+'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---- estado ----
+let categorias = [], clientes = [], filtro = 'todos', sel = null, q = '';
+
+// ---- login ----
+const email = u => `${u.toLowerCase()}@india-admin.local`;
+$('blogin').addEventListener('click', doLogin);
+$('p').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+async function doLogin(){
+  const e=$('lerr'); e.classList.remove('show');
+  try { await signInWithEmailAndPassword(auth, email($('u').value.trim()), $('p').value); }
+  catch(err){ e.textContent='Usuario o contraseña incorrectos.'; e.classList.add('show'); }
+}
+$('bout').addEventListener('click', ()=>signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  if(user){ $('login').style.display='none'; $('app').classList.add('on'); cargar(); }
+  else { $('login').style.display='flex'; $('app').classList.remove('on'); }
+});
+
+// ---- api ----
+async function api(path, opts={}){
+  const tok = await auth.currentUser.getIdToken();
+  const r = await fetch(API+path, { ...opts, headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json', ...(opts.headers||{}) }});
+  if(!r.ok) throw new Error('api '+r.status);
+  const ct = r.headers.get('content-type')||'';
+  return ct.includes('json') ? r.json() : r;
+}
+
+async function cargar(){
+  try {
+    [categorias, clientes] = await Promise.all([ api('/categorias'), api('/clientes') ]);
+    renderSide(); renderList(); renderTablero();
+  } catch(e){ toast('Error cargando: '+e.message); }
+}
+
+// ---- helpers ----
+const catById = id => categorias.find(c=>c.id===id);
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2600); }
+function fmtDate(s){ if(!s) return ''; const [d,t]=s.split(' '); const [y,m,dd]=d.split('-'); return `${dd}/${m} ${t||''}`.trim(); }
+function nombreCli(c){ const n=(c.nombre||'').trim(); return (n && n!=='Você' && n!=='You') ? n : (c.numero||c.jid); }
+
+// ---- SIDEBAR (categorias/filtros) ----
+function renderSide(){
+  const counts = { todos:clientes.length, sin:clientes.filter(c=>!c.categoria_id).length };
+  categorias.forEach(cat=> counts[cat.id]=clientes.filter(c=>c.categoria_id===cat.id).length);
+  let h = `<div class="label">Categorías</div>`;
+  h += row('todos','var(--green)','Todos',counts.todos);
+  h += row('sin','var(--muted)','Sin categoría',counts.sin);
+  categorias.forEach(cat=> h+= row(cat.id, cat.color, cat.nombre, counts[cat.id]));
+  h += `<button class="addcat" id="addcat">+ Nueva categoría</button>`;
+  $('side').innerHTML = h;
+  $('side').querySelectorAll('[data-f]').forEach(el=> el.addEventListener('click',()=>{ filtro=el.dataset.f; renderSide(); renderList(); }));
+  $('addcat').addEventListener('click', addCategoria);
+  function row(f,color,name,cnt){ return `<div class="catrow ${filtro==f?'on':''}" data-f="${f}"><span class="dot" style="background:${color}"></span><span>${esc(name)}</span><span class="cnt">${cnt||0}</span></div>`; }
+}
+
+async function addCategoria(){
+  const nombre = prompt('Nombre de la nueva categoría:'); if(!nombre) return;
+  const palette=['#4f7a3a','#c2873e','#8b6535','#3c6e71','#9c3527','#5b5f97','#7a6852'];
+  const color = palette[categorias.length % palette.length];
+  try{ const cat = await api('/categoria',{method:'POST',body:JSON.stringify({nombre,color})});
+    if(!categorias.find(c=>c.id===cat.id)) categorias.push(cat);
+    renderSide(); renderTablero(); if(sel) renderConv();
+    toast('Categoría creada');
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+// ---- LISTA de clientes ----
+function filtrados(){
+  return clientes.filter(c=>{
+    if(filtro==='sin' && c.categoria_id) return false;
+    if(filtro!=='todos' && filtro!=='sin' && c.categoria_id!=Number(filtro)) return false;
+    if(q){ const s=(nombreCli(c)+' '+(c.ultimo_texto||'')+' '+(c.numero||'')).toLowerCase(); if(!s.includes(q)) return false; }
+    return true;
+  });
+}
+function renderList(){
+  const arr = filtrados();
+  if(!arr.length){ $('list').innerHTML='<div class="load">Sin clientes.</div>'; return; }
+  $('list').innerHTML = arr.map(c=>{
+    const cat = catById(c.categoria_id);
+    const tag = cat ? `<span class="tag" style="background:${cat.color}">${esc(cat.nombre)}</span>` : '';
+    const note = c.nota ? `<span class="noteic">✎ nota</span>` : '';
+    const dir = c.ultima_dir==='saliente' ? '→ ' : '';
+    return `<div class="cli ${sel===c.jid?'on':''}" data-jid="${esc(c.jid)}">
+      <div class="cli-top"><span class="cli-name">${esc(nombreCli(c))}</span><span class="cli-date">${fmtDate(c.ultima_fecha)}</span></div>
+      <div class="cli-last">${dir}${esc(c.ultimo_texto||'')}</div>
+      ${(tag||note)?`<div class="cli-tags">${tag}${note}</div>`:''}
+    </div>`;
+  }).join('');
+  $('list').querySelectorAll('[data-jid]').forEach(el=> el.addEventListener('click',()=>abrir(el.dataset.jid)));
+}
+$('search').addEventListener('input', e=>{ q=e.target.value.trim().toLowerCase(); renderList(); });
+
+// ---- CONVERSACION ----
+async function abrir(jid){
+  sel=jid; renderList();
+  const c = clientes.find(x=>x.jid===jid);
+  $('conv').classList.add('on');
+  $('conv').innerHTML = `<div class="conv-head" id="ch"></div><div class="thread" id="th"><div class="load">Cargando…</div></div>`;
+  renderConvHead(c);
+  try{
+    const msgs = await api('/conversacion?jid='+encodeURIComponent(jid));
+    $('th').innerHTML = msgs.map(m=>`<div class="msg ${m.direccion==='saliente'?'sal':'ent'}">${esc(m.texto)}<span class="t">${fmtDate(m.fecha)}</span></div>`).join('') || '<div class="empty">Sin mensajes.</div>';
+    $('th').scrollTop = $('th').scrollHeight;
+  }catch(e){ $('th').innerHTML='<div class="empty">No se pudo cargar la conversación.</div>'; }
+}
+function renderConv(){ const c=clientes.find(x=>x.jid===sel); if(c) renderConvHead(c); }
+function renderConvHead(c){
+  const picks = categorias.map(cat=>{
+    const on = c.categoria_id===cat.id;
+    return `<button class="catpick ${on?'on':''}" style="${on?`background:${cat.color}`:''}" data-cat="${cat.id}">${esc(cat.nombre)}</button>`;
+  }).join('');
+  $('ch').innerHTML = `
+    <div class="row1"><span class="conv-name">${esc(nombreCli(c))}</span><span class="conv-num">${esc(c.numero||'')}</span>
+      <button class="btn btn-ghost btn-sm" id="backc" style="margin-left:auto">← Volver</button></div>
+    <div class="catsel">${picks}<button class="catpick" data-cat="0">✕ ninguna</button></div>
+    <textarea class="nota" id="nota" placeholder="Nota sobre este cliente…">${esc(c.nota||'')}</textarea>`;
+  $('backc').addEventListener('click',()=>{ $('conv').classList.remove('on'); sel=null; renderList(); });
+  $('ch').querySelectorAll('[data-cat]').forEach(b=> b.addEventListener('click',()=>setCat(c, Number(b.dataset.cat)||null)));
+  let tmr; $('nota').addEventListener('input', e=>{ clearTimeout(tmr); tmr=setTimeout(()=>setNota(c, e.target.value), 700); });
+}
+async function setCat(c, catId){
+  c.categoria_id = catId;
+  try{ await api('/cliente',{method:'POST',body:JSON.stringify({jid:c.jid,categoria_id:catId,nota:c.nota||null,alias:c.alias||null})});
+    renderConvHead(c); renderSide(); renderList(); renderTablero(); toast('Categoría actualizada');
+  }catch(e){ toast('Error: '+e.message); }
+}
+async function setNota(c, nota){
+  c.nota = nota;
+  try{ await api('/cliente',{method:'POST',body:JSON.stringify({jid:c.jid,categoria_id:c.categoria_id||null,nota,alias:c.alias||null})});
+    renderList(); toast('Nota guardada');
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+// ---- TABLERO (kanban) ----
+function renderTablero(){
+  const cols = [{id:'sin',nombre:'Sin categoría',color:'var(--muted)'}, ...categorias];
+  $('tablero').innerHTML = cols.map(col=>{
+    const arr = clientes.filter(c=> col.id==='sin' ? !c.categoria_id : c.categoria_id===col.id);
+    const cards = arr.map(c=>`<div class="card" draggable="true" data-jid="${esc(c.jid)}">
+        <div class="cn">${esc(nombreCli(c))}</div><div class="cl">${esc(c.ultimo_texto||'')}</div></div>`).join('');
+    return `<div class="col"><div class="col-h"><span class="dot" style="background:${col.color}"></span>${esc(col.nombre)}<span class="cnt">${arr.length}</span></div>
+      <div class="col-body" data-col="${col.id}">${cards}</div></div>`;
+  }).join('');
+  let dragJid=null;
+  $('tablero').querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('dragstart',()=>{ dragJid=card.dataset.jid; card.classList.add('dragging'); });
+    card.addEventListener('dragend',()=> card.classList.remove('dragging'));
+  });
+  $('tablero').querySelectorAll('.col-body').forEach(body=>{
+    body.addEventListener('dragover',e=>{ e.preventDefault(); body.classList.add('drag'); });
+    body.addEventListener('dragleave',()=> body.classList.remove('drag'));
+    body.addEventListener('drop',async e=>{ e.preventDefault(); body.classList.remove('drag');
+      const col=body.dataset.col; const catId= col==='sin'?null:Number(col);
+      const c=clientes.find(x=>x.jid===dragJid); if(!c||c.categoria_id===catId) return;
+      c.categoria_id=catId;
+      try{ await api('/cliente',{method:'POST',body:JSON.stringify({jid:c.jid,categoria_id:catId,nota:c.nota||null,alias:c.alias||null})});
+        renderTablero(); renderSide(); renderList(); if(sel===c.jid) renderConv(); toast('Movido');
+      }catch(err){ toast('Error: '+err.message); }
+    });
+  });
+}
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); $('v-'+t.dataset.view).classList.add('on');
+}));
+
+// ---- export ----
+$('bexport').addEventListener('click', async ()=>{
+  try{ toast('Preparando CSV…');
+    const r = await api('/export'); const blob = await r.blob();
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download='conversaciones.csv'; a.click(); URL.revokeObjectURL(url);
+  }catch(e){ toast('Error exportando: '+e.message); }
+});
+</script>
+</body>
+</html>

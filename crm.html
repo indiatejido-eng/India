@@ -296,10 +296,11 @@ function renderConvHead(c){
     const on = c.categoria_id===cat.id;
     return `<button class="catpick ${on?'on':''}" style="${on?`background:${cat.color}`:''}" data-cat="${cat.id}">${esc(cat.nombre)}</button>`;
   }).join('');
-  const sub = esLid(c) ? `${c.mensajes||0} mensajes · nº oculto por WhatsApp` : `${esc(c.numero||'')} · ${c.mensajes||0} mensajes`;
+  const tel = c.telefono;
+  const sub = tel ? `+${esc(tel)} · ${c.mensajes||0} mensajes` : `${c.mensajes||0} mensajes · el nº se completa cuando el cliente te vuelva a escribir`;
+  const waBtn = tel ? `<a class="btn btn-sm" href="https://wa.me/${esc(tel)}" target="_blank" style="margin-left:auto;text-decoration:none">Responder ↗</a><button class="btn btn-ghost btn-sm" id="backc">← Volver</button>` : `<button class="btn btn-ghost btn-sm" id="backc" style="margin-left:auto">← Volver</button>`;
   $('ch').innerHTML = `
-    <div class="row1">${avatar(c)}<div><div class="conv-name">${esc(nombreCli(c))}</div><div class="conv-sub">${sub}</div></div>
-      <button class="btn btn-ghost btn-sm" id="backc" style="margin-left:auto">← Volver</button></div>
+    <div class="row1">${avatar(c)}<div><div class="conv-name">${esc(nombreCli(c))}</div><div class="conv-sub">${sub}</div></div>${waBtn}</div>
     <div class="catsel">${picks}<button class="catpick" data-cat="0">✕ ninguna</button></div>
     <textarea class="nota" id="nota" placeholder="Nota sobre este cliente…">${esc(c.nota||'')}</textarea>`;
   $('backc').addEventListener('click',()=>{ $('conv').classList.remove('on'); sel=null; renderList(); });

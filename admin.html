@@ -650,6 +650,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
+      <button class="tab" data-tab="baja">Dados de baja <span class="tab-count" id="count-baja">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
       <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
     </div>
@@ -808,6 +809,10 @@
     </div>
     <div class="tab-panel" id="panel-anterior">
       <div class="grid-admin" id="grid-anterior"></div>
+    </div>
+    <div class="tab-panel" id="panel-baja">
+      <p style="color:var(--muted); font-size:0.9rem; margin:0 0 14px;">Estos chalecos <strong>no aparecen en la web</strong>, pero quedan acá. Podés restaurarlos cuando quieras.</p>
+      <div class="grid-admin" id="grid-baja"></div>
     </div>
     <div class="tab-panel" id="panel-resenas">
       <div class="resenas-gen">
@@ -1443,12 +1448,13 @@ function initFiltro(visits){
 }
 
 // ===== SUSCRIPCIÓN A FIRESTORE =====
-let unsubDisp = null, unsubAnt = null;
-let dataDisp = [], dataAnt = [];
+let unsubDisp = null, unsubAnt = null, unsubBaja = null;
+let dataDisp = [], dataAnt = [], dataBaja = [];
 
 function suscribir(){
   if (unsubDisp) unsubDisp();
   if (unsubAnt) unsubAnt();
+  if (unsubBaja) unsubBaja();
 
   const qD = query(collection(db, 'chalecos'), where('estado', '==', 'disponible'));
   unsubDisp = onSnapshot(qD, snap => {
@@ -1467,29 +1473,50 @@ function suscribir(){
     $('count-ant').textContent = dataAnt.length;
     refrescarClicksChalecos();
   });
+
+  const qB = query(collection(db, 'chalecos'), where('estado', '==', 'baja'));
+  unsubBaja = onSnapshot(qB, snap => {
+    dataBaja = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    renderGrid('baja', dataBaja);
+    $('count-baja').textContent = dataBaja.length;
+  });
 }
 
 function desuscribir(){
   if (unsubDisp) { unsubDisp(); unsubDisp = null; }
   if (unsubAnt) { unsubAnt(); unsubAnt = null; }
+  if (unsubBaja) { unsubBaja(); unsubBaja = null; }
 }
 
 // ===== RENDER =====
 function renderGrid(estado, items){
   const grid = $(`grid-${estado}`);
-  const addCard = `<button class="add-card" data-add="${estado}">
+  const esBaja = estado === 'baja';
+  const addCard = esBaja ? '' : `<button class="add-card" data-add="${estado}">
     <span class="plus">+</span>
     <span>Agregar chaleco</span>
   </button>`;
 
   if (items.length === 0) {
-    grid.innerHTML = addCard + `<div class="empty-state">Todavía no agregaste ${estado === 'disponible' ? 'chalecos disponibles' : 'trabajos anteriores'}.</div>`;
+    const vacio = esBaja ? 'No hay chalecos dados de baja.' : `Todavía no agregaste ${estado === 'disponible' ? 'chalecos disponibles' : 'trabajos anteriores'}.`;
+    grid.innerHTML = addCard + `<div class="empty-state">${vacio}</div>`;
   } else {
     grid.innerHTML = items.map((it, idx) => {
       const nombre = escapeHtml(it.nombre || 'Sin nombre');
       const desc = escapeHtml(it.desc || '');
       const otroEstado = estado === 'disponible' ? 'anterior' : 'disponible';
       const otroLabel = estado === 'disponible' ? '→ Vendido' : '↻ Disponible';
+      const acciones = esBaja
+        ? `<button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
+              <button class="btn btn-ghost btn-sm" data-restaurar="${it.id}" data-prev="${it.estadoPrev || 'anterior'}">↻ Restaurar</button>
+              <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>`
+        : `<button class="btn btn-ghost btn-sm btn-arrow" data-orden="up" data-id="${it.id}" data-estado="${estado}" title="Subir" aria-label="Subir"${idx === 0 ? ' disabled' : ''}>↑</button>
+              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="down" data-id="${it.id}" data-estado="${estado}" title="Bajar" aria-label="Bajar"${idx === items.length - 1 ? ' disabled' : ''}>↓</button>
+              <button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
+              <button class="btn btn-ghost btn-sm" data-move="${it.id}" data-to="${otroEstado}">${otroLabel}</button>
+              <button class="btn btn-ghost btn-sm" data-baja="${it.id}" data-estado="${estado}">Dar de baja</button>
+              <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>`;
       return `
         <div class="card" data-id="${it.id}">
           <div class="card-img">
@@ -1499,11 +1526,7 @@ function renderGrid(estado, items){
             <h3>${nombre}</h3>
             <div class="desc">${desc || '—'}</div>
             <div class="card-actions">
-              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="up" data-id="${it.id}" data-estado="${estado}" title="Subir" aria-label="Subir"${idx === 0 ? ' disabled' : ''}>↑</button>
-              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="down" data-id="${it.id}" data-estado="${estado}" title="Bajar" aria-label="Bajar"${idx === items.length - 1 ? ' disabled' : ''}>↓</button>
-              <button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
-              <button class="btn btn-ghost btn-sm" data-move="${it.id}" data-to="${otroEstado}">${otroLabel}</button>
-              <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>
+              ${acciones}
             </div>
           </div>
         </div>`;
@@ -1514,6 +1537,8 @@ function renderGrid(estado, items){
   grid.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => abrirModal('nuevo', estado)));
   grid.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirModal('editar', estado, b.dataset.edit)));
   grid.querySelectorAll('[data-move]').forEach(b => b.addEventListener('click', () => moverChaleco(b.dataset.move, b.dataset.to)));
+  grid.querySelectorAll('[data-baja]').forEach(b => b.addEventListener('click', () => darDeBaja(b.dataset.baja, b.dataset.estado)));
+  grid.querySelectorAll('[data-restaurar]').forEach(b => b.addEventListener('click', () => restaurarChaleco(b.dataset.restaurar, b.dataset.prev)));
   grid.querySelectorAll('[data-orden]').forEach(b => b.addEventListener('click', () => reordenar(b.dataset.estado, b.dataset.id, b.dataset.orden)));
   grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => confirmarBorrado(b.dataset.del, b.dataset.foto)));
 }
@@ -1599,7 +1624,7 @@ function renderFotosList(){
 }
 
 function abrirModal(modo, estado, id=null){
-  const item = id ? [...dataDisp, ...dataAnt].find(x => x.id === id) : null;
+  const item = id ? [...dataDisp, ...dataAnt, ...dataBaja].find(x => x.id === id) : null;
   editing = item ? { ...item } : { estado };
   if (!editing.estado) editing.estado = estado;
 
@@ -1702,6 +1727,34 @@ async function moverChaleco(id, nuevoEstado){
       actualizadoEn: serverTimestamp()
     });
     showToast(nuevoEstado === 'anterior' ? 'Movido a "Vendidos"' : 'Movido a "Disponibles"');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+// ===== DAR DE BAJA / RESTAURAR (oculto en la web, sigue en admin) =====
+async function darDeBaja(id, estadoActual){
+  try {
+    await updateDoc(doc(db, 'chalecos', id), {
+      estadoPrev: estadoActual,   // para saber a dónde volver al restaurar
+      estado: 'baja',
+      actualizadoEn: serverTimestamp()
+    });
+    showToast('Dado de baja — ya no se ve en la web');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+async function restaurarChaleco(id, estadoPrev){
+  const destino = (estadoPrev === 'disponible' || estadoPrev === 'anterior') ? estadoPrev : 'anterior';
+  try {
+    await updateDoc(doc(db, 'chalecos', id), {
+      estado: destino,
+      orden: Date.now(),   // cae al final de su pestaña
+      actualizadoEn: serverTimestamp()
+    });
+    showToast(destino === 'disponible' ? 'Restaurado a "Disponibles"' : 'Restaurado a "Vendidos / Hechos"');
   } catch (err) {
     showToast('Error: ' + err.message, true);
   }

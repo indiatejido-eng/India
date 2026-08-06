@@ -320,12 +320,28 @@
   }
   .chart-empty{ color: var(--muted); font-style: italic; font-size: 0.9rem; text-align: center; padding: 46px 0; width: 100%; }
 
+  /* ===== Dashboard estadísticas (rediseño alta gama) ===== */
+  .stats-header{ margin: 2px 2px 24px; }
+  .stats-eyebrow{ font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .stats-title{ font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(2rem, 6vw, 3rem); color: var(--ink); line-height: 1.04; margin-top: 8px; }
+  .stats-title .it{ font-style: italic; }
+  .stats-hero{ grid-template-columns: repeat(3, 1fr); }
+  @media(max-width: 720px){ .stats-hero{ grid-template-columns: 1fr; } }
+  .links-share{ display: flex; flex-wrap: wrap; gap: 8px; margin: -14px 2px 28px; }
+  .donut-wrap{ display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .donut-svg{ width: 132px; height: 132px; flex: none; }
+  .donut-legend{ display: flex; flex-direction: column; gap: 9px; font-size: 0.92rem; color: var(--ink); }
+  .donut-leg{ display: flex; align-items: center; gap: 9px; font-variant-numeric: tabular-nums; }
+  .donut-dot{ width: 11px; height: 11px; border-radius: 3px; flex: none; }
+
   .tabs{
     display: flex; gap: 8px;
     background: var(--bg-soft);
     padding: 6px; border-radius: 100px;
     margin-bottom: 28px;
     width: fit-content;
+    position: sticky; top: 8px; z-index: 30;
+    box-shadow: 0 8px 22px -14px rgba(60,40,20,0.45);
   }
   .tab{
     padding: 10px 22px; border-radius: 100px;
@@ -640,6 +656,10 @@
     </div>
 
     <div class="tab-panel" id="panel-stats">
+    <div class="stats-header">
+      <div class="stats-eyebrow">Análisis de impacto</div>
+      <h2 class="stats-title">Estadísticas de la <span class="it">Marca</span></h2>
+    </div>
     <div class="periodo-filtro">
       <span class="periodo-label">Mostrar:</span>
       <button type="button" class="periodo-b" data-periodo="hoy">Hoy</button>
@@ -653,63 +673,36 @@
     </div>
     <div class="periodo-nota" id="periodo-nota"></div>
 
-    <section class="stats" aria-label="Estadísticas de la página">
+    <section class="stats stats-hero" aria-label="Resumen">
       <div class="stat-card">
-        <div class="stat-label">Visitas a la página</div>
+        <div class="stat-label">Visitas totales</div>
         <div class="stat-num" id="stat-visitas">—</div>
         <div class="stat-hint">Una visita por dispositivo cada hora</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Clicks en WhatsApp</div>
         <div class="stat-num" id="stat-wa">—</div>
-        <div class="stat-hint">Suma todos los botones WhatsApp del sitio</div>
+        <div class="stat-hint">Todos los botones del sitio</div>
       </div>
-    </section>
-
-    <section class="stats-mini">
-      <div class="stat-card-sm">
+      <div class="stat-card">
         <div class="stat-label">Visitantes únicos</div>
         <div class="stat-num" id="stat-unicos">—</div>
-      </div>
-      <div class="stat-card-sm">
-        <div class="stat-label">Nuevos</div>
-        <div class="stat-num" id="stat-nuevos">—</div>
-      </div>
-      <div class="stat-card-sm">
-        <div class="stat-label">Recurrentes</div>
-        <div class="stat-num" id="stat-recurrentes">—</div>
+        <div class="stat-hint"><b id="stat-nuevos">—</b> nuevos · <b id="stat-recurrentes">—</b> recurrentes</div>
       </div>
     </section>
 
-    <section class="stats" aria-label="Entradas por link" style="margin-top:4px">
-      <div class="stat-card">
-        <div class="stat-label">Entran por link "Disponibles"</div>
-        <div class="stat-num" id="stat-entrada-chalecos">—</div>
-        <div class="stat-hint">Los que llegan con el link .../#chalecos</div>
-        <button type="button" class="copy-link" data-suffix="/#chalecos">Copiar link</button>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Entran por link "Opiniones"</div>
-        <div class="stat-num" id="stat-entrada-opiniones">—</div>
-        <div class="stat-hint">Los que llegan con el link .../#opiniones</div>
-        <button type="button" class="copy-link" data-suffix="/#opiniones">Copiar link</button>
+    <section class="stats-detail" style="grid-template-columns:1fr">
+      <div class="stats-detail-card">
+        <div class="stats-detail-title">Fuentes de tráfico</div>
+        <div class="stats-list" id="fuentes-trafico"><div class="stats-empty">Sin entradas por link todavía</div></div>
       </div>
     </section>
-
-    <section class="stats" aria-label="Entradas por red social" style="margin-top:4px">
-      <div class="stat-card">
-        <div class="stat-label">Entran desde Instagram</div>
-        <div class="stat-num" id="stat-entrada-instagram">—</div>
-        <div class="stat-hint">Link del perfil: …/?ref=instagram</div>
-        <button type="button" class="copy-link" data-suffix="/?ref=instagram">Copiar link</button>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Entran desde Facebook</div>
-        <div class="stat-num" id="stat-entrada-facebook">—</div>
-        <div class="stat-hint">Link de Facebook: …/?ref=facebook</div>
-        <button type="button" class="copy-link" data-suffix="/?ref=facebook">Copiar link</button>
-      </div>
-    </section>
+    <div class="links-share">
+      <button type="button" class="copy-link" data-suffix="/?ref=instagram">Copiar link Instagram</button>
+      <button type="button" class="copy-link" data-suffix="/?ref=facebook">Copiar link Facebook</button>
+      <button type="button" class="copy-link" data-suffix="/#chalecos">Copiar link Disponibles</button>
+      <button type="button" class="copy-link" data-suffix="/#opiniones">Copiar link Opiniones</button>
+    </div>
 
     <section class="stats-chart">
       <div class="chart-head">
@@ -801,8 +794,8 @@
         <div class="stats-list" id="top-referrers"><div class="stats-empty">Sin datos todavía</div></div>
       </div>
       <div class="stats-detail-card">
-        <div class="stats-detail-title">Dispositivo</div>
-        <div class="stats-list" id="top-devices"><div class="stats-empty">Sin datos todavía</div></div>
+        <div class="stats-detail-title">Tráfico por dispositivo</div>
+        <div id="donut-dispositivo"><div class="stats-empty">Sin datos todavía</div></div>
       </div>
       <div class="stats-detail-card">
         <div class="stats-detail-title">Navegador</div>
@@ -1134,6 +1127,54 @@ function renderTopList(elId, entries) {
     </div>`;
   }).join('');
 }
+
+// Fuentes de tráfico: junta las 4 entradas por link y las muestra como barras con % del total.
+function renderFuentes(esTotal){
+  const el = $('fuentes-trafico');
+  if (!el) return;
+  const fuentes = [
+    ['Instagram', 'entrada_instagram'],
+    ['Facebook', 'entrada_facebook'],
+    ['Link Disponibles', 'entrada_chalecos'],
+    ['Link Opiniones', 'entrada_opiniones'],
+  ];
+  const data = fuentes.map(([nombre, key]) => [nombre, esTotal ? (STATS_TOTAL[key] ?? 0) : sumaMetrica(key)]);
+  const total = data.reduce((a, [, c]) => a + c, 0);
+  if (!total) { el.innerHTML = '<div class="stats-empty">Sin entradas por link todavía</div>'; return; }
+  data.sort((a, b) => b[1] - a[1]);
+  el.innerHTML = data.map(([nombre, count]) => {
+    const pct = Math.round((count / total) * 100);
+    return `<div class="stats-row">
+      <div class="stats-row-bar" style="width:${pct}%"></div>
+      <span class="stats-row-name">${nombre}</span>
+      <span class="stats-row-count">${pct}% <span style="opacity:.5">· ${fmtNum(count)}</span></span>
+    </div>`;
+  }).join('');
+}
+
+// Dona SVG para el reparto por dispositivo (móvil / escritorio / tablet).
+function renderDonut(elId, entries){
+  const el = $(elId);
+  if (!el) return;
+  const nombres = { mobile: 'Móvil', desktop: 'Escritorio', tablet: 'Tablet' };
+  const cols = ['var(--accent)', '#c8a97e', '#9db89f', '#d9cbb3'];
+  const data = entries.map(([n, c]) => [nombres[n] || n, c]);
+  const total = data.reduce((a, [, c]) => a + c, 0);
+  if (!total) { el.innerHTML = '<div class="stats-empty">Sin datos todavía</div>'; return; }
+  const R = 52, CIRC = 2 * Math.PI * R;
+  let off = 0;
+  const segs = data.map(([, c], i) => {
+    const len = (c / total) * CIRC;
+    const dash = Math.max(0, len - 2);
+    const s = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${cols[i % cols.length]}" stroke-width="20" stroke-dasharray="${dash} ${CIRC - dash}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;
+    off += len;
+    return s;
+  }).join('');
+  const leg = data.map(([n, c], i) =>
+    `<div class="donut-leg"><span class="donut-dot" style="background:${cols[i % cols.length]}"></span>${n} · ${Math.round(c / total * 100)}%</div>`
+  ).join('');
+  el.innerHTML = `<div class="donut-wrap"><svg viewBox="0 0 140 140" class="donut-svg" aria-hidden="true">${segs}</svg><div class="donut-legend">${leg}</div></div>`;
+}
 // ===== CONSOLIDAR EL HISTORIAL POR MES =====
 // Los contadores mensuales (stats/{metrica}_mes_YYYY-MM) son nuevos, así que los meses anteriores
 // no los tienen. Esto los arma sumando los documentos por día que YA existen: nada se borra ni se
@@ -1172,7 +1213,7 @@ async function cargarAnalytics() {
     const visits = snap.docs.map(d => d.data());
     renderTopList('top-countries', topN(visits, 'country', 6));
     renderTopList('top-referrers', topN(visits, 'referrer', 6));
-    renderTopList('top-devices', topN(visits, 'device', 4));
+    renderDonut('donut-dispositivo', topN(visits, 'device', 4));
     renderTopList('top-browsers', topN(visits, 'browser', 5));
     // La colección stats acumula un documento por métrica y día para siempre, así que leerla
     // entera se vuelve más lenta y cara cada mes. Se leen solo los tramos que se usan: los últimos
@@ -1233,10 +1274,7 @@ function refrescarTarjetas(){
   if ($('stat-visitas')) $('stat-visitas').textContent = fmtNum(esTotal ? (STATS_TOTAL['visitas'] ?? 0) : sumaMetrica('visitas'));
   // Clicks y entradas: total = contador; período = suma de docs por día (el detalle por fecha arranca hoy)
   if ($('stat-wa')) $('stat-wa').textContent = fmtNum(esTotal ? (STATS_TOTAL['clicks_whatsapp'] ?? 0) : sumaMetrica('clicks'));
-  if ($('stat-entrada-chalecos')) $('stat-entrada-chalecos').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_chalecos'] ?? 0) : sumaMetrica('entrada_chalecos'));
-  if ($('stat-entrada-opiniones')) $('stat-entrada-opiniones').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_opiniones'] ?? 0) : sumaMetrica('entrada_opiniones'));
-  if ($('stat-entrada-instagram')) $('stat-entrada-instagram').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_instagram'] ?? 0) : sumaMetrica('entrada_instagram'));
-  if ($('stat-entrada-facebook')) $('stat-entrada-facebook').textContent = fmtNum(esTotal ? (STATS_TOTAL['entrada_facebook'] ?? 0) : sumaMetrica('entrada_facebook'));
+  renderFuentes(esTotal);
   if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);

@@ -915,8 +915,7 @@
 
   <div class="ot-hint">Deslizá <span class="ar">→</span></div>
   <div class="ot-wrap grid-anteriores">
-    <div class="ot-row" id="ot-row-1"><!-- fila 1 --></div>
-    <div class="ot-row" id="ot-row-2"><!-- fila 2 --></div>
+    <div class="ot-row" id="ot-row-1"><!-- una sola fila que se desliza --></div>
   </div>
 </section>
 
@@ -1302,8 +1301,7 @@
 
   function renderAnteriores(items){
     const section = document.getElementById('anteriores');
-    const r1 = document.getElementById('ot-row-1');
-    const r2 = document.getElementById('ot-row-2');
+    const row = document.getElementById('ot-row-1');
 
     if (items.length === 0) {
       section.style.display = 'none';
@@ -1322,16 +1320,11 @@
           </div>
         </article>`;
     };
-    const mid = Math.ceil(items.length / 2);
-    r1.innerHTML = items.slice(0, mid).map((it, i) => cardHtml(it, i)).join('');
-    r2.innerHTML = items.slice(mid).map((it, i) => cardHtml(it, mid + i)).join('');
-
-    [r1, r2].forEach(row => {
-      row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
-      });
-      row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
+    row.innerHTML = items.map((it, i) => cardHtml(it, i)).join('');
+    row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
+      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
     });
+    row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     animatePieces();
     if (window.otUpdate) requestAnimationFrame(window.otUpdate);
   }

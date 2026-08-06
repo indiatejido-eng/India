@@ -23,9 +23,14 @@
   .label{ font-family:'DM Sans',sans-serif; text-transform:uppercase; letter-spacing:.22em; font-size:.72rem; font-weight:500; color:var(--muted); }
 
   .ot{ max-width:1320px; margin:0 auto; padding:96px 0 96px; }
-  .ot-head{ text-align:center; padding:0 24px; margin-bottom:52px; }
+  .ot-head{ text-align:center; padding:0 24px; margin-bottom:44px; }
   .ot-head .display{ font-size:clamp(2.2rem,6vw,3.6rem); margin:14px 0 0; }
   .ot-lead{ font-family:'Fraunces',serif; font-size:1.05rem; color:var(--ink-soft); max-width:460px; margin:18px auto 0; }
+
+  /* pista "deslizá" */
+  .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; max-width:1320px; margin:0 auto 14px; padding:0 46px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
+  .ot-hint .ar{ display:inline-block; font-size:1.05rem; animation:otNudge 1.5s ease-in-out infinite; }
+  @keyframes otNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(7px); opacity:1; } }
 
   .ot-strip-wrap{ position:relative; }
   .ot-strip{
@@ -35,6 +40,9 @@
     -webkit-overflow-scrolling:touch; scrollbar-width:none;
   }
   .ot-strip::-webkit-scrollbar{ display:none; }
+  /* velo suave a la derecha: sugiere que sigue */
+  .ot-strip-wrap::after{ content:''; position:absolute; top:0; bottom:12px; right:0; width:64px; pointer-events:none; z-index:2;
+    background:linear-gradient(to right, rgba(243,236,224,0), var(--bg)); }
   .ot-card{ flex:0 0 auto; width:262px; scroll-snap-align:start; display:flex; flex-direction:column; text-align:center; }
   .ot-img{ width:100%; aspect-ratio:4/5; overflow:hidden; border-radius:2px; background:var(--bg-soft); margin-bottom:16px; cursor:pointer; }
   .ot-img img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .9s cubic-bezier(.2,.8,.2,1); }
@@ -46,7 +54,7 @@
   .ot-arrow{
     position:absolute; top:170px; transform:translateY(-50%);
     width:46px; height:46px; border-radius:50%; border:1px solid var(--line);
-    background:rgba(245,240,232,.92); color:var(--muted);
+    background:rgba(245,240,232,.94); color:var(--muted);
     font-family:'Fraunces',serif; font-size:1.5rem; line-height:1; cursor:pointer;
     display:flex; align-items:center; justify-content:center; z-index:3;
     transition:opacity .25s, border-color .2s, color .2s; box-shadow:0 6px 18px -10px rgba(60,40,20,.4);
@@ -55,11 +63,17 @@
   .ot-arrow:hover{ border-color:var(--ink); color:var(--ink); }
   .ot-arrow[disabled]{ opacity:0; pointer-events:none; }
 
+  /* barrita de progreso */
+  .ot-progress{ width:120px; height:2px; background:var(--line); border-radius:2px; margin:30px auto 0; position:relative; overflow:hidden; }
+  .ot-progress span{ position:absolute; top:0; left:0; height:100%; width:22%; background:var(--muted); border-radius:2px; transition:left .1s linear, width .1s linear; }
+
   @media(max-width:767px){
     .ot{ padding:64px 0 72px; }
-    .ot-arrow{ display:none; }              /* en el celu se desliza con el dedo */
+    .ot-arrow{ display:none; }               /* en el celu se desliza con el dedo */
+    .ot-hint{ justify-content:center; padding:0 20px; font-size:.72rem; }
     .ot-strip{ gap:16px; padding:6px 20px 12px; }
-    .ot-card{ width:66vw; max-width:290px; } /* asoma la siguiente */
+    .ot-strip-wrap::after{ width:40px; }
+    .ot-card{ width:70vw; max-width:300px; }  /* asoma bien la siguiente */
   }
 </style>
 </head>
@@ -73,6 +87,8 @@
     <p class="ot-lead">Algunos chalecos que ya hicimos. Para que veas el estilo.</p>
   </div>
 
+  <div class="ot-hint">Deslizá <span class="ar">→</span></div>
+
   <div class="ot-strip-wrap">
     <button class="ot-arrow ot-prev" type="button" aria-label="Anterior">‹</button>
     <button class="ot-arrow ot-next" type="button" aria-label="Siguiente">›</button>
@@ -85,12 +101,15 @@
       <article class="ot-card"><div class="ot-img"><img src="img/ot-6.webp" alt="" loading="lazy"></div><h3 class="ot-name">Rayado tierra</h3><a class="ot-ver" href="#">Ver la pieza</a></article>
     </div>
   </div>
+
+  <div class="ot-progress"><span id="ot-bar"></span></div>
 </section>
 
 <script>
   const strip = document.getElementById('ot-strip');
   const prev = document.querySelector('.ot-prev');
   const next = document.querySelector('.ot-next');
+  const bar  = document.getElementById('ot-bar');
   const stepPx = () => {
     const card = strip.querySelector('.ot-card');
     const gap = parseFloat(getComputedStyle(strip).columnGap || getComputedStyle(strip).gap || '28');
@@ -98,14 +117,18 @@
   };
   prev.addEventListener('click', () => strip.scrollBy({ left: -stepPx(), behavior: 'smooth' }));
   next.addEventListener('click', () => strip.scrollBy({ left: stepPx(), behavior: 'smooth' }));
-  const updateArrows = () => {
-    const max = strip.scrollWidth - strip.clientWidth - 2;
+  const update = () => {
+    const max = strip.scrollWidth - strip.clientWidth;
     prev.toggleAttribute('disabled', strip.scrollLeft <= 2);
-    next.toggleAttribute('disabled', strip.scrollLeft >= max);
+    next.toggleAttribute('disabled', strip.scrollLeft >= max - 2);
+    const thumb = Math.max(18, (strip.clientWidth / strip.scrollWidth) * 100);
+    const frac = max > 0 ? strip.scrollLeft / max : 0;
+    bar.style.width = thumb + '%';
+    bar.style.left = (frac * (100 - thumb)) + '%';
   };
-  strip.addEventListener('scroll', updateArrows, { passive: true });
-  window.addEventListener('resize', updateArrows);
-  updateArrows();
+  strip.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
 </script>
 </body>
 </html>

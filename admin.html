@@ -652,7 +652,6 @@
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
       <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
-      <button class="tab" data-tab="stats">Estadísticas</button>
     </div>
 
     <div class="tab-panel" id="panel-stats">
@@ -1089,6 +1088,19 @@ document.querySelectorAll('.tab').forEach(t => {
     $(`panel-${currentTab}`).classList.add('active');
   });
 });
+
+// Vista Estadísticas standalone: /admin.html#stats abre SOLO el dashboard (sin las pestañas
+// del catálogo ni el título de gestión). Es la sección que se abre desde /carga; por eso
+// Estadísticas ya no es una pestaña del catálogo, vive como su propia vista.
+if ((location.hash || '') === '#stats') {
+  document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+  const ps = document.getElementById('panel-stats');
+  if (ps) ps.classList.add('active');
+  const tabsBar = document.querySelector('.tabs');
+  if (tabsBar) tabsBar.style.display = 'none';
+  const head = document.querySelector('.page-head');
+  if (head) head.style.display = 'none';
+}
 
 // ===== SUSCRIPCIÓN A STATS (independiente del login, public read) =====
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-AR');

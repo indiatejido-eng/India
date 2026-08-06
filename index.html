@@ -418,32 +418,22 @@
   .grid-anteriores .ver-fotos{ margin-left: auto; margin-right: auto; }
   .grid-anteriores .piece-img{ aspect-ratio: 4 / 5; }
 
-  /* "Otros tejidos" — tira de 2 filas que se desliza al costado (el id gana a las clases de cantidad) */
-  #grid-anteriores{
-    display:grid; grid-auto-flow:column; grid-template-rows:auto auto; align-items:start;
-    grid-auto-columns:230px; grid-template-columns:none;
-    gap:30px 26px; max-width:none; margin:0;
-    overflow-x:auto; scroll-snap-type:x proximity; scroll-behavior:smooth;
-    padding:6px 6px 16px; scrollbar-width:none;
-  }
-  #grid-anteriores::-webkit-scrollbar{ display:none; }
-  #grid-anteriores .piece{ scroll-snap-align:start; }
+  /* "Otros tejidos" — 2 filas INDEPENDIENTES que se deslizan al costado */
   .ot-wrap{ position:relative; }
-  .ot-wrap::after{ content:''; position:absolute; top:0; bottom:16px; right:0; width:56px; pointer-events:none; z-index:2; background:linear-gradient(to right, rgba(243,236,224,0), var(--bg)); }
-  .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:0 0 12px; padding:0 8px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
+  .ot-wrap::after{ content:''; position:absolute; top:0; bottom:0; right:0; width:56px; pointer-events:none; z-index:2; background:linear-gradient(to right, rgba(243,236,224,0), var(--bg)); }
+  .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:0 0 14px; padding:0 8px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
   .ot-hint .ar{ display:inline-block; font-size:1.05rem; animation:otNudge 1.5s ease-in-out infinite; }
   @keyframes otNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(7px); opacity:1; } }
-  .ot-arrow{ position:absolute; top:44%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid var(--line); background:rgba(245,240,232,.94); color:var(--muted); font-family:'Fraunces',serif; font-size:1.5rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:3; transition:opacity .25s,border-color .2s,color .2s; box-shadow:0 6px 18px -10px rgba(60,40,20,.4); }
-  .ot-prev{ left:-8px; } .ot-next{ right:-8px; }
-  .ot-arrow:hover{ border-color:var(--ink); color:var(--ink); }
-  .ot-arrow[disabled]{ opacity:0; pointer-events:none; }
-  .ot-progress{ width:120px; height:2px; background:var(--line); border-radius:2px; margin:30px auto 0; position:relative; overflow:hidden; }
-  .ot-progress span{ position:absolute; top:0; left:0; height:100%; width:22%; background:var(--muted); border-radius:2px; transition:left .1s linear, width .1s linear; }
+  .ot-row{ display:flex; gap:26px; overflow-x:auto; scroll-snap-type:x proximity; scroll-behavior:smooth; padding:6px 6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; cursor:grab; }
+  .ot-row.dragging{ cursor:grabbing; scroll-behavior:auto; }
+  .ot-row::-webkit-scrollbar{ display:none; }
+  .ot-row + .ot-row{ margin-top:22px; }
+  .ot-row .piece{ flex:0 0 230px; scroll-snap-align:start; }
   @media(max-width:767px){
-    #grid-anteriores{ grid-auto-columns:46vw; gap:20px 16px; padding:6px 2px 16px; }
-    .ot-arrow{ display:none; }
     .ot-hint{ justify-content:center; padding:0 20px; }
     .ot-wrap::after{ width:34px; }
+    .ot-row{ gap:16px; }
+    .ot-row .piece{ flex:0 0 46vw; }
   }
   @media(max-width: 767px){
     .grid{ gap: 24px 6px; }
@@ -924,14 +914,10 @@
   </div>
 
   <div class="ot-hint">Deslizá <span class="ar">→</span></div>
-  <div class="ot-wrap">
-    <button class="ot-arrow ot-prev" type="button" aria-label="Ver anteriores">‹</button>
-    <button class="ot-arrow ot-next" type="button" aria-label="Ver más">›</button>
-    <div class="grid grid-anteriores" id="grid-anteriores">
-      <!-- Los trabajos anteriores se cargan acá automáticamente -->
-    </div>
+  <div class="ot-wrap grid-anteriores">
+    <div class="ot-row" id="ot-row-1"><!-- fila 1 --></div>
+    <div class="ot-row" id="ot-row-2"><!-- fila 2 --></div>
   </div>
-  <div class="ot-progress"><span id="ot-bar"></span></div>
 </section>
 
 <!-- A MEDIDA -->
@@ -1315,8 +1301,9 @@
   }
 
   function renderAnteriores(items){
-    const grid = document.getElementById('grid-anteriores');
     const section = document.getElementById('anteriores');
+    const r1 = document.getElementById('ot-row-1');
+    const r2 = document.getElementById('ot-row-2');
 
     if (items.length === 0) {
       section.style.display = 'none';
@@ -1324,10 +1311,8 @@
     }
     section.style.display = '';
 
-    grid.className = 'grid grid-anteriores ' + gridSizeClass(items.length);
-    grid.innerHTML = items.map((it, i) => {
+    const cardHtml = (it, i) => {
       const nombre = escapeHtml(it.nombre || 'Chaleco');
-      const desc = escapeHtml(it.desc || '');
       return `
         <article class="piece${it.conFondo ? ' con-fondo' : ''}">
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
@@ -1336,47 +1321,38 @@
             ${verFotos(it, i)}
           </div>
         </article>`;
-    }).join('');
+    };
+    const mid = Math.ceil(items.length / 2);
+    r1.innerHTML = items.slice(0, mid).map((it, i) => cardHtml(it, i)).join('');
+    r2.innerHTML = items.slice(mid).map((it, i) => cardHtml(it, mid + i)).join('');
 
-    grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
+    [r1, r2].forEach(row => {
+      row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
+        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
+      });
+      row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     });
-
-    // En la tira de 2 filas las piezas se ven ya (el fade dependía del scroll vertical y acá va horizontal)
-    grid.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     animatePieces();
     if (window.otUpdate) requestAnimationFrame(window.otUpdate);
   }
 
-  // Tira "Otros tejidos": flechas (compu), barrita de progreso y ocultar señales si entra todo
-  (function setupOtStrip(){
-    const strip = document.getElementById('grid-anteriores');
-    const prev = document.querySelector('.ot-prev');
-    const next = document.querySelector('.ot-next');
-    const bar  = document.getElementById('ot-bar');
+  // "Otros tejidos": 2 filas independientes — arrastre con el mouse en compu, swipe en celu
+  (function setupOtRows(){
+    const rows = ['ot-row-1', 'ot-row-2'].map(id => document.getElementById(id)).filter(Boolean);
     const hint = document.querySelector('.ot-hint');
-    const prog = document.querySelector('.ot-progress');
-    if (!strip || !prev || !next || !bar) return;
-    const stepPx = () => {
-      const card = strip.querySelector('.piece');
-      const gap = parseFloat(getComputedStyle(strip).columnGap || '26');
-      return card ? (card.getBoundingClientRect().width + gap) : 240;
-    };
+    rows.forEach(el => {
+      let down = false, startX = 0, startL = 0, moved = false;
+      el.addEventListener('mousedown', e => { down = true; moved = false; startX = e.pageX; startL = el.scrollLeft; el.classList.add('dragging'); });
+      const end = () => { down = false; el.classList.remove('dragging'); };
+      window.addEventListener('mouseup', end);
+      el.addEventListener('mouseleave', end);
+      el.addEventListener('mousemove', e => { if (!down) return; const dx = e.pageX - startX; if (Math.abs(dx) > 4) moved = true; el.scrollLeft = startL - dx; });
+      el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
+    });
     window.otUpdate = () => {
-      const max = strip.scrollWidth - strip.clientWidth;
-      const overflow = max > 4;
-      prev.toggleAttribute('disabled', strip.scrollLeft <= 2);
-      next.toggleAttribute('disabled', strip.scrollLeft >= max - 2);
-      const thumb = Math.max(18, (strip.clientWidth / strip.scrollWidth) * 100);
-      const frac = max > 0 ? strip.scrollLeft / max : 0;
-      bar.style.width = thumb + '%';
-      bar.style.left = (frac * (100 - thumb)) + '%';
+      const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
       if (hint) hint.style.visibility = overflow ? 'visible' : 'hidden';
-      if (prog) prog.style.visibility = overflow ? 'visible' : 'hidden';
     };
-    prev.addEventListener('click', () => strip.scrollBy({ left: -stepPx() * 2, behavior: 'smooth' }));
-    next.addEventListener('click', () => strip.scrollBy({ left:  stepPx() * 2, behavior: 'smooth' }));
-    strip.addEventListener('scroll', window.otUpdate, { passive: true });
     window.addEventListener('resize', window.otUpdate);
     window.otUpdate();
   })();

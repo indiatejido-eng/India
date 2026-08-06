@@ -432,8 +432,8 @@
   @media(max-width:767px){
     .ot-hint{ justify-content:center; padding:0 20px; }
     .ot-wrap::after{ width:44px; }
-    .ot-row{ gap:12px; padding:6px 2px; }
-    .ot-row .piece{ flex:0 0 42vw; }   /* 2 piezas + asoma la siguiente (peek estilo Burberry/Arandú) */
+    .ot-row{ gap:10px; padding:6px 2px; }
+    .ot-row .piece{ flex:0 0 39vw; }   /* 2 piezas completas + asoma bien la 3ra (peek Burberry/Arandú) */
   }
   @media(max-width: 767px){
     .grid{ gap: 24px 6px; }
@@ -915,7 +915,8 @@
 
   <div class="ot-hint">Deslizá <span class="ar">→</span></div>
   <div class="ot-wrap grid-anteriores">
-    <div class="ot-row" id="ot-row-1"><!-- una sola fila que se desliza --></div>
+    <div class="ot-row" id="ot-row-1"><!-- fila 1 --></div>
+    <div class="ot-row" id="ot-row-2"><!-- fila 2 --></div>
   </div>
 </section>
 
@@ -1301,7 +1302,8 @@
 
   function renderAnteriores(items){
     const section = document.getElementById('anteriores');
-    const row = document.getElementById('ot-row-1');
+    const r1 = document.getElementById('ot-row-1');
+    const r2 = document.getElementById('ot-row-2');
 
     if (items.length === 0) {
       section.style.display = 'none';
@@ -1320,11 +1322,16 @@
           </div>
         </article>`;
     };
-    row.innerHTML = items.map((it, i) => cardHtml(it, i)).join('');
-    row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
+    const mid = Math.ceil(items.length / 2);
+    r1.innerHTML = items.slice(0, mid).map((it, i) => cardHtml(it, i)).join('');
+    r2.innerHTML = items.slice(mid).map((it, i) => cardHtml(it, mid + i)).join('');
+
+    [r1, r2].forEach(row => {
+      row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
+        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
+      });
+      row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     });
-    row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     animatePieces();
     if (window.otUpdate) requestAnimationFrame(window.otUpdate);
   }

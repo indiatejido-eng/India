@@ -163,7 +163,7 @@
     <div class="sub">Tocá una opción y completá.</div>
     <div class="actions">
       <button class="act" onclick="go('venta')"><div><b>Vendí un chaleco</b><small>Suma a las ventas</small></div><div class="arr">→</div></button>
-      <button class="act" onclick="go('gasto')"><div><b>Anoté un gasto</b><small>Lana, envío, publicidad, retiro</small></div><div class="arr">→</div></button>
+      <button class="act" onclick="go('gasto')"><div><b>Anoté un gasto</b><small>Lana, tejedora, envío, publicidad, retiro</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('stats')"><div><b>Ver mis números</b><small>Ventas, ganancia, qué se vende más</small></div><div class="arr">→</div></button>
       <button class="act" onclick="location.href='/admin.html#stats'"><div><b>Estadísticas de la web</b><small>Visitas, fuentes de tráfico, dispositivos</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('clientes')"><div><b>Clientes</b><small>Pedidos, señas, envíos y reseñas</small></div><div class="arr">→</div></button>
@@ -197,10 +197,10 @@
     <button class="back" onclick="home()">← Volver</button>
     <div class="ttl">Anoté un gasto</div>
     <div class="field"><label>Fecha</label><input type="date" id="g-fecha"></div>
-    <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
+    <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Tejedora</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field" id="g-kgwrap"><label>Kilos de lana</label><input type="number" id="g-kg" inputmode="decimal" step="0.1" placeholder="1.6"></div>
     <div class="field"><label>Monto</label><input type="number" id="g-monto" inputmode="numeric" placeholder="19200"></div>
-    <div class="field"><label>Detalle (opcional)</label><input type="text" id="g-detalle" placeholder="Proveedora, correo..."></div>
+    <div class="field"><label id="g-detalle-lbl">Detalle (opcional)</label><input type="text" id="g-detalle" placeholder="Proveedora, correo..."></div>
     <button class="save" onclick="send('gasto')">Guardar gasto</button>
   </div>
 
@@ -264,7 +264,14 @@
   function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
-  function kg(){setTimeout(()=>{$('g-kgwrap').style.display=$('g-tipo').dataset.val==='Lana'?'block':'none'},0)}
+  // Ajusta los campos del gasto según el tipo: kilos solo para Lana, y en Tejedora
+  // el "Detalle" pasa a pedir el nombre (va a la misma columna del Sheet).
+  function kg(){setTimeout(()=>{
+    const t=$('g-tipo').dataset.val, esTej=t==='Tejedora';
+    $('g-kgwrap').style.display=t==='Lana'?'block':'none';
+    $('g-detalle-lbl').textContent=esTej?'¿Qué tejedora?':'Detalle (opcional)';
+    $('g-detalle').placeholder=esTej?'Nombre de la tejedora':'Proveedora, correo...';
+  },0)}
   function togglePago(){setTimeout(()=>{$('v-senawrap').style.display=$('v-pago').dataset.val==='Pagó seña'?'block':'none'},0)}
 
   const pesos=n=>'$'+Math.round(Number(n)||0).toLocaleString('es-AR');

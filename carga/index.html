@@ -54,6 +54,8 @@
   .chip{padding:10px 15px;border:1px solid var(--line2);border-radius:11px;background:var(--surface);font-size:14px;font-weight:500;cursor:pointer;transition:.12s}
   .chip:active{transform:scale(.96)}
   .chip.sel{background:var(--sel);color:#faf6ee;border-color:var(--sel)}
+  .tej{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tej span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px}
 
   .save{width:100%;margin-top:6px;padding:16px;font-size:16px;font-weight:600;font-family:var(--disp);background:var(--accent);color:#faf6ee;border:none;border-radius:13px;cursor:pointer;transition:background .15s}
   .save:active{background:var(--accent-d)}
@@ -199,8 +201,14 @@
     <div class="field"><label>Fecha</label><input type="date" id="g-fecha"></div>
     <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Tejedora</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field" id="g-kgwrap"><label>Kilos de lana</label><input type="number" id="g-kg" inputmode="decimal" step="0.1" placeholder="1.6"></div>
+    <div class="field" id="g-tejwrap" style="display:none"><label>¿Cuántos chalecos le pagás?</label>
+      <div class="tej">
+        <div><span id="g-tej-nino-lbl"></span><input type="number" id="g-tej-nino" inputmode="numeric" min="0" step="1" value="0" oninput="calcTejedora()"></div>
+        <div><span id="g-tej-adulto-lbl"></span><input type="number" id="g-tej-adulto" inputmode="numeric" min="0" step="1" value="0" oninput="calcTejedora()"></div>
+      </div>
+    </div>
     <div class="field"><label>Monto</label><input type="number" id="g-monto" inputmode="numeric" placeholder="19200"></div>
-    <div class="field"><label id="g-detalle-lbl">Detalle (opcional)</label><input type="text" id="g-detalle" placeholder="Proveedora, correo..."></div>
+    <div class="field"><label>Detalle (opcional)</label><input type="text" id="g-detalle" placeholder="Proveedora, correo..."></div>
     <button class="save" onclick="send('gasto')">Guardar gasto</button>
   </div>
 
@@ -264,14 +272,35 @@
   function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
-  // Ajusta los campos del gasto según el tipo: kilos solo para Lana, y en Tejedora
-  // el "Detalle" pasa a pedir el nombre (va a la misma columna del Sheet).
+  // Lo que cobra la tejedora por chaleco tejido. Es una sola tejedora y la tarifa es fija:
+  // si cambia, se toca SOLO acá (las etiquetas del formulario se escriben desde estos números).
+  const TARIFA_TEJEDORA={nino:9000,adulto:18000};
+
+  // Ajusta los campos del gasto según el tipo: kilos solo para Lana, contador de chalecos
+  // solo para Tejedora.
   function kg(){setTimeout(()=>{
     const t=$('g-tipo').dataset.val, esTej=t==='Tejedora';
     $('g-kgwrap').style.display=t==='Lana'?'block':'none';
-    $('g-detalle-lbl').textContent=esTej?'¿Qué tejedora?':'Detalle (opcional)';
-    $('g-detalle').placeholder=esTej?'Nombre de la tejedora':'Proveedora, correo...';
+    $('g-tejwrap').style.display=esTej?'block':'none';
+    if(esTej){
+      $('g-tej-nino-lbl').textContent='Niño · '+pesos(TARIFA_TEJEDORA.nino)+' c/u';
+      $('g-tej-adulto-lbl').textContent='Adulto · '+pesos(TARIFA_TEJEDORA.adulto)+' c/u';
+    }
   },0)}
+
+  // Cantidad de chalecos → monto. Queda editable por si algún pago no sigue la tarifa.
+  const tejCant=id=>Math.max(0,Math.floor(Number($(id).value)||0));
+  function calcTejedora(){
+    const n=tejCant('g-tej-nino'), a=tejCant('g-tej-adulto');
+    if(n+a>0)$('g-monto').value=n*TARIFA_TEJEDORA.nino+a*TARIFA_TEJEDORA.adulto;
+  }
+  // Texto para la columna Detalle: "2 adulto, 1 niño" + lo que haya escrito Bárbara.
+  function detalleTejedora(){
+    const n=tejCant('g-tej-nino'), a=tejCant('g-tej-adulto'), p=[];
+    if(a)p.push(a+' adulto'+(a>1?'s':''));
+    if(n)p.push(n+' niño'+(n>1?'s':''));
+    return [p.join(', '),$('g-detalle').value.trim()].filter(Boolean).join(' · ');
+  }
   function togglePago(){setTimeout(()=>{$('v-senawrap').style.display=$('v-pago').dataset.val==='Pagó seña'?'block':'none'},0)}
 
   const pesos=n=>'$'+Math.round(Number(n)||0).toLocaleString('es-AR');
@@ -399,7 +428,12 @@
   async function send(accion){
     let d;
     if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value};
-    else d={accion,fecha:$('g-fecha').value,tipo:$('g-tipo').dataset.val,monto:Number($('g-monto').value||0),kg:$('g-tipo').dataset.val==='Lana'?Number($('g-kg').value||0):'',detalle:$('g-detalle').value};
+    else{
+      const tipo=$('g-tipo').dataset.val;
+      d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
+         kg:tipo==='Lana'?Number($('g-kg').value||0):'',
+         detalle:tipo==='Tejedora'?detalleTejedora():$('g-detalle').value};
+    }
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
     $('demo').style.display='none';
     $('done-check').style.display='none';

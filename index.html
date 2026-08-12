@@ -222,8 +222,8 @@
     margin: calc(-1 * var(--nav-h, 86px)) 0 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
-    background-image: url('/hero-desktop.jpg');
-    background-size: cover; background-position: center 72%;
+    background-image: url('/hero-desktop.jpg?v=2');
+    background-size: cover; background-position: center 50%;
   }
   .hero::after{
     content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
@@ -307,7 +307,7 @@
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
   /* círculo decorativo detrás */
   @media(max-width: 800px){
-    .hero{ background-image: url('/hero-portada.jpg'); background-position: center 42%; }
+    .hero{ background-image: url('/hero-portada.jpg?v=2'); background-position: center 42%; }
     .hero-content{ max-width: none; padding: 0 22px 54px; }
     .hero-content .hero-lead{ max-width: none; }
     .hero h1{ font-size: clamp(2.4rem, 9.5vw, 3.1rem); margin: 0 0 18px; }

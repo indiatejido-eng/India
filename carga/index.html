@@ -200,7 +200,7 @@
     <div class="ttl">Anoté un gasto</div>
     <div class="field"><label>Fecha</label><input type="date" id="g-fecha"></div>
     <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Tejedora</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
-    <div class="field" id="g-kgwrap"><label>Kilos de lana</label><input type="number" id="g-kg" inputmode="decimal" step="0.1" placeholder="1.6"></div>
+    <div class="field" id="g-kgwrap"><label>Kilos de lana</label><input type="text" id="g-kg" inputmode="decimal" placeholder="1,6" oninput="soloDecimal(this)"></div>
     <div class="field" id="g-tejwrap" style="display:none"><label>¿Cuántos chalecos le pagás?</label>
       <div class="tej">
         <div><span id="g-tej-nino-lbl"></span><input type="number" id="g-tej-nino" inputmode="numeric" min="0" step="1" value="0" oninput="calcTejedora()"></div>
@@ -301,6 +301,17 @@
     if(n)p.push(n+' niño'+(n>1?'s':''));
     return [p.join(', '),$('g-detalle').value.trim()].filter(Boolean).join(' · ');
   }
+  // Los kilos van en un input de texto: type="number" rechaza la coma y el teclado del celu
+  // en es-AR ofrece coma, así que no se podía escribir "1,6". Filtramos a mano y al leer
+  // aceptamos coma o punto indistintamente.
+  function soloDecimal(el){
+    let v=el.value.replace(/[^\d.,]/g,'');
+    const i=v.search(/[.,]/);
+    if(i>-1)v=v.slice(0,i+1)+v.slice(i+1).replace(/[.,]/g,'');
+    if(el.value!==v)el.value=v;
+  }
+  const decimal=id=>Number(String($(id).value).trim().replace(',','.'))||0;
+
   function togglePago(){setTimeout(()=>{$('v-senawrap').style.display=$('v-pago').dataset.val==='Pagó seña'?'block':'none'},0)}
 
   const pesos=n=>'$'+Math.round(Number(n)||0).toLocaleString('es-AR');
@@ -431,7 +442,7 @@
     else{
       const tipo=$('g-tipo').dataset.val;
       d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
-         kg:tipo==='Lana'?Number($('g-kg').value||0):'',
+         kg:tipo==='Lana'?decimal('g-kg'):'',
          detalle:tipo==='Tejedora'?detalleTejedora():$('g-detalle').value};
     }
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));

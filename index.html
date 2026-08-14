@@ -315,30 +315,6 @@
     .hero-cta{ padding: 15px 26px; font-size: 0.95rem; }
   }
 
-  /* SELLO — una sola línea entre la portada y las piezas. Es el estándar de la marca
-     ("100% lana de oveja. Tejido a mano.") dicho en el eyebrow de la casa: hechos chiquitos,
-     con aire, sin caja ni íconos. No es una sección: es un renglón. */
-  .sello{
-    display: flex; flex-wrap: wrap;
-    align-items: center; justify-content: center;
-    gap: 10px 26px;
-    padding: 4px 24px 0;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.68rem; font-weight: 600;
-    letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--accent);
-    text-align: center;
-  }
-  .sello span{ position: relative; }
-  .sello span + span::before{
-    content: ''; position: absolute; left: -14px; top: 50%;
-    width: 4px; height: 4px; margin-top: -2px;
-    border-radius: 50%; background: var(--line);
-  }
-  @media(max-width: 520px){
-    .sello{ gap: 8px 18px; font-size: 0.6rem; letter-spacing: 0.13em; }
-    .sello span + span::before{ left: -11px; }
-  }
   /* GALERIA */
   .gallery{
     padding: 60px 24px 80px;
@@ -799,7 +775,8 @@
     margin: -10px 0 -4px; text-align: center;
   }
   .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
-  .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); }
+  /* Un respiro entre la ficha (medidas + material) y el precio */
+  .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); margin-top: 8px; }
   .lightbox-precio .envio{
     font-family: 'DM Sans', sans-serif;
     font-size: 0.68rem; font-weight: 600;
@@ -1060,12 +1037,6 @@
     </div>
 </section>
 
-<!-- SELLO — los tres hechos de la marca. Hechos, no adjetivos: es lo que sostiene el precio. -->
-<div class="sello">
-  <span>100% lana de oveja</span>
-  <span>Hilado y tejido a mano</span>
-</div>
-
 <!-- GALERIA -->
 <section class="gallery" id="chalecos">
   <div class="gallery-head">
@@ -1245,12 +1216,12 @@
   // La descripción viene tipo "Talle M. Ancho: 53cm | Largo: 65cm". En la grilla va SOLO lo
   // primero (el talle): ficha técnica al lado de la foto es ruido. Las medidas se leen en el
   // visor, que es donde alguien las busca. Si la desc no tiene separadores, va entera.
-  // "Talle 8" solo no dice nada — puede leerse como un talle raro de adulto. Los talles
-  // numéricos son de niño (la lista va de 6 a 14), así que se aclara. Sin la palabra, todo
-  // un público no se entera de que hay para chicos.
-  const marcarNino = (t) => t.replace(/(talle\s*:?\s*\d{1,2})\b/i, '$1 · niño');
-  const descCorta = (d) => marcarNino(String(d || '').split(/[.|]/)[0].trim());
-  const descLarga = (d) => marcarNino(String(d || '').replace(/\s*[.|]\s*/g, ' · ').replace(/\s·\s*$/, '').trim());
+  const descCorta = (d) => String(d || '').split(/[.|]/)[0].trim();
+  const descLarga = (d) => String(d || '').replace(/\s*[.|]\s*/g, ' · ').replace(/\s·\s*$/, '').trim();
+  // Los hechos de la marca. No van sueltos en la página: van en la ficha del visor, que es
+  // donde alguien está evaluando la pieza y el dato justifica el precio. Son iguales para
+  // todos los chalecos, por eso son fijos y no un campo del admin.
+  const MATERIAL = '100% lana de oveja · hilado y tejido a mano';
   // Dispositivos internos (Bárbara y Justo): no ensucian las estadísticas. El flag se activa
   // solo al entrar a admin.html, o a mano con ...?interno=1 en la URL (?interno=0 lo saca).
   // Bloquea TODO el tracking: visitas, clicks de WhatsApp, clicks por chaleco y entradas por link.
@@ -1339,6 +1310,7 @@
     const amMsg = `Hola! Me gusta el chaleco ${item.nombre || ''}. ¿Lo pueden hacer a mi medida?`.replace('  ', ' ');
     lbPrecio.innerHTML = !opts.hideCta
       ? `${dTxt ? `<span class="d">${dTxt}</span>` : ''}`
+        + `<span class="d">${MATERIAL}</span>`
         + `${pTxt ? `<span class="n">${pTxt}</span><span class="envio">Envío incluido</span>` : ''}`
         + `<a class="am" href="${waLink(amMsg)}" target="_blank" rel="noopener">Pedilo a tu medida</a>`
       : '';

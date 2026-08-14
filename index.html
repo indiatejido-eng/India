@@ -461,6 +461,9 @@
   /* "Otros tejidos" — 2 filas INDEPENDIENTES que se deslizan al costado */
   .ot-wrap{ position:relative; }
   .ot-wrap::after{ content:''; position:absolute; top:0; bottom:0; right:0; width:56px; pointer-events:none; z-index:2; background:linear-gradient(to right, rgba(243,236,224,0), var(--bg)); }
+  /* Si entra todo y no hay nada al costado, el velo se va: si queda, se lee
+     como si las piezas estuvieran metidas adentro de una caja. */
+  .ot-wrap.sin-desliz::after{ display:none; }
   .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:0 0 14px; padding:0 8px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
   .ot-hint .ar{ display:inline-block; font-size:1.05rem; animation:otNudge 1.5s ease-in-out infinite; }
   @keyframes otNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(7px); opacity:1; } }
@@ -984,20 +987,39 @@
     .grid{ gap: 76px 120px; }
     .grid.grid-1{ max-width: 420px; }
     .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 860px; }
-    .grid.grid-3{ grid-template-columns: repeat(3, 1fr); max-width: none; }
-    .grid.grid-many{ grid-template-columns: repeat(3, 1fr); max-width: none; }
-    /* Cuadro menos alto que en el celu (4/5 en vez de 5/7). La altura es lo que
-       se come la pantalla, y es lo que hacía que se vieran enormes. */
+    /* Piezas con tope de ancho: el sobrante se va al gutter, no a la foto. */
+    .grid.grid-3, .grid.grid-many{
+      grid-template-columns: repeat(3, minmax(0, 340px));
+      justify-content: space-between;
+      max-width: none;
+    }
+    /* Cuadro menos alto que en el celu (4/5 en vez de 5/7). */
     .piece-img{ aspect-ratio: 4 / 5; }
+    /* LA CAUSA DE TODO: `height:92%` no resuelve contra una caja cuyo alto sale
+       de aspect-ratio, así que cada foto se dibujaba a su TAMAÑO NATURAL y se
+       salía del cuadro. Los chalecos medían entre 440px y 525px de alto según
+       la proporción de cada foto (0.57 a 0.68). De ahí las tres quejas juntas:
+       gigantes, desnivelados y "como en una caja".
+       Posicionada absoluta, el porcentaje sí resuelve: todas miden lo mismo,
+       ninguna desborda y el nombre de todas arranca a la misma altura. */
+    .piece-img img{
+      position: absolute; inset: 0; margin: auto;
+      width: auto; height: auto;
+      max-width: 100%; max-height: 92%;
+      object-fit: contain;
+    }
     /* La ficha acompaña el tamaño de la foto */
     .piece-info h3{ font-size: 1.3rem; }
     .piece-info .desc{ font-size: 0.97rem; }
     .piece-info .precio{ font-size: 1.02rem; }
 
-    /* OTROS TEJIDOS — la tira también estaba en tamaño celular */
-    .ot-row{ gap: 34px; }
-    .ot-row .piece{ flex: 0 0 300px; }
-    .ot-row + .ot-row{ margin-top: 34px; }
+    /* OTROS TEJIDOS — es el archivo: va más chico que el catálogo, y a este
+       tamaño las 5 piezas de cada fila entran enteras en la pantalla. Por eso
+       desaparecen solos el "Deslizá" y el velo del borde: no hay nada al
+       costado que mostrar. */
+    .ot-row{ gap: 52px; }
+    .ot-row .piece{ flex: 0 0 210px; }
+    .ot-row + .ot-row{ margin-top: 44px; }
     .ot-wrap::after{ width: 90px; }
 
     /* A MEDIDA — el texto quedaba centrado dentro de su mitad y se leía corrido
@@ -1045,11 +1067,10 @@
      pero con techo — que el ojo no tenga que barrer de punta a punta. */
   @media(min-width: 1600px){
     :root{ --maxw: 1480px; --gutter: 64px; }
-    .ot-row .piece{ flex: 0 0 340px; }
     .gallery{ padding: 130px var(--gutter) 150px; }
-    /* La grilla no sigue creciendo con la pantalla: las fotos quedan del mismo
-       tamaño que en 1440 y el aire de más se reparte a los costados. */
-    .grid.grid-3, .grid.grid-many{ max-width: 1340px; margin-inline: auto; }
+    /* Las piezas ya tienen tope de ancho, así que en pantallas grandes el aire
+       de más va al gutter: las fotos no crecen. */
+    .ot-row{ gap: 64px; }
   }
 </style>
 </head>
@@ -1594,9 +1615,13 @@
       el.addEventListener('mousemove', e => { if (!down) return; const dx = e.pageX - startX; if (Math.abs(dx) > 4) moved = true; el.scrollLeft = startL - dx; });
       el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
     });
+    const wrap = document.querySelector('.ot-wrap');
     window.otUpdate = () => {
       const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
       if (hint) hint.style.visibility = overflow ? 'visible' : 'hidden';
+      // El velo del borde derecho también se va cuando no hay nada al costado:
+      // si queda, se lee como si las piezas estuvieran metidas en una caja.
+      if (wrap) wrap.classList.toggle('sin-desliz', !overflow);
     };
     window.addEventListener('resize', window.otUpdate);
     window.otUpdate();

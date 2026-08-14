@@ -233,6 +233,7 @@
   .hero{
     position: relative;
     min-height: 100vh;
+    min-height: 100dvh;
     margin: calc(-1 * var(--nav-h, 86px)) 0 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
@@ -483,7 +484,7 @@
 
   /* A MEDIDA — editorial bespoke (foto + pasos numerados) */
   .am{ --forest:#2f3a24; --forest-dark:#26301d;
-       display:flex; align-items:stretch; min-height:100vh; background:var(--bg); }
+       display:flex; align-items:stretch; min-height:100vh; min-height:100dvh; background:var(--bg); }
 
   /* Columna foto */
   .am-foto{ position:relative; width:50%; overflow:hidden; background:var(--bg-soft); }
@@ -513,7 +514,7 @@
   /* Celular: hero con foto + título encima */
   @media(max-width:880px){
     .am{ flex-direction:column; min-height:0; }
-    .am-foto{ width:100%; height:68vh; min-height:440px; }
+    .am-foto{ width:100%; height:68vh; height:68dvh; min-height:440px; }
     .am-foto::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.86) 0%, rgba(28,22,14,.45) 34%, rgba(28,22,14,0) 62%); }
     .am-hero-text{ display:flex; flex-direction:column; position:absolute; left:0; right:0; bottom:0; z-index:2; padding:0 24px 34px; }
     .am-hero-text .am-eyebrow{ color:rgba(250,245,234,.82); margin-bottom:16px; }
@@ -682,19 +683,32 @@
   .foot-bottom em{ font-style: italic; font-family: 'Fraunces', serif; }
 
   /* LIGHTBOX (galería del chaleco) */
+  /* Alto: 100vh en iPhone NO descuenta la barra del navegador (que en iOS va abajo), así que
+     el botón de WhatsApp quedaba tapado. 100dvh sí la descuenta —y se reajusta cuando la barra
+     aparece o desaparece—, con el vh viejo de fallback. El padding de abajo respeta la franja
+     del gesto (safe-area). Y si aun así no entra, scrollea: nunca más contenido cortado. */
   .lightbox{
     position: fixed; inset: 0; z-index: 2000;
+    height: 100vh;
+    height: 100dvh;
     background: rgba(245, 240, 232, 0.97);
     display: none;
-    align-items: center; justify-content: center;
+    align-items: flex-start; justify-content: center;
     padding: 36px 24px;
+    padding-bottom: calc(36px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     opacity: 0;
     transition: opacity 0.25s ease;
   }
   .lightbox.show{ display: flex; opacity: 1; }
+  /* margin:auto (y no align-items:center) centra vertical solo si hay lugar; si no hay,
+     el contenido arranca arriba y se scrollea, en vez de recortarse por los dos lados. */
   .lightbox-inner{
     position: relative;
     width: 100%; max-width: 900px;
+    margin: auto;
     display: flex; flex-direction: column;
     align-items: center; gap: 28px;
   }
@@ -723,11 +737,13 @@
     display: flex; align-items: center; justify-content: center;
     padding: 8px 0;
     min-height: 50vh;
+    min-height: 46dvh;
     overflow: hidden;
   }
   .lightbox-img{
     max-width: 100%;
     max-height: 66vh;
+    max-height: 62dvh;
     object-fit: contain;
     filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.2));
     transition: opacity 0.2s, transform 0.3s cubic-bezier(.2,.8,.2,1);
@@ -827,14 +843,15 @@
   .lightbox-cta:hover{ background: #38452b; transform: translateY(-2px); }
   .lightbox-cta svg{ width: 18px; height: 18px; fill: currentColor; }
   @media(max-width: 767px){
-    .lightbox{ padding: 24px 12px; }
+    .lightbox{ padding: 24px 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
     .lightbox-inner{ gap: 20px; }
     .lb-side{ gap: 20px; }
     .lightbox-close{ top: 10px; right: 10px; width: 36px; height: 36px; font-size: 1.3rem; }
     .lightbox-prev{ left: 4px; }
     .lightbox-next{ right: 4px; }
     .lightbox-arrow{ width: 36px; height: 36px; font-size: 1.3rem; background: rgba(58, 46, 31, 0.15); }
-    .lightbox-img{ max-height: 56vh; }
+    /* La foto cede alto para que la ficha y el botón entren en una pantalla de celu */
+    .lightbox-img{ max-height: 50vh; max-height: 46dvh; }
     /* Thumbs scrolleables horizontalmente cuando son más de los que entran */
     .lightbox-thumbs{
       flex-wrap: nowrap;
@@ -1004,7 +1021,9 @@
     .lightbox-inner{
       flex-direction: row; align-items: center;
       gap: 60px; max-width: 1280px;
+      margin: auto;
       height: min(86vh, 840px);
+      height: min(86dvh, 840px);
     }
     .lightbox-stage{ flex: 1 1 auto; height: 100%; min-height: 0; padding: 0; }
     .lightbox-img{ max-height: 100%; max-width: 100%; }

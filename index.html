@@ -409,10 +409,19 @@
   /* El precio es un dato, no una oferta: chico, en la tipografía de texto, sin destacar. */
   .piece-info .precio{
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem; font-weight: 500; letter-spacing: 0.01em;
-    color: var(--ink-soft);
+    font-size: 0.95rem; font-weight: 500; letter-spacing: 0.01em;
+    color: var(--ink);
   }
-  .piece-info .precio .envio{ color: var(--muted); font-weight: 400; }
+  /* El envío se destaca con el eyebrow de la casa (mayúsculas chiquitas + tracking, marrón),
+     el mismo recurso de "A MEDIDA" y "LAS PIEZAS". Se nota sin parecer una promo: nada de
+     verde (es el color de la acción) ni de tick. */
+  .piece-info .envio{
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.66rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 5px;
+  }
   .piece-links{
     display: flex; align-items: center; flex-wrap: wrap;
     gap: 8px 16px; margin-top: 10px;
@@ -759,9 +768,23 @@
     margin: -10px 0 -4px; text-align: center;
   }
   .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
-  .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.05rem; font-weight: 500; color: var(--ink); }
-  .lightbox-precio .n .envio{ color: var(--muted); font-weight: 400; font-size: 0.92rem; }
-  .lightbox-precio .am{ font-family: 'Fraunces', serif; font-style: italic; font-size: 0.95rem; color: var(--muted); }
+  .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); }
+  .lightbox-precio .envio{
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  /* "Pedilo a tu medida" no es una frase decorativa: es la otra forma de encargar esta misma
+     pieza. Va como link (no como segundo botón) para no competirle al CTA de WhatsApp. */
+  .lightbox-precio .am{
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 1rem;
+    color: var(--accent-deep);
+    border-bottom: 1.5px solid rgba(139, 101, 53, 0.35);
+    padding-bottom: 2px; margin-top: 6px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .lightbox-precio .am:hover{ color: var(--accent); border-bottom-color: var(--accent); }
   .lightbox-cta{
     display: inline-flex; align-items: center; gap: 12px;
     background: var(--wa-deep); color: #fff;
@@ -1173,10 +1196,11 @@
     // momento en que la persona está mirando UNA pieza, con atención: es donde lee.
     const pTxt = opts.hideCta ? '' : precioTxt(item);
     const dTxt = opts.hideCta ? '' : escapeHtml(descLarga(item.desc));
-    lbPrecio.innerHTML = (pTxt || dTxt)
+    const amMsg = `Hola! Me gusta el chaleco ${item.nombre || ''}. ¿Lo pueden hacer a mi medida?`.replace('  ', ' ');
+    lbPrecio.innerHTML = !opts.hideCta
       ? `${dTxt ? `<span class="d">${dTxt}</span>` : ''}`
-        + `${pTxt ? `<span class="n">${pTxt} <span class="envio">· envío incluido</span></span>` : ''}`
-        + `<span class="am">También se teje a tu medida.</span>`
+        + `${pTxt ? `<span class="n">${pTxt}</span><span class="envio">Envío incluido</span>` : ''}`
+        + `<a class="am" href="${waLink(amMsg)}" target="_blank" rel="noopener">Pedilo a tu medida</a>`
       : '';
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.
@@ -1330,7 +1354,7 @@
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
             <div class="piece-foot">
-              ${precioTxt(it) ? `<div class="precio">${precioTxt(it)} <span class="envio">· envío incluido</span></div>` : ''}
+              ${precioTxt(it) ? `<div class="precio">${precioTxt(it)}</div><div class="envio">Envío incluido</div>` : ''}
               <div class="piece-links">
                 ${verFotos(it, i)}
                 <a class="piece-encargar" href="${waLink(msg)}" target="_blank" rel="noopener">Encargar</a>

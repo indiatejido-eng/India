@@ -391,6 +391,10 @@
   }
   .ver-fotos:hover{ color: var(--accent); border-bottom-color: var(--accent); }
   .ver-fotos svg{ width: 16px; height: 16px; }
+  /* La info crece y el pie (precio + links) se ancla abajo: así dos piezas vecinas quedan
+     niveladas aunque una tenga el nombre en dos líneas y la otra en una. */
+  .piece-info{ flex: 1; display: flex; flex-direction: column; }
+  .piece-foot{ margin-top: auto; padding-top: 12px; }
   .piece-info h3{
     font-family: 'Fraunces', serif;
     font-size: 1.15rem; font-weight: 400; line-height: 1.25;
@@ -407,12 +411,11 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem; font-weight: 500; letter-spacing: 0.01em;
     color: var(--ink-soft);
-    margin-top: 8px;
   }
   .piece-info .precio .envio{ color: var(--muted); font-weight: 400; }
   .piece-links{
     display: flex; align-items: center; flex-wrap: wrap;
-    gap: 8px 16px; margin-top: 14px;
+    gap: 8px 16px; margin-top: 10px;
   }
   .piece-links .ver-fotos{ margin: 0; }
   .piece-encargar{
@@ -755,6 +758,7 @@
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     margin: -10px 0 -4px; text-align: center;
   }
+  .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
   .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.05rem; font-weight: 500; color: var(--ink); }
   .lightbox-precio .n .envio{ color: var(--muted); font-weight: 400; font-size: 0.92rem; }
   .lightbox-precio .am{ font-family: 'Fraunces', serif; font-style: italic; font-size: 0.95rem; color: var(--muted); }
@@ -1081,6 +1085,11 @@
     const n = Number(it && it.precio);
     return n > 0 ? '$' + Math.round(n).toLocaleString('es-AR') : '';
   };
+  // La descripción viene tipo "Talle M. Ancho: 53cm | Largo: 65cm". En la grilla va SOLO lo
+  // primero (el talle): ficha técnica al lado de la foto es ruido. Las medidas se leen en el
+  // visor, que es donde alguien las busca. Si la desc no tiene separadores, va entera.
+  const descCorta = (d) => String(d || '').split(/[.|]/)[0].trim();
+  const descLarga = (d) => String(d || '').replace(/\s*[.|]\s*/g, ' · ').replace(/\s·\s*$/, '').trim();
   // Dispositivos internos (Bárbara y Justo): no ensucian las estadísticas. El flag se activa
   // solo al entrar a admin.html, o a mano con ...?interno=1 en la URL (?interno=0 lo saca).
   // Bloquea TODO el tracking: visitas, clicks de WhatsApp, clicks por chaleco y entradas por link.
@@ -1160,10 +1169,14 @@
     lbPlain = !!opts.plain;
     if (opts.hideCta) { lbCta.style.display = 'none'; }
     else { lbCta.style.display = ''; lbCta.href = waLink(`Hola! Me interesa el chaleco ${item.nombre || ''}.`.trim()); }
-    // El precio (si Bárbara lo cargó) va acá, con el recordatorio de que también se teje a medida.
+    // Acá va la ficha completa: medidas, precio y el recordatorio del a medida. Es el único
+    // momento en que la persona está mirando UNA pieza, con atención: es donde lee.
     const pTxt = opts.hideCta ? '' : precioTxt(item);
-    lbPrecio.innerHTML = pTxt
-      ? `<span class="n">${pTxt} <span class="envio">· envío incluido</span></span><span class="am">También se teje a tu medida.</span>`
+    const dTxt = opts.hideCta ? '' : escapeHtml(descLarga(item.desc));
+    lbPrecio.innerHTML = (pTxt || dTxt)
+      ? `${dTxt ? `<span class="d">${dTxt}</span>` : ''}`
+        + `${pTxt ? `<span class="n">${pTxt} <span class="envio">· envío incluido</span></span>` : ''}`
+        + `<span class="am">También se teje a tu medida.</span>`
       : '';
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.
@@ -1308,7 +1321,7 @@
     grid.className = 'grid ' + gridSizeClass(items.length);
     grid.innerHTML = items.map((it, i) => {
       const nombre = escapeHtml(it.nombre || 'Chaleco tejido a mano');
-      const desc = escapeHtml(it.desc || '');
+      const desc = escapeHtml(descCorta(it.desc));
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
         <article class="piece${it.conFondo ? ' con-fondo' : ''}">
@@ -1316,10 +1329,12 @@
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
-            ${precioTxt(it) ? `<div class="precio">${precioTxt(it)} <span class="envio">· envío incluido</span></div>` : ''}
-            <div class="piece-links">
-              ${verFotos(it, i)}
-              <a class="piece-encargar" href="${waLink(msg)}" target="_blank" rel="noopener">Encargar</a>
+            <div class="piece-foot">
+              ${precioTxt(it) ? `<div class="precio">${precioTxt(it)} <span class="envio">· envío incluido</span></div>` : ''}
+              <div class="piece-links">
+                ${verFotos(it, i)}
+                <a class="piece-encargar" href="${waLink(msg)}" target="_blank" rel="noopener">Encargar</a>
+              </div>
             </div>
           </div>
         </article>`;
@@ -1350,7 +1365,7 @@
           <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
-            ${verFotos(it, i)}
+            <div class="piece-foot">${verFotos(it, i)}</div>
           </div>
         </article>`;
     };

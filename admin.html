@@ -875,6 +875,12 @@
     </div>
 
     <div class="field">
+      <label for="m-precio">Precio</label>
+      <input type="text" id="m-precio" inputmode="numeric" placeholder="150000">
+      <div class="field-hint">Opcional. Se muestra abajo del nombre, en la página. Si lo dejás vacío, no aparece ningún precio y siguen preguntando por WhatsApp.</div>
+    </div>
+
+    <div class="field">
       <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:500;">
         <input type="checkbox" id="m-confondo" style="width:18px; height:18px; accent-color: var(--accent); flex:none;">
         Mostrar con fondo (sin recortar)
@@ -1525,6 +1531,7 @@ function renderGrid(estado, items){
           <div class="card-body">
             <h3>${nombre}</h3>
             <div class="desc">${desc || '—'}</div>
+            ${Number(it.precio) > 0 ? `<div class="desc" style="margin-top:4px;font-weight:600;color:var(--ink)">$${Math.round(it.precio).toLocaleString('es-AR')}</div>` : ''}
             <div class="card-actions">
               ${acciones}
             </div>
@@ -1631,6 +1638,7 @@ function abrirModal(modo, estado, id=null){
   $('modal-title').textContent = item ? 'Editar chaleco' : 'Nuevo chaleco';
   $('m-nombre').value = item?.nombre || '';
   $('m-desc').value = item?.desc || '';
+  $('m-precio').value = Number(item?.precio) > 0 ? Math.round(item.precio).toLocaleString('es-AR') : '';
   $('m-confondo').checked = !!item?.conFondo;
   fileInput.value = '';
 
@@ -1658,9 +1666,18 @@ function cerrarModal(){
 
 $('btn-save').addEventListener('click', guardar);
 
+// El precio se escribe con separador de miles a medida que se tipea ("150.000"), así se ve
+// de una si sobra o falta un cero. Adentro se guarda como número pelado.
+const soloPesos = v => Number(String(v).replace(/\D/g, '')) || 0;
+$('m-precio').addEventListener('input', e => {
+  const n = soloPesos(e.target.value);
+  e.target.value = n > 0 ? n.toLocaleString('es-AR') : '';
+});
+
 async function guardar(){
   const nombre = $('m-nombre').value.trim();
   const desc = $('m-desc').value.trim();
+  const precio = soloPesos($('m-precio').value);
 
   if (!nombre) { showToast('Falta el nombre', true); return; }
   if (fotos.length === 0) { showToast('Falta al menos una foto', true); return; }
@@ -1689,7 +1706,7 @@ async function guardar(){
     const fotosFinal = fotos.map(f => ({ url: f.url, path: f.path || '' }));
 
     const payload = {
-      nombre, desc,
+      nombre, desc, precio,
       conFondo: $('m-confondo').checked,
       fotos: fotosFinal,
       foto: fotosFinal[0].url,            // espejo de la principal — usado por la grilla y compat con chalecos viejos

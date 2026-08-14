@@ -29,6 +29,33 @@
 <meta name="twitter:description" content="Chalecos tejidos a mano. Cada pieza es única. Hechos a tu medida.">
 <meta name="twitter:image" content="https://india-tejidos.vercel.app/og-image.jpg?v=1">
 
+<!-- Píxel de Meta. Mide visitas y clicks a WhatsApp para que los anuncios optimicen por gente
+     que escribe, no por gente que solo mira. Sin API de conversiones a propósito: manda los
+     eventos desde un servidor y acá no hay backend (sitio estático en Vercel).
+     Va en script clásico y arriba de todo para no depender de que cargue Firebase.
+     El chequeo de "interno" se repite acá (está también en el módulo de abajo) porque este
+     script corre antes: los dispositivos de Bárbara y Justo no ensucian los datos de Meta. -->
+<script>
+  (function(){
+    var interno = null;
+    try {
+      var p = new URLSearchParams(location.search).get('interno');
+      if (p === '1') localStorage.setItem('india_interno', '1');
+      else if (p === '0') localStorage.removeItem('india_interno');
+      interno = localStorage.getItem('india_interno');
+    } catch (e) {}
+    if (interno === '1') return;
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '906025832567425');
+    fbq('track', 'PageView');
+  })();
+</script>
+<!-- Sin <noscript> a propósito: sin JS no se carga ni el catálogo, así que no habría nada que medir. -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
@@ -1700,6 +1727,10 @@
     const a = e.target.closest('a[href*="wa.me"]');
     if (!a) return;
     bumpStat('clicks_whatsapp', 'clicks');
+    // Mismo click, dos destinos: las stats propias (arriba) y Meta. Es la única señal de
+    // intención de compra que se puede medir en el sitio — la venta se cierra en WhatsApp.
+    // fbq no existe si el visitante es interno o si un bloqueador tumbó el píxel.
+    if (window.fbq) fbq('track', 'Contact');
   });
 
   // Suscribirse a Firestore en tiempo real

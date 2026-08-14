@@ -897,6 +897,68 @@
   @media(max-width:520px){
     .op-grid{ grid-template-columns:1fr; gap:16px; max-width:400px; }
   }
+
+  /* ==========================================================================
+     COMPU (>= 1024px)
+     El celu manda hasta acá y no se toca. De 1024 para arriba la página dejaba
+     de crecer: cada sección tenía su propio ancho (nav 1100, galería 1300,
+     care 1200, opiniones 1120) y la grilla de chalecos estaba clavada en
+     760px — ancho de celular — en el medio de una pantalla de 1920.
+     Acá hay UN solo contenedor para todo y la grilla usa el ancho real.
+     ========================================================================== */
+  @media(min-width: 1024px){
+    :root{ --maxw: 1340px; --gutter: 48px; }
+
+    /* Todo alineado al mismo borde: logo, títulos, fotos y pie */
+    .nav-inner{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding: 0 var(--gutter); }
+    .gallery{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding: 110px var(--gutter) 130px; }
+    .care{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding: 110px var(--gutter); }
+    .op-grid{ max-width: none; gap: 34px; }
+
+    /* HERO — el texto arranca en el mismo borde que la grilla, no pegado al canto */
+    .hero-content{
+      max-width: calc(var(--maxw) + var(--gutter) * 2);
+      margin: 0 auto;
+      padding: 0 var(--gutter) 92px;
+    }
+    .hero h1{ font-size: clamp(3rem, 3.4vw, 4.3rem); }
+    .hero-lead{ max-width: 520px; }
+
+    /* CATÁLOGO — era el problema grande. Ahora 3 por fila a ancho completo:
+       con 5 piezas quedan 3 + 2, alineadas a la izquierda (queda editorial,
+       no "roto"). Una sola pieza sigue chica: 1 chaleco gigante = hotel. */
+    .gallery-head{ margin-bottom: 84px; }
+    .grid{ gap: 70px 44px; }
+    .grid.grid-1{ max-width: 460px; }
+    .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 940px; }
+    .grid.grid-3{ grid-template-columns: repeat(3, 1fr); max-width: none; }
+    .grid.grid-many{ grid-template-columns: repeat(3, 1fr); max-width: none; }
+    /* La ficha acompaña el tamaño de la foto */
+    .piece-info h3{ font-size: 1.3rem; }
+    .piece-info .desc{ font-size: 0.97rem; }
+    .piece-info .precio{ font-size: 1.02rem; }
+
+    /* OTROS TEJIDOS — la tira también estaba en tamaño celular */
+    .ot-row{ gap: 34px; }
+    .ot-row .piece{ flex: 0 0 300px; }
+    .ot-row + .ot-row{ margin-top: 34px; }
+    .ot-wrap::after{ width: 90px; }
+
+    /* A MEDIDA — la columna de texto respiraba poco en pantalla grande */
+    .am-body{ padding: 120px 6vw; }
+    .am-inner{ max-width: 600px; }
+
+    /* CIERRE — más aire arriba y abajo */
+    .final{ padding: 150px 24px; }
+  }
+
+  /* Pantallas grandes de verdad (1600+): el contenedor crece un poco más,
+     pero con techo — que el ojo no tenga que barrer de punta a punta. */
+  @media(min-width: 1600px){
+    :root{ --maxw: 1480px; --gutter: 64px; }
+    .ot-row .piece{ flex: 0 0 340px; }
+    .gallery{ padding: 130px var(--gutter) 150px; }
+  }
 </style>
 </head>
 <body>

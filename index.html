@@ -464,6 +464,9 @@
   /* Si entra todo y no hay nada al costado, el velo se va: si queda, se lee
      como si las piezas estuvieran metidas adentro de una caja. */
   .ot-wrap.sin-desliz::after{ display:none; }
+  /* Y si entra todo, la fila se centra: si no, queda pegada a la izquierda y
+     con un hueco a la derecha, que se lee como sección descentrada. */
+  .ot-wrap.sin-desliz .ot-row{ justify-content: center; }
   .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:0 0 14px; padding:0 8px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
   .ot-hint .ar{ display:inline-block; font-size:1.05rem; animation:otNudge 1.5s ease-in-out infinite; }
   @keyframes otNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(7px); opacity:1; } }
@@ -717,6 +720,7 @@
   }
   /* Agrupa ficha + botón + miniaturas. En celu no cambia nada: misma columna
      centrada y mismo gap que antes. En compu se convierte en la columna derecha. */
+  .lb-main,
   .lb-side{
     display: flex; flex-direction: column;
     align-items: center; gap: 28px;
@@ -827,14 +831,18 @@
   }
   /* "Pedilo a tu medida" no es una frase decorativa: es la otra forma de encargar esta misma
      pieza. Va como link (no como segundo botón) para no competirle al CTA de WhatsApp. */
-  .lightbox-precio .am{
+  /* OJO con el nombre: se llamaba ".am" y chocaba con la SECCIÓN "A medida"
+     (`.am { display:flex; min-height:100vh }`), así que este link de texto
+     heredaba 100vh de alto y empujaba toda la ficha fuera del visor. En el celu
+     no se notaba porque a ≤880px la sección pisa el min-height a 0. */
+  .lightbox-precio .lb-medida{
     font-family: 'Fraunces', serif; font-style: italic; font-size: 1rem;
     color: var(--accent-deep);
     border-bottom: 1.5px solid rgba(139, 101, 53, 0.35);
     padding-bottom: 2px; margin-top: 6px;
     transition: color 0.15s, border-color 0.15s;
   }
-  .lightbox-precio .am:hover{ color: var(--accent); border-bottom-color: var(--accent); }
+  .lightbox-precio .lb-medida:hover{ color: var(--accent); border-bottom-color: var(--accent); }
   .lightbox-cta{
     display: inline-flex; align-items: center; gap: 12px;
     background: var(--wa-deep); color: #fff;
@@ -848,7 +856,7 @@
   @media(max-width: 767px){
     .lightbox{ padding: 24px 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
     .lightbox-inner{ gap: 20px; }
-    .lb-side{ gap: 20px; }
+    .lb-main, .lb-side{ gap: 20px; }
     .lightbox-close{ top: 10px; right: 10px; width: 36px; height: 36px; font-size: 1.3rem; }
     .lightbox-prev{ left: 4px; }
     .lightbox-next{ right: 4px; }
@@ -1042,23 +1050,25 @@
     .lightbox{ padding: 0 56px; }
     .lightbox-inner{
       flex-direction: row; align-items: center;
-      gap: 60px; max-width: 1280px;
+      gap: 60px; max-width: 1180px;
       margin: auto;
-      height: min(86vh, 840px);
-      height: min(86dvh, 840px);
+      height: min(76vh, 700px);
+      height: min(76dvh, 700px);
     }
-    .lightbox-stage{ flex: 1 1 auto; height: 100%; min-height: 0; padding: 0; }
+    /* Izquierda: la foto y, abajo, las miniaturas. Derecha: la ficha y el botón.
+       Las miniaturas van con la foto (y no en la ficha) porque son dos filas de
+       80px: en la columna de la derecha empujaban el botón fuera de la pantalla. */
+    .lb-main{ flex: 1 1 auto; min-width: 0; height: 100%; gap: 20px; justify-content: center; }
+    .lightbox-stage{ flex: 1 1 auto; width: 100%; min-height: 0; padding: 0; }
     .lightbox-img{ max-height: 100%; max-width: 100%; }
     /* Las flechas van adentro de la foto: afuera le pisarían la ficha */
     .lightbox-prev{ left: 8px; }
     .lightbox-next{ right: 8px; }
+    .lightbox-thumbs{ flex: 0 0 auto; }
     .lb-side{ flex: 0 0 330px; width: 330px; align-items: flex-start; gap: 28px; }
-    /* Orden de lectura en compu: ficha → botón → miniaturas */
-    .lightbox-precio{ order: 1; align-items: flex-start; text-align: left; margin: 0; gap: 8px; }
+    .lightbox-precio{ align-items: flex-start; text-align: left; margin: 0; gap: 8px; }
     .lightbox-precio .d{ font-size: 0.98rem; line-height: 1.5; }
     .lightbox-precio .n{ font-size: 1.5rem; }
-    .lightbox-cta{ order: 2; }
-    .lightbox-thumbs{ order: 3; justify-content: flex-start; }
     /* Foto sola (las de las reseñas): no hay ficha, la foto se lleva todo el ancho */
     .lightbox.lb-solo .lb-side{ display: none; }
   }
@@ -1235,16 +1245,18 @@
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Galería del chaleco">
   <button class="lightbox-close" id="lightbox-close" aria-label="Cerrar">×</button>
   <div class="lightbox-inner">
+    <!-- Dos columnas en compu; en celu las dos son columnas apiladas y queda el
+         mismo orden de siempre: foto → miniaturas → ficha → botón. -->
+    <div class="lb-main">
     <div class="lightbox-stage">
       <button class="lightbox-arrow lightbox-prev" id="lightbox-prev" aria-label="Anterior">‹</button>
       <img class="lightbox-img" id="lightbox-img" src="" alt="">
       <div class="lightbox-loader" id="lightbox-loader" aria-hidden="true"></div>
       <button class="lightbox-arrow lightbox-next" id="lightbox-next" aria-label="Siguiente">›</button>
     </div>
-    <!-- Ficha + botón + miniaturas. En celu es la misma columna apilada de siempre;
-         en compu se convierte en la columna derecha del visor (ver @media 1024px). -->
-    <div class="lb-side">
     <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
+    </div>
+    <div class="lb-side">
     <div class="lightbox-precio" id="lightbox-precio"></div>
     <a class="lightbox-cta" id="lightbox-cta" href="" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1395,7 +1407,7 @@
         + (esAnterior
             ? `<span class="entregado">Este ya se entregó. Se teje de nuevo a tu medida.</span>`
             : `${pTxt ? `<span class="n">${pTxt}</span><span class="envio">Envío incluido</span>` : ''}`
-              + `<a class="am" href="${waLink(amMsg)}" target="_blank" rel="noopener">Pedilo a tu medida</a>`)
+              + `<a class="lb-medida" href="${waLink(amMsg)}" target="_blank" rel="noopener">Pedilo a tu medida</a>`)
       : '';
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.

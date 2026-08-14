@@ -83,19 +83,6 @@
     color: var(--muted);
   }
   .it{ font-style: italic; font-weight: 350; color: var(--accent-deep); }
-  .sep-hilo{
-    display: flex; align-items: center; justify-content: center; gap: 16px;
-    max-width: 1100px; margin: 6px auto; padding: 0 24px;
-    color: var(--accent);
-  }
-  .sep-hilo::before, .sep-hilo::after{
-    content: ""; height: 6px; flex: 1 1 40px; max-width: 160px;
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='26'%20height='6'%3E%3Cpath%20d='M0%204%20Q6.5%202.7%2013%204%20T26%204'%20fill='none'%20stroke='%238b6535'%20stroke-width='1.3'/%3E%3C/svg%3E");
-    background-repeat: repeat-x; background-position: center;
-    opacity: 0.5;
-  }
-  .sep-hilo svg{ width: 26px; height: 26px; opacity: 0.7; flex: none; }
-
   /* Grano sutil global */
   body::before{
     content:"";
@@ -377,9 +364,11 @@
   }
   .piece:hover .piece-img img{ transform: translateY(-6px) rotate(-1deg); }
   /* Chaleco "con fondo": foto ambientada en cuadrado (el chaleco manda), texto debajo como las demás */
-  .piece.con-fondo .piece-img{ border-radius: 2px; overflow: hidden; }
-  .piece.con-fondo .piece-img img{ width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; filter: none; }
-  .piece.con-fondo:hover .piece-img img{ transform: scale(1.03); }
+  /* Las piezas van SIEMPRE recortadas (sin fondo). Se sacó el modo "con fondo":
+     una foto con su fondo metida en la grilla se lee como un rectángulo blanco
+     pegado sobre el crema, y al lado de una recortada parece otro tamaño.
+     El switch del admin ya no afecta la web. Las fotos ambientadas van al hero,
+     a "A medida" y al visor, a todo ancho, donde se leen como decisión. */
   .ver-fotos{
     display: flex; width: fit-content; align-items: center; gap: 7px;
     margin: 13px 0 0;
@@ -944,11 +933,18 @@
        con 5 piezas quedan 3 + 2, alineadas a la izquierda (queda editorial,
        no "roto"). Una sola pieza sigue chica: 1 chaleco gigante = hotel. */
     .gallery-head{ margin-bottom: 84px; }
-    .grid{ gap: 70px 44px; }
-    .grid.grid-1{ max-width: 460px; }
-    .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 940px; }
+    /* El aire va en el gutter, no en el tamaño de la foto: la grilla sigue
+       llegando de punta a punta pero cada chaleco queda del tamaño justo.
+       Con el gutter chico quedaban gigantes: más de medio alto de pantalla
+       en una notebook. */
+    .grid{ gap: 76px 120px; }
+    .grid.grid-1{ max-width: 420px; }
+    .grid.grid-2{ grid-template-columns: repeat(2, 1fr); max-width: 860px; }
     .grid.grid-3{ grid-template-columns: repeat(3, 1fr); max-width: none; }
     .grid.grid-many{ grid-template-columns: repeat(3, 1fr); max-width: none; }
+    /* Cuadro menos alto que en el celu (4/5 en vez de 5/7). La altura es lo que
+       se come la pantalla, y es lo que hacía que se vieran enormes. */
+    .piece-img{ aspect-ratio: 4 / 5; }
     /* La ficha acompaña el tamaño de la foto */
     .piece-info h3{ font-size: 1.3rem; }
     .piece-info .desc{ font-size: 0.97rem; }
@@ -960,8 +956,9 @@
     .ot-row + .ot-row{ margin-top: 34px; }
     .ot-wrap::after{ width: 90px; }
 
-    /* A MEDIDA — la columna de texto respiraba poco en pantalla grande */
-    .am-body{ padding: 120px 6vw; }
+    /* A MEDIDA — el texto quedaba centrado dentro de su mitad y se leía corrido
+       a la derecha, lejos de la foto. Ahora arranca pegado a la foto. */
+    .am-body{ justify-content: flex-start; padding: 120px 4vw 120px 5vw; }
     .am-inner{ max-width: 600px; }
 
     /* CIERRE — más aire arriba y abajo */
@@ -1004,6 +1001,9 @@
     :root{ --maxw: 1480px; --gutter: 64px; }
     .ot-row .piece{ flex: 0 0 340px; }
     .gallery{ padding: 130px var(--gutter) 150px; }
+    /* La grilla no sigue creciendo con la pantalla: las fotos quedan del mismo
+       tamaño que en 1440 y el aire de más se reparte a los costados. */
+    .grid.grid-3, .grid.grid-many{ max-width: 1340px; margin-inline: auto; }
   }
 </style>
 </head>
@@ -1074,10 +1074,6 @@
 </section>
 
 <!-- A MEDIDA -->
-<div class="sep-hilo" aria-hidden="true">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M5.5 9.5c4 1 8 3.5 11 6.6M8 4.8c3 2.6 6 6.2 8 10.2M5.4 14.6c3-2.6 6.2-6.2 8.6-9.8"/></svg>
-</div>
-
 <section class="am" id="a-medida">
   <!-- Foto: canasto con el chaleco tejiéndose. En el celu, hero con el título encima -->
   <div class="am-foto">
@@ -1480,8 +1476,8 @@
       const desc = escapeHtml(descCorta(it.desc));
       const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
       return `
-        <article class="piece${it.conFondo ? ' con-fondo' : ''}">
-          <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+        <article class="piece">
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             ${desc ? `<div class="desc">${desc}</div>` : ''}
@@ -1497,7 +1493,7 @@
     }).join('');
 
     grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo }); });
+      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it); });
     });
 
     animatePieces();
@@ -1517,8 +1513,8 @@
     const cardHtml = (it, i) => {
       const nombre = escapeHtml(it.nombre || 'Chaleco');
       return `
-        <article class="piece${it.conFondo ? ' con-fondo' : ''}">
-          <div class="piece-img${it.conFondo ? ' con-fondo' : ''}" data-idx="${i}"><img src="${(it.conFondo ? fotoPlain : fotoUrl)(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
+        <article class="piece">
+          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
           <div class="piece-info">
             <h3><span class="it">${nombre}</span></h3>
             <div class="piece-foot">${verFotos(it, i)}</div>
@@ -1531,7 +1527,7 @@
 
     [r1, r2].forEach(row => {
       row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { plain: !!it.conFondo, anterior: true }); });
+        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { anterior: true }); });
       });
       row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     });

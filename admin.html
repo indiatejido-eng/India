@@ -805,6 +805,10 @@
     </div><!-- /panel-stats -->
 
     <div class="tab-panel active" id="panel-disponible">
+      <div id="precios-bar" style="display:none; align-items:center; gap:14px; flex-wrap:wrap; background:var(--bg-card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:0 0 16px;">
+        <span style="font-size:0.9rem; color:var(--ink-soft)" id="precios-bar-txt"></span>
+        <button class="btn btn-sm" id="btn-precios-talle">Poner los precios de la lista</button>
+      </div>
       <div class="grid-admin" id="grid-disponible"></div>
     </div>
     <div class="tab-panel" id="panel-anterior">
@@ -877,7 +881,7 @@
     <div class="field">
       <label for="m-precio">Precio</label>
       <input type="text" id="m-precio" inputmode="numeric" placeholder="150000">
-      <div class="field-hint">Opcional. Se muestra abajo del nombre, en la página. Si lo dejás vacío, no aparece ningún precio y siguen preguntando por WhatsApp.</div>
+      <div class="field-hint" id="m-precio-hint">Opcional. Se muestra abajo del nombre, en la página. Si lo dejás vacío, no aparece ningún precio y siguen preguntando por WhatsApp.</div>
     </div>
 
     <div class="field">
@@ -1467,6 +1471,7 @@ function suscribir(){
     dataDisp = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('disponible', dataDisp);
+    actualizarBarraPrecios();
     $('count-disp').textContent = dataDisp.length;
     refrescarClicksChalecos();
   });
@@ -1496,6 +1501,67 @@ function desuscribir(){
 }
 
 // ===== RENDER =====
+// ===== Precios por talle =====
+// La lista de precios vigente. Si cambian los precios, se tocan SOLO estos números:
+// el admin sugiere y completa a partir de acá, y cada chaleco guarda el suyo.
+const PRECIOS_TALLE = [
+  { talles: ['6', '7', '8', '9', '10'], precio: 80000,  label: '6 a 10' },
+  { talles: ['11', '12', '13', '14'],   precio: 95000,  label: '12 a 14' },
+  { talles: ['S'],                      precio: 150000, label: 'S' },
+  { talles: ['M', 'L'],                 precio: 160000, label: 'M a L' },
+  { talles: ['XL'],                     precio: 175000, label: 'XL' }
+];
+
+// Saca el talle de la descripción ("Talle M. Ancho: 53cm", "Talle 14") y devuelve el precio
+// de la lista. Si no dice talle, o dice "Único", devuelve null y el precio se pone a mano.
+function precioPorTalle(desc){
+  const m = String(desc || '').match(/talle\s*:?\s*(xl|s|m|l|\d{1,2})\b/i);
+  if (!m) return null;
+  const t = m[1].toUpperCase();
+  const fila = PRECIOS_TALLE.find(f => f.talles.includes(t));
+  return fila ? { precio: fila.precio, talle: t, label: fila.label } : null;
+}
+
+// Barra de "poner los precios de la lista": aparece solo si hay disponibles sin precio
+// a los que se les puede deducir el talle.
+function actualizarBarraPrecios(){
+  const bar = $('precios-bar');
+  if (!bar) return;
+  const pendientes = dataDisp.filter(it => !(Number(it.precio) > 0) && precioPorTalle(it.desc));
+  if (pendientes.length === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  $('precios-bar-txt').innerHTML = pendientes.length === 1
+    ? 'Hay <strong>1 chaleco sin precio</strong> con el talle en la descripción.'
+    : `Hay <strong>${pendientes.length} chalecos sin precio</strong> con el talle en la descripción.`;
+}
+
+$('btn-precios-talle').addEventListener('click', async () => {
+  const pendientes = dataDisp.filter(it => !(Number(it.precio) > 0) && precioPorTalle(it.desc));
+  if (pendientes.length === 0) return;
+  const detalle = pendientes.map(it => {
+    const p = precioPorTalle(it.desc);
+    return `${it.nombre} (talle ${p.talle}) → $${p.precio.toLocaleString('es-AR')}`;
+  }).join('\n');
+  if (!confirm(`Se van a poner estos precios:\n\n${detalle}\n\nDespués los podés cambiar uno por uno.`)) return;
+
+  const btn = $('btn-precios-talle');
+  btn.disabled = true; btn.textContent = 'Poniendo...';
+  try {
+    for (const it of pendientes) {
+      await updateDoc(doc(db, 'chalecos', it.id), {
+        precio: precioPorTalle(it.desc).precio,
+        actualizadoEn: serverTimestamp()
+      });
+    }
+    showToast(pendientes.length === 1 ? 'Precio puesto' : `${pendientes.length} precios puestos`);
+  } catch (err) {
+    console.error(err);
+    showToast('Error al poner los precios: ' + err.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Poner los precios de la lista';
+  }
+});
+
 function renderGrid(estado, items){
   const grid = $(`grid-${estado}`);
   const esBaja = estado === 'baja';
@@ -1638,7 +1704,20 @@ function abrirModal(modo, estado, id=null){
   $('modal-title').textContent = item ? 'Editar chaleco' : 'Nuevo chaleco';
   $('m-nombre').value = item?.nombre || '';
   $('m-desc').value = item?.desc || '';
-  $('m-precio').value = Number(item?.precio) > 0 ? Math.round(item.precio).toLocaleString('es-AR') : '';
+  // Precio: si el chaleco ya tiene, ese. Si no, se sugiere el de la lista según el talle
+  // que diga la descripción (queda escrito en el campo, editable).
+  const sug = precioPorTalle(item?.desc);
+  const hintPrecio = $('m-precio-hint');
+  if (Number(item?.precio) > 0) {
+    $('m-precio').value = Math.round(item.precio).toLocaleString('es-AR');
+    hintPrecio.textContent = 'Se muestra abajo del nombre, en la página. Vacío = no aparece ningún precio.';
+  } else if (sug) {
+    $('m-precio').value = sug.precio.toLocaleString('es-AR');
+    hintPrecio.textContent = `Sugerido por el talle ${sug.talle} (lista: ${sug.label}). Cambialo si este va a otro precio.`;
+  } else {
+    $('m-precio').value = '';
+    hintPrecio.textContent = 'Opcional. Se muestra abajo del nombre, en la página. Vacío = no aparece ningún precio.';
+  }
   $('m-confondo').checked = !!item?.conFondo;
   fileInput.value = '';
 

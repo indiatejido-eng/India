@@ -60,6 +60,7 @@ Colección `chalecos`, cada doc:
 |---|---|---|
 | `nombre` | string | |
 | `desc` | string | |
+| `precio` | number | Opcional. `0` o ausente = no se muestra precio en la web |
 | `foto` | string | URL pública de Cloudinary |
 | `fotoPath` | string | public_id de Cloudinary |
 | `estado` | string | `"disponible"` o `"anterior"` |

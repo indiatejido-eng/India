@@ -1382,6 +1382,11 @@
     lbUrls = urls;
     lbIdx = 0;
     lbPlain = !!opts.plain;
+    // Abrir una pieza en el visor es interés real, no "cargó la página", y pasa mucho más
+    // seguido que el click a WhatsApp. Meta necesita ~50 conversiones por semana para
+    // aprender y con `Contact` solo no se llega; este evento es el que junta ese volumen.
+    // Va acá adentro y no en los listeners de la grilla para cubrir las dos secciones.
+    if (window.fbq) fbq('track', 'ViewContent', { content_name: item.nombre || '', content_ids: [item.id || ''], content_type: 'product' });
     // Una pieza de "Otros tejidos" ya se entregó: no se puede encargar ESA. Adentro del visor
     // se pierde el contexto de la sección (misma ficha, mismo botón verde que un disponible),
     // así que acá se dice y el botón cambia: se pide UNO ASÍ, no ese.

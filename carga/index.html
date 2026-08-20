@@ -50,6 +50,9 @@
   label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:7px}
   input{width:100%;padding:13px 14px;font-size:16px;font-family:var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:12px}
   input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(182,91,56,.14)}
+  .duo{display:flex;gap:10px}
+  .duo>div{flex:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}
   .chips{display:flex;flex-wrap:wrap;gap:7px}
   .chip{padding:10px 15px;border:1px solid var(--line2);border-radius:11px;background:var(--surface);font-size:14px;font-weight:500;cursor:pointer;transition:.12s}
   .chip:active{transform:scale(.96)}
@@ -182,13 +185,22 @@
     <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="v-tel" inputmode="tel" placeholder="3454 123456"></div>
     <div class="field"><label>Modelo</label><div class="chips" id="v-modelo" data-val="Liso"><div class="chip sel" onclick="pick(this)">Liso</div><div class="chip" onclick="pick(this)">Trenza</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>Talle</label><div class="chips" id="v-talle" data-val="M"><div class="chip" onclick="pick(this)">S</div><div class="chip sel" onclick="pick(this)">M</div><div class="chip" onclick="pick(this)">L</div><div class="chip" onclick="pick(this)">Único</div></div></div>
+    <div class="field"><label>Medidas del chaleco, en cm</label>
+      <div class="duo">
+        <div><input type="text" id="v-ancho" inputmode="decimal" placeholder="Ancho" oninput="soloDecimal(this)"></div>
+        <div><input type="text" id="v-largo" inputmode="decimal" placeholder="Largo" oninput="soloDecimal(this)"></div>
+      </div>
+      <div class="hint" id="v-medhint">Las que pasó la clienta. Son las que definen el talle de verdad.</div>
+    </div>
     <div class="field"><label>Color</label><div class="chips" id="v-color" data-val="Marrón"><div class="chip sel" onclick="pick(this)">Marrón</div><div class="chip" onclick="pick(this)">Gris</div><div class="chip" onclick="pick(this)">Crudo</div><div class="chip" onclick="pick(this)">Negro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Para quién?</label><div class="chips" id="v-genero" data-val="Mujer"><div class="chip sel" onclick="pick(this)">Mujer</div><div class="chip" onclick="pick(this)">Hombre</div><div class="chip" onclick="pick(this)">Niño</div></div></div>
-    <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
+    <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida" onclick="toggleMedidas()"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
     <div class="field"><label>Precio</label><input type="number" id="v-precio" inputmode="numeric" placeholder="145000"></div>
-    <div class="field"><label>Destino</label><input type="text" id="v-destino" placeholder="Buenos Aires"></div>
+    <div class="field"><label>¿A dónde va?</label><input type="text" id="v-destino" placeholder="Ciudad y provincia">
+      <div class="hint">Ej.: General Roca, Río Negro. Sirve para saber a qué provincias conviene anunciar.</div>
+    </div>
     <div class="field"><label>¿Cómo pagó?</label><div class="chips" id="v-pago" data-val="Pagó todo" onclick="togglePago()"><div class="chip sel" onclick="pick(this)">Pagó todo</div><div class="chip" onclick="pick(this)">Pagó seña</div></div></div>
     <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="number" id="v-sena" inputmode="numeric" placeholder="50000"></div>
     <div class="field"><label>¿Estado?</label><div class="chips" id="v-estado" data-val="En proceso"><div class="chip" onclick="pick(this)">Ya entregado</div><div class="chip sel" onclick="pick(this)">En proceso</div></div></div>
@@ -311,6 +323,13 @@
     if(el.value!==v)el.value=v;
   }
   const decimal=id=>Number(String($(id).value).trim().replace(',','.'))||0;
+
+  // La ayuda de las medidas cambia según de dónde salen: de la clienta o de la ficha.
+  function toggleMedidas(){setTimeout(()=>{
+    $('v-medhint').textContent = $('v-confeccion').dataset.val==='A medida'
+      ? 'Las que pasó la clienta. Son las que definen el talle de verdad.'
+      : 'Las de la ficha del chaleco. Anotalas igual: ese talle ya sabemos que le quedó bien a alguien.';
+  },0)}
 
   function togglePago(){setTimeout(()=>{$('v-senawrap').style.display=$('v-pago').dataset.val==='Pagó seña'?'block':'none'},0)}
 
@@ -438,7 +457,7 @@
 
   async function send(accion){
     let d;
-    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value};
+    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
     else{
       const tipo=$('g-tipo').dataset.val;
       d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
@@ -481,6 +500,13 @@
       cliente: $('v-cliente').value.trim(),
       telefono: $('v-tel').value.trim(),
       queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
+      // Medidas y destino van también acá: el Sheet depende de que n8n los mapee,
+      // Firebase no. Así el dato queda guardado igual.
+      talle: $('v-talle').dataset.val,
+      confeccion: $('v-confeccion').dataset.val,
+      ancho: decimal('v-ancho'),
+      largo: decimal('v-largo'),
+      destino: $('v-destino').value.trim(),
       total,
       sena,
       saldoCobrado: pagoTodo,

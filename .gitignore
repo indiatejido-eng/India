@@ -3,3 +3,7 @@ node_modules/
 # Bóveda de Obsidian: cerebro del negocio (números, clientes, teléfonos).
 # NO se sube — el repo se publica en Vercel. El respaldo lo da OneDrive.
 Boveda/
+
+# El manual compilado del asistente: sale de la bóveda, así que lleva lo mismo
+# adentro (precios, estrategia de venta). Se pega en Ajustes y vive en Firestore.
+tools/manual.txt

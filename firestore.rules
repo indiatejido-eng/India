@@ -59,6 +59,19 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // Configuración interna. Hoy: config/asistente, el manual que usa /responder.
+    // Nunca público: tiene la estrategia de venta completa.
+    match /config/{doc} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Registro de lo que el asistente sugirió y se copió. Es el material para
+    // mejorar el manual: qué se usó tal cual y qué hubo que corregir.
+    match /asistente_uso/{id} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
     function resenaValida(token) {
       let inv = /databases/$(database)/documents/invitaciones/$(token);
       let d = request.resource.data;

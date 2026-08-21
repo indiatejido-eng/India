@@ -141,17 +141,26 @@
   .hint{max-width:720px;margin:7px auto 0;font-size:.76rem;color:var(--muted);text-align:center}
 
   /* grabando */
-  .grabando{display:none;max-width:720px;margin:0 auto;align-items:center;gap:11px;background:#fff;border:1.5px solid #b5473a;border-radius:22px;padding:9px 10px 9px 16px}
+  #bmic{touch-action:none;-webkit-user-select:none;user-select:none}
+  #bmic.rec{background:#b5473a;color:#fff;transform:scale(1.15)}
+  .comp-in.grabando-on{opacity:.4}
+  .comp-in.grabando-on #bmic{opacity:1}
+  .grabando{display:none;max-width:720px;margin:0 auto 8px;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:7px 7px 7px 10px;min-height:50px}
   .grabando.on{display:flex}
-  .comp-in.oculto{display:none}
-  .grabando .pulso{width:11px;height:11px;border-radius:50%;background:#b5473a;flex-shrink:0;animation:lat 1.2s infinite}
-  @keyframes lat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+  .grabando.cancelar{border-color:#b5473a;background:#fdf2f0}
+  .grabando .gtacho{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0}
+  .grabando.cancelar .gtacho{color:#b5473a;background:#f7e0dc}
+  .grabando .pulso{width:10px;height:10px;border-radius:50%;background:#b5473a;flex-shrink:0;animation:lat 1.2s infinite}
+  @keyframes lat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
   .grabando .reloj{font-variant-numeric:tabular-nums;font-weight:600;font-size:1.02rem}
   .grabando .sp{flex:1}
-  .grabando .gcancel{padding:9px 14px;border-radius:100px;font-size:.9rem;color:var(--muted)}
-  .grabando .gcancel:hover{background:var(--panel2)}
-  .grabando .gstop{padding:10px 20px;border-radius:100px;background:var(--green);color:#f5f0e8;font-weight:600;font-size:.95rem}
+  .grabando .pista{font-size:.84rem;color:var(--muted);white-space:nowrap;animation:vaiven 2s ease-in-out infinite}
+  @keyframes vaiven{0%,100%{opacity:.45;transform:translateX(3px)}50%{opacity:.9;transform:translateX(-3px)}}
+  .grabando.cancelar .pista{color:#b5473a;font-weight:600;animation:none;transform:none;opacity:1}
+  .grabando .gstop{display:none;padding:11px 22px;border-radius:100px;background:var(--green);color:#f5f0e8;font-weight:600;font-size:.95rem}
   .grabando .gstop:hover{background:#20291a}
+  .grabando.fijado .gstop{display:block}
+  .grabando.fijado .pista{display:none}
   .adj-t.audio{width:auto;padding:0 12px;display:flex;align-items:center;gap:8px;background:var(--panel);font-size:.88rem;font-weight:500}
   .adj-t.audio button{position:static;width:18px;height:18px;background:var(--panel2);color:var(--soft)}
 
@@ -208,22 +217,27 @@
 
   <div class="comp">
     <div class="adjuntos" id="adjuntos"></div>
-    <div class="comp-in" id="comp-in">
-      <button class="cbtn" id="bfoto" title="Adjuntar captura">📎</button>
-      <textarea id="txt" rows="1" placeholder="Escribí, hablá, o pegá la captura…"></textarea>
-      <button class="cbtn" id="bmic" title="Grabar audio">🎤</button>
-      <button class="cbtn" id="send" title="Enviar">↑</button>
-    </div>
-
     <div class="grabando" id="grabando">
+      <button class="gtacho" id="gcancel" aria-label="Cancelar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zM6 9h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 9z"/></svg>
+      </button>
       <span class="pulso"></span>
       <span class="reloj" id="reloj">0:00</span>
       <span class="sp"></span>
-      <button class="gcancel" id="gcancel">Cancelar</button>
-      <button class="gstop" id="gstop">Listo</button>
+      <span class="pista" id="pista">‹ deslizá para cancelar</span>
+      <button class="gstop" id="gstop">Enviar</button>
+    </div>
+    <div class="comp-in" id="comp-in">
+      <button class="cbtn" id="bfoto" title="Adjuntar captura">📎</button>
+      <textarea id="txt" rows="1" placeholder="Escribí, hablá, o pegá la captura…"></textarea>
+      <button class="cbtn" id="bmic" title="Mantené apretado para grabar" aria-label="Grabar audio">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M17.3 11a.9.9 0 0 0-1.8 0 3.5 3.5 0 0 1-7 0 .9.9 0 0 0-1.8 0 5.3 5.3 0 0 0 4.4 5.2V19H9.6a.9.9 0 0 0 0 1.8h4.8a.9.9 0 0 0 0-1.8h-1.5v-2.8A5.3 5.3 0 0 0 17.3 11z"/></svg>
+      </button>
+      <button class="cbtn" id="send" title="Enviar">↑</button>
     </div>
 
-    <div class="hint" id="hint">Pegá una captura con Ctrl+V, o tocá el micrófono y contá qué pasó</div>
+
+    <div class="hint" id="hint">Mantené apretado el micrófono para hablar, o pegá una captura con Ctrl+V</div>
     <input type="file" id="file" accept="image/*" multiple hidden>
   </div>
 </div>
@@ -961,7 +975,10 @@ function pintarReloj(){
   if(seg >= 300) pararAudio();   // 5 minutos es más que suficiente para contar algo
 }
 
+let fijado = false, cancelando = false, abortar = false, x0 = 0, y0 = 0;
+
 async function grabarAudio(){
+  if(rec) return;
   const prov = hayProxy ? null : proveedorDe(localStorage.getItem('india_key'));
   if(prov && !['google','groq'].includes(prov)){
     toast('Para mandar audio necesitás la clave de Google o de Groq. Con '+PROVEEDORES[prov].nombre+' escribí el mensaje.');
@@ -969,7 +986,10 @@ async function grabarAudio(){
   }
   let stream;
   try{ stream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
-  catch(e){ toast('No pude usar el micrófono. Fijate que el navegador tenga permiso.'); return; }
+  catch(e){ toast('No pude usar el micrófono. Fijate que el navegador tenga permiso.'); cerrarBarra(); return; }
+
+  // el permiso tarda: si soltó el dedo mientras tanto, no arrancamos
+  if(abortar){ stream.getTracks().forEach(t => t.stop()); abortar = false; cerrarBarra(); return; }
 
   chunks = [];
   rec = new MediaRecorder(stream);
@@ -977,29 +997,88 @@ async function grabarAudio(){
   rec.onstop = async () => {
     stream.getTracks().forEach(t => t.stop());
     clearInterval(tick);
-    $('grabando').classList.remove('on'); $('comp-in').classList.remove('oculto');
-    if(rec.cancelado || !chunks.length) return;
+    const descartar = rec.cancelado, mandarlo = rec.mandarlo;
+    rec = null; cerrarBarra();
+    if(descartar || !chunks.length) return;
     try{
-      const wav = await aWav(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
-      const seg = Math.round((Date.now()-t0)/1000);
+      const wav = await aWav(new Blob(chunks, { type:'audio/webm' }));
+      const seg = Math.max(1, Math.round((Date.now()-t0)/1000));
       adjuntos.push({ tipoAdj:'audio', b64: await b64(wav), tipo:'audio/wav', seg });
       pintarAdjuntos();
+      if(mandarlo) enviar();          // como WhatsApp: soltás y se manda
     }catch(e){ toast('No pude procesar el audio: '+e.message); }
   };
   rec.start();
   t0 = Date.now(); pintarReloj();
-  tick = setInterval(pintarReloj, 250);
-  $('grabando').classList.add('on'); $('comp-in').classList.add('oculto');
+  tick = setInterval(pintarReloj, 200);
 }
 
-function pararAudio(cancelar){
-  if(!rec || rec.state === 'inactive') return;
+function abrirBarra(){
+  fijado = false; cancelando = false;
+  $('grabando').className = 'grabando on';
+  $('pista').textContent = '‹ deslizá para cancelar';
+  $('reloj').textContent = '0:00';
+  $('bmic').classList.add('rec'); $('comp-in').classList.add('grabando-on');
+}
+function cerrarBarra(){
+  $('grabando').className = 'grabando';
+  $('bmic').classList.remove('rec'); $('comp-in').classList.remove('grabando-on');
+  fijado = false; cancelando = false;
+}
+
+function pararAudio(cancelar, mandarlo){
+  if(!rec || rec.state === 'inactive'){ if(!rec) cerrarBarra(); return; }
   rec.cancelado = !!cancelar;
+  rec.mandarlo = !!mandarlo;
   rec.stop();
 }
 
-$('bmic').addEventListener('click', grabarAudio);
-$('gstop').addEventListener('click', () => pararAudio(false));
+/* ── el gesto de WhatsApp: mantener para grabar, soltar para mandar ── */
+const mic = $('bmic');
+mic.addEventListener('contextmenu', e => e.preventDefault());   // que el hold no abra el menú del celular
+
+mic.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if(rec) return;                     // ya está grabando en manos libres: no reiniciar nada
+  try{ mic.setPointerCapture(e.pointerId); }catch(err){}
+  x0 = e.clientX; y0 = e.clientY;
+  abortar = false;
+  abrirBarra();
+  grabarAudio();
+});
+
+mic.addEventListener('pointermove', e => {
+  if(fijado || !$('grabando').classList.contains('on')) return;
+  const dx = e.clientX - x0, dy = e.clientY - y0;
+  if(dy < -70){                       // hacia arriba: manos libres
+    fijado = true; cancelando = false;
+    $('grabando').className = 'grabando on fijado';
+    return;
+  }
+  const antes = cancelando;
+  cancelando = dx < -70;
+  if(cancelando !== antes){
+    $('grabando').classList.toggle('cancelar', cancelando);
+    $('pista').textContent = cancelando ? 'soltá para cancelar' : '‹ deslizá para cancelar';
+  }
+});
+
+function soltar(e){
+  try{ mic.releasePointerCapture(e.pointerId); }catch(err){}
+  if(fijado) return;                  // queda grabando; se corta con los botones
+  if(!rec){ abortar = true; cerrarBarra(); return; }
+  if(cancelando) return pararAudio(true);
+  if(Date.now() - t0 < 700){          // un toque suelto no es un audio
+    pararAudio(true);
+    toast('Mantené apretado el micrófono mientras hablás');
+    return;
+  }
+  pararAudio(false, true);
+}
+mic.addEventListener('pointerup', soltar);
+mic.addEventListener('pointercancel', e => { if(!fijado){ abortar = true; pararAudio(true); } });
+
+$('gstop').addEventListener('click', () => pararAudio(false, true));
 $('gcancel').addEventListener('click', () => pararAudio(true));
 
 /* ═════════ COMPOSER ═════════ */
@@ -1049,7 +1128,7 @@ function bienvenida(){
   hilo().querySelectorAll('.atajo').forEach(b => b.addEventListener('click', () => {
     const a = b.dataset.a;
     if(a === '__foto'){ $('file').click(); return; }
-    if(a === '__audio'){ grabarAudio(); return; }
+    if(a === '__audio'){ abrirBarra(); fijado = true; $('grabando').className = 'grabando on fijado'; grabarAudio(); return; }
     if(a.endsWith('? ') || a.startsWith('¿')){ mandar(a); return; }
     $('txt').value = a; $('txt').focus(); refrescarComposer();
   }));

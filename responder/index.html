@@ -140,6 +140,21 @@
   .adj-t button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(34,25,15,.82);color:#fff;font-size:.75rem;display:flex;align-items:center;justify-content:center}
   .hint{max-width:720px;margin:7px auto 0;font-size:.76rem;color:var(--muted);text-align:center}
 
+  /* grabando */
+  .grabando{display:none;max-width:720px;margin:0 auto;align-items:center;gap:11px;background:#fff;border:1.5px solid #b5473a;border-radius:22px;padding:9px 10px 9px 16px}
+  .grabando.on{display:flex}
+  .comp-in.oculto{display:none}
+  .grabando .pulso{width:11px;height:11px;border-radius:50%;background:#b5473a;flex-shrink:0;animation:lat 1.2s infinite}
+  @keyframes lat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+  .grabando .reloj{font-variant-numeric:tabular-nums;font-weight:600;font-size:1.02rem}
+  .grabando .sp{flex:1}
+  .grabando .gcancel{padding:9px 14px;border-radius:100px;font-size:.9rem;color:var(--muted)}
+  .grabando .gcancel:hover{background:var(--panel2)}
+  .grabando .gstop{padding:10px 20px;border-radius:100px;background:var(--green);color:#f5f0e8;font-weight:600;font-size:.95rem}
+  .grabando .gstop:hover{background:#20291a}
+  .adj-t.audio{width:auto;padding:0 12px;display:flex;align-items:center;gap:8px;background:var(--panel);font-size:.88rem;font-weight:500}
+  .adj-t.audio button{position:static;width:18px;height:18px;background:var(--panel2);color:var(--soft)}
+
   /* ---------- MODAL ---------- */
   .modal{position:fixed;inset:0;background:rgba(34,25,15,.5);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
   .modal.on{display:flex}
@@ -193,12 +208,22 @@
 
   <div class="comp">
     <div class="adjuntos" id="adjuntos"></div>
-    <div class="comp-in">
+    <div class="comp-in" id="comp-in">
       <button class="cbtn" id="bfoto" title="Adjuntar captura">📎</button>
-      <textarea id="txt" rows="1" placeholder="Escribí, pegá la charla o la captura…"></textarea>
+      <textarea id="txt" rows="1" placeholder="Escribí, hablá, o pegá la captura…"></textarea>
+      <button class="cbtn" id="bmic" title="Grabar audio">🎤</button>
       <button class="cbtn" id="send" title="Enviar">↑</button>
     </div>
-    <div class="hint" id="hint">Podés pegar una captura con Ctrl+V</div>
+
+    <div class="grabando" id="grabando">
+      <span class="pulso"></span>
+      <span class="reloj" id="reloj">0:00</span>
+      <span class="sp"></span>
+      <button class="gcancel" id="gcancel">Cancelar</button>
+      <button class="gstop" id="gstop">Listo</button>
+    </div>
+
+    <div class="hint" id="hint">Pegá una captura con Ctrl+V, o tocá el micrófono y contá qué pasó</div>
     <input type="file" id="file" accept="image/*" multiple hidden>
   </div>
 </div>
@@ -265,6 +290,8 @@ Tu único trabajo: que contestarle a un cliente les lleve diez segundos en vez d
 
 QUIÉN TE HABLA
 Te habla Bárbara o Justo, NUNCA el cliente. Cuando te pasan una conversación, vos escribís lo que ELLOS le van a mandar al cliente. Si te falta un dato para escribir bien, se lo pedís a ellos, no al cliente.
+
+Si te mandan un AUDIO, es Bárbara o Justo contándote la situación al toque, casi siempre apurados: escuchalo y hacé lo que piden. NO es un audio del cliente, salvo que aclaren que lo reenviaron. Como están hablando y no escribiendo, va a haber frases cortadas, repeticiones y cosas dichas a medias — entendé la intención y resolvé, no les pidas que lo repitan más prolijo. Si de verdad hay algo clave que no se entendió, preguntá esa sola cosa.
 
 CÓMO ENTREGÁS
 El mensaje para el cliente va SIEMPRE dentro de un bloque así:
@@ -486,7 +513,7 @@ function aGoogle(cuerpo){
     const parts = [];
     for(const b of bloques){
       if(b.type === 'text' && b.text) parts.push({ text:b.text });
-      else if(b.type === 'image') parts.push({ inlineData:{ mimeType:b.source.media_type, data:b.source.data } });
+      else if(b.type === 'image' || b.type === 'audio') parts.push({ inlineData:{ mimeType:b.source.media_type, data:b.source.data } });
       else if(b.type === 'tool_use') parts.push({ functionCall:{ name:b.name, args:b.input || {} } });
       else if(b.type === 'tool_result') parts.push({ functionResponse:{
         name: toolNames[b.tool_use_id] || 'herramienta',
@@ -693,12 +720,14 @@ async function turno(){
 const hilo = () => $('hilo');
 function abajo(){ const c=$('chat'); requestAnimationFrame(()=>{ c.scrollTop = c.scrollHeight; }); }
 
-function pintarYo(texto, imgs){
+function pintarYo(texto, imgs, audios){
   hilo().querySelector('.hola')?.remove();   // al primer mensaje, la bienvenida se va
   const d = document.createElement('div');
   d.className = 'turn yo';
   const im = (imgs||[]).map(i => `<img src="${i.url}" alt="captura">`).join('');
-  d.innerHTML = `<div class="burb">${esc(texto)||'<span class="adj">(captura)</span>'}${im}</div>`;
+  const au = (audios||[]).map(a => `<div class="adj">🎤 audio de ${a.seg}s</div>`).join('');
+  const vacio = (imgs||[]).length ? '<span class="adj">(captura)</span>' : '';
+  d.innerHTML = `<div class="burb">${esc(texto)||vacio}${au}${im}</div>`;
   hilo().appendChild(d); abajo();
 }
 
@@ -813,16 +842,48 @@ async function registrar(texto){
 }
 
 /* ═════════ MANDAR ═════════ */
-async function mandar(texto, imgs=[], esAjuste=false){
+// Groq no procesa audio en el chat, pero tiene Whisper aparte y es gratis
+async function transcribirGroq(a, key){
+  const bytes = Uint8Array.from(atob(a.b64), c => c.charCodeAt(0));
+  const fd = new FormData();
+  fd.append('file', new Blob([bytes], { type:'audio/wav' }), 'audio.wav');
+  fd.append('model', 'whisper-large-v3');
+  fd.append('language', 'es');
+  const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method:'POST', headers:{ authorization:'Bearer '+key }, body:fd });
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d?.error?.message || 'no se pudo transcribir el audio');
+  return (d.text||'').trim();
+}
+
+async function mandar(texto, adj=[], esAjuste=false){
   if(ocupado) return;
   texto = (texto||'').trim();
-  if(!texto && !imgs.length) return;
+  if(!texto && !adj.length) return;
   if(!MANUAL){ toast('Falta cargar el manual en Ajustes'); abrirConf(); return; }
 
-  pintarYo(esAjuste ? '↻ '+texto : texto, imgs);
+  const imgs   = adj.filter(a => a.tipoAdj !== 'audio');
+  let audios   = adj.filter(a => a.tipoAdj === 'audio');
+  const key    = localStorage.getItem('india_key');
+  const prov   = proveedorDe(key);
+
+  pintarYo(esAjuste ? '↻ '+texto : texto, imgs, audios);
+
+  // Google entiende el audio directo; para Groq hay que pasarlo por Whisper primero
+  if(audios.length && prov === 'groq'){
+    const b = pintarTool('pasando el audio a texto');
+    try{
+      const dichos = [];
+      for(const a of audios) dichos.push(await transcribirGroq(a, key));
+      texto = [texto, ...dichos].filter(Boolean).join('\n');
+      audios = [];
+      b.querySelector('.tool').textContent = '🎤 ' + (texto || '(no se entendió nada)');
+    }catch(e){ b.remove(); pintarAsistente('No pude pasar el audio a texto: '+e.message); return; }
+  }
 
   const content = [];
-  for(const im of imgs) content.push({ type:'image', source:{ type:'base64', media_type:im.tipo, data:im.b64 } });
+  for(const im of imgs)   content.push({ type:'image', source:{ type:'base64', media_type:im.tipo, data:im.b64 } });
+  for(const au of audios) content.push({ type:'audio', source:{ type:'base64', media_type:au.tipo, data:au.b64 } });
   if(texto) content.push({ type:'text', text:texto });
   mensajes.push({ role:'user', content });
 
@@ -844,12 +905,102 @@ async function sumarImagen(file){
 }
 
 function pintarAdjuntos(){
-  $('adjuntos').innerHTML = adjuntos.map((a,i) =>
-    `<div class="adj-t"><img src="${a.url}"><button data-i="${i}">✕</button></div>`).join('');
+  $('adjuntos').innerHTML = adjuntos.map((a,i) => a.tipoAdj === 'audio'
+    ? `<div class="adj-t audio">🎤 ${Math.floor(a.seg/60)}:${String(a.seg%60).padStart(2,'0')}<button data-i="${i}">✕</button></div>`
+    : `<div class="adj-t"><img src="${a.url}"><button data-i="${i}">✕</button></div>`).join('');
   $('adjuntos').querySelectorAll('button').forEach(b =>
     b.addEventListener('click', () => { adjuntos.splice(+b.dataset.i,1); pintarAdjuntos(); }));
   refrescarComposer();
 }
+
+/* ═════════ AUDIO ═════════
+   Se graba con lo que el navegador banque (webm, mp4, lo que sea) y se
+   convierte a WAV 16 kHz mono, que es el único formato que entienden todos
+   los proveedores. Un mensaje de 30 segundos queda en ~1 MB. */
+let rec = null, chunks = [], t0 = 0, tick = null;
+
+function encodeWav(muestras, rate){
+  const buf = new ArrayBuffer(44 + muestras.length*2);
+  const v = new DataView(buf);
+  const txt = (o,s) => { for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  txt(0,'RIFF');  v.setUint32(4, 36 + muestras.length*2, true);
+  txt(8,'WAVE');  txt(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true);
+  v.setUint16(32,2,true); v.setUint16(34,16,true);
+  txt(36,'data'); v.setUint32(40, muestras.length*2, true);
+  let o = 44;
+  for(let i=0;i<muestras.length;i++, o+=2){
+    const s = Math.max(-1, Math.min(1, muestras[i]));
+    v.setInt16(o, s < 0 ? s*0x8000 : s*0x7FFF, true);
+  }
+  return new Blob([buf], { type:'audio/wav' });
+}
+
+async function aWav(blob){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const decodificado = await ctx.decodeAudioData(await blob.arrayBuffer());
+  await ctx.close();
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decodificado.duration*16000)), 16000);
+  const src = off.createBufferSource();
+  src.buffer = decodificado; src.connect(off.destination); src.start();
+  const listo = await off.startRendering();
+  return encodeWav(listo.getChannelData(0), 16000);
+}
+
+const b64 = blob => new Promise((ok,mal) => {
+  const fr = new FileReader();
+  fr.onload = () => ok(fr.result.split(',')[1]);
+  fr.onerror = mal;
+  fr.readAsDataURL(blob);
+});
+
+function pintarReloj(){
+  const seg = Math.floor((Date.now()-t0)/1000);
+  $('reloj').textContent = Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0');
+  if(seg >= 300) pararAudio();   // 5 minutos es más que suficiente para contar algo
+}
+
+async function grabarAudio(){
+  const prov = hayProxy ? null : proveedorDe(localStorage.getItem('india_key'));
+  if(prov && !['google','groq'].includes(prov)){
+    toast('Para mandar audio necesitás la clave de Google o de Groq. Con '+PROVEEDORES[prov].nombre+' escribí el mensaje.');
+    return;
+  }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
+  catch(e){ toast('No pude usar el micrófono. Fijate que el navegador tenga permiso.'); return; }
+
+  chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(tick);
+    $('grabando').classList.remove('on'); $('comp-in').classList.remove('oculto');
+    if(rec.cancelado || !chunks.length) return;
+    try{
+      const wav = await aWav(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
+      const seg = Math.round((Date.now()-t0)/1000);
+      adjuntos.push({ tipoAdj:'audio', b64: await b64(wav), tipo:'audio/wav', seg });
+      pintarAdjuntos();
+    }catch(e){ toast('No pude procesar el audio: '+e.message); }
+  };
+  rec.start();
+  t0 = Date.now(); pintarReloj();
+  tick = setInterval(pintarReloj, 250);
+  $('grabando').classList.add('on'); $('comp-in').classList.add('oculto');
+}
+
+function pararAudio(cancelar){
+  if(!rec || rec.state === 'inactive') return;
+  rec.cancelado = !!cancelar;
+  rec.stop();
+}
+
+$('bmic').addEventListener('click', grabarAudio);
+$('gstop').addEventListener('click', () => pararAudio(false));
+$('gcancel').addEventListener('click', () => pararAudio(true));
 
 /* ═════════ COMPOSER ═════════ */
 function refrescarComposer(){
@@ -883,6 +1034,7 @@ function enviar(){
 /* ═════════ BIENVENIDA ═════════ */
 const ATAJOS = [
   ['🔍','Contestarle a alguien','Decime el nombre y busco la charla sola','Contestale a '],
+  ['🎤','Contarlo hablando','Tocá y contá qué te preguntaron, sin escribir','__audio'],
   ['📸','Pegar una captura','Screenshot del chat, de WhatsApp o de Instagram','__foto'],
   ['📋','Pegar la conversación','Copiás el chat y lo pegás tal cual',''],
   ['🧶','Qué hay tejido','Los chalecos listos para enviar, con precio','¿Qué chalecos hay listos para enviar?']
@@ -897,6 +1049,7 @@ function bienvenida(){
   hilo().querySelectorAll('.atajo').forEach(b => b.addEventListener('click', () => {
     const a = b.dataset.a;
     if(a === '__foto'){ $('file').click(); return; }
+    if(a === '__audio'){ grabarAudio(); return; }
     if(a.endsWith('? ') || a.startsWith('¿')){ mandar(a); return; }
     $('txt').value = a; $('txt').focus(); refrescarComposer();
   }));

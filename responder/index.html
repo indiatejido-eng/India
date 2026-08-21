@@ -318,6 +318,7 @@ Tenés acceso al registro de WhatsApp y al catálogo.
 - Si te nombran a un cliente ("contestale a Ignacio", "el de Coronel Dorrego"), buscalo con buscar_cliente y leé la charla con leer_conversacion antes de escribir nada. No pidas que te peguen la conversación si la podés buscar sola.
 - Si hay varios que coinciden, mostrá los candidatos con su última charla y preguntá cuál es.
 - ver_chalecos: usalo siempre que la charla toque talle, precio o "qué tenés". No contestes de memoria.
+- marcar_cliente: cuando alguien pide algo que NO tejemos (sweater, pulóver, campera, cardigan, saco) o pregunta por venta al por mayor, marcalo en el CRM con la categoría que corresponda, además de contestarle. Son casi una de cada cinco charlas y hoy se pierden. Si no sabés qué categorías hay, llamalo sin categoría y te devuelve la lista. No hace falta pedir permiso para esto.
 - Si te pegan una captura o el texto de la charla, trabajá con eso y no busques la conversación.
 
 Cuando leas una conversación, fijate bien quién dijo qué: "saliente" es lo que mandó Bárbara, "entrante" es el cliente.`;
@@ -333,6 +334,15 @@ const TOOLS = [
     name:'leer_conversacion',
     description:'Trae los últimos mensajes de una conversación de WhatsApp. Cada mensaje dice si es "entrante" (lo escribió el cliente) o "saliente" (lo escribió Bárbara). Necesita el jid que devuelve buscar_cliente.',
     input_schema:{ type:'object', properties:{ jid:{type:'string'}, cantidad:{type:'number',description:'Cuántos mensajes traer del final. Por defecto 40.'} }, required:['jid'] }
+  },
+  {
+    name:'marcar_cliente',
+    description:'Le pone una categoría o una nota a un cliente en el CRM. Usalo cuando alguien pide algo que no está en el catálogo (sweater, campera, pulóver, venta por mayor): se lo marca para poder avisarle si algún día se teje. También sirve para dejar anotado algo importante de la charla. Necesita el jid que devuelve buscar_cliente. Si no sabés qué categorías hay, llamalo sin categoría y te devuelve la lista.',
+    input_schema:{ type:'object', properties:{
+      jid:{type:'string'},
+      categoria:{type:'string',description:'Nombre de la categoría, como figura en el CRM (ej: "quiere sweater").'},
+      nota:{type:'string',description:'Nota para dejar anotada. Reemplaza la nota anterior, así que si ya había una, sumale lo nuevo en vez de pisarla.'}
+    }, required:['jid'] }
   },
   {
     name:'ver_chalecos',
@@ -372,6 +382,36 @@ async function correrTool(nombre, args){
       if(media) t = MEDIA[media[1]] || '['+media[1]+']';
       return `[${m.fecha||''}] ${quien}: ${t}`;
     }).join('\n');
+  }
+
+  if(nombre === 'marcar_cliente'){
+    const [cats, todos] = await Promise.all([ crm('/categorias'), crm('/clientes') ]);
+    const c = todos.find(x => x.jid === args.jid);
+    if(!c) return 'No encontré ese cliente. Buscalo primero con buscar_cliente.';
+
+    const lista = cats.map(x => x.nombre).join(' · ') || '(no hay categorías creadas)';
+    let catId = c.categoria_id || null;
+
+    if(args.categoria){
+      const q = args.categoria.toLowerCase().trim();
+      const hit = cats.find(x => (x.nombre||'').toLowerCase().trim() === q)
+               || cats.find(x => (x.nombre||'').toLowerCase().includes(q))
+               || cats.find(x => q.includes((x.nombre||'').toLowerCase().trim()));
+      if(!hit) return `No existe la categoría "${args.categoria}". Las que hay son: ${lista}. Elegí una de esas o decile a Justo que la cree en el CRM.`;
+      catId = hit.id;
+    } else if(args.nota === undefined){
+      return `Categorías disponibles: ${lista}. Este cliente hoy tiene: ${cats.find(x=>x.id===c.categoria_id)?.nombre || 'ninguna'}.`;
+    }
+
+    // el endpoint reemplaza el registro entero: hay que mandar lo que ya estaba
+    await crm('/cliente', { method:'POST', body:JSON.stringify({
+      jid: c.jid,
+      categoria_id: catId,
+      nota: args.nota !== undefined ? args.nota : (c.nota || null),
+      alias: c.alias || null
+    })});
+    const qué = [args.categoria && `categoría "${cats.find(x=>x.id===catId)?.nombre}"`, args.nota !== undefined && 'nota'].filter(Boolean).join(' y ');
+    return `Listo: le puse ${qué} a ${c.nombre || 'ese cliente'} en el CRM.`;
   }
 
   if(nombre === 'ver_chalecos'){
@@ -454,6 +494,7 @@ async function turno(){
       const avisos = usos.map(u => ({
         buscar_cliente:'buscando a '+(u.input.nombre||''),
         leer_conversacion:'leyendo la conversación',
+        marcar_cliente:'marcando en el CRM',
         ver_chalecos:'mirando el catálogo'
       })[u.name] || 'buscando datos');
       pintarTool(avisos.join(' · '));

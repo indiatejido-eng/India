@@ -101,4 +101,14 @@ if __name__ == "__main__":
         aprox = len(manual) // 4
         print(f"\nManual compilado -> {SALIDA}")
         print(f"{len(manual):,} caracteres (~{aprox:,} tokens)")
-        print("\nAhora: abrir /responder -> Ajustes -> pegar el contenido -> Guardar manual.")
+
+        # Si estan las credenciales, se sube solo: nadie tiene que abrir la pagina.
+        creds = RAIZ / "tools" / "credenciales.json"
+        if creds.exists():
+            import subprocess
+            print()
+            subprocess.run([sys.executable, str(RAIZ / "tools" / "subir-manual.py")], check=False)
+        else:
+            print("\nPara que se suba solo, crear tools/credenciales.json:")
+            print('    {"usuario": "barbara123", "password": "..."}')
+            print("Mientras tanto: /responder -> Ajustes -> Elegir manual.txt")

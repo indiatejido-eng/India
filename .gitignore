@@ -7,3 +7,6 @@ Boveda/
 # El manual compilado del asistente: sale de la bóveda, así que lleva lo mismo
 # adentro (precios, estrategia de venta). Se pega en Ajustes y vive en Firestore.
 tools/manual.txt
+
+# Credenciales del panel para subir el manual solo. NUNCA se sube.
+tools/credenciales.json

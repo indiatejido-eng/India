@@ -524,6 +524,10 @@ async function modeloGoogle(key){
 // Anthropic -> Gemini
 function aGoogle(cuerpo){
   const contents = cuerpo.messages.map(m => {
+    // Gemini 3 firma sus llamadas a herramientas (thoughtSignature) y exige que se
+    // le devuelvan tal cual, así que se reusan las partes originales sin tocar.
+    if(m.role === 'assistant' && m._parts) return { role:'model', parts:m._parts };
+
     const bloques = Array.isArray(m.content) ? m.content : [{type:'text', text:m.content}];
     const parts = [];
     for(const b of bloques){
@@ -556,6 +560,7 @@ function deGoogle(data){
   const content = [];
   let n = 0;
   for(const p of parts){
+    if(p.thought) continue;                       // razonamiento interno: no se muestra
     if(p.text) content.push({ type:'text', text:p.text });
     else if(p.functionCall){
       const id = 'g'+(++n)+'_'+Math.round(performance.now());
@@ -569,7 +574,7 @@ function deGoogle(data){
     if(fin === 'MAX_TOKENS') throw new Error('La respuesta salió cortada por largo.');
     throw new Error('Google no devolvió nada'+(fin ? ' ('+fin+')' : '')+'.');
   }
-  return { content };
+  return { content, _parts: parts };
 }
 
 /* ── Anthropic <-> formato OpenAI (sirve para Groq, OpenRouter, Cerebras…) ── */
@@ -666,10 +671,11 @@ async function pensar(){
     return deGoogle(data);
   }
 
+  const limpio = { ...cuerpo, messages: cuerpo.messages.map(({role,content}) => ({role,content})) };
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{ 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-    body:JSON.stringify(cuerpo)
+    body:JSON.stringify(limpio)
   });
   const data = await r.json();
   if(!r.ok) throw new Error(data?.error?.message || ('Error '+r.status));
@@ -683,7 +689,7 @@ async function turno(){
   try{
     for(let vuelta=0; vuelta<6; vuelta++){
       const rta = await pensar();
-      mensajes.push({ role:'assistant', content:rta.content });
+      mensajes.push({ role:'assistant', content:rta.content, ...(rta._parts ? { _parts:rta._parts } : {}) });
 
       const usos = (rta.content||[]).filter(b => b.type === 'tool_use');
       const texto = (rta.content||[]).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();

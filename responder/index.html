@@ -290,7 +290,8 @@ const $ = id => document.getElementById(id);
 const esc = (s='') => (s+'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 let MANUAL = '';
-let manualCompartido = false;   // true = guardado en Firestore (lo ve Barbara); false = solo local
+let manualCompartido = false;
+let claveCompartida  = false;   // true = guardado en Firestore (lo ve Barbara); false = solo local
 let hayProxy = false;          // ¿el server ya tiene el endpoint andando?
 let mensajes = [];             // historial que se le manda al modelo
 let adjuntos = [];             // imágenes pendientes de enviar
@@ -1166,10 +1167,20 @@ function pintarConf(){
       '<b>Anthropic</b> — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-ant-</code>. Es paga y no entrena con tus datos.';
     const k = localStorage.getItem('india_key');
     const prov = proveedorDe(k);
-    if(k && prov){ ek.className='estado ok'; ek.textContent = PROVEEDORES[prov].nombre+' · ····'+k.slice(-6); }
+    if(k && prov){ ek.className='estado ok'; ek.textContent = PROVEEDORES[prov].nombre+' · ····'+k.slice(-6)+' · '+(claveCompartida ? 'compartida: Bárbara no tiene que cargar nada' : 'solo en este dispositivo'); }
     else if(k){ ek.className='estado no'; ek.textContent = 'La clave guardada no la reconozco.'; }
     else { ek.className='estado no'; ek.textContent = 'Sin clave: el asistente no puede pensar.'; }
   }
+}
+
+// Todo lo que se configura se guarda para los dos: se hace una vez y desde
+// cualquier teléfono ya funciona. Si Firestore no está disponible, queda local.
+async function guardarCompartido(campos){
+  try{
+    await setDoc(doc(db,'config','asistente'),
+      { ...campos, actualizado:serverTimestamp(), por:auth.currentUser?.email||'' }, { merge:true });
+    return true;
+  }catch(e){ return false; }
 }
 
 async function guardarManual(txt){
@@ -1177,12 +1188,8 @@ async function guardarManual(txt){
   txt = txt.trim();
   MANUAL = txt;
   localStorage.setItem('india_manual', txt);      // siempre queda local, asi funciona ya
-  try{
-    await setDoc(doc(db,'config','asistente'), { manual:txt, actualizado:serverTimestamp(), por:auth.currentUser?.email||'' });
-    manualCompartido = true; toast('Manual guardado para los dos');
-  }catch(e){
-    manualCompartido = false; toast('Guardado en este dispositivo (faltan las reglas de Firestore)');
-  }
+  manualCompartido = await guardarCompartido({ manual:txt });
+  toast(manualCompartido ? 'Manual guardado para los dos' : 'Guardado en este dispositivo (faltan las reglas de Firestore)');
   $('ta-manual').value=''; pintarConf();
 }
 $('bmanual').addEventListener('click', () => guardarManual($('ta-manual').value));
@@ -1238,14 +1245,18 @@ $('bkey').addEventListener('click', async () => {
     if(!r.ok){ toast(`${PROVEEDORES[prov].nombre} ${r.msg}`); return; }
     localStorage.setItem('india_key', k);
     localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
+    claveCompartida = await guardarCompartido({ apiKey:k });
     $('in-key').value=''; pintarConf();
-    toast('Listo, la clave de '+PROVEEDORES[prov].nombre+' funciona');
+    toast(claveCompartida
+      ? 'Listo, la clave de '+PROVEEDORES[prov].nombre+' funciona y queda para los dos'
+      : 'La clave funciona, pero quedó solo en este dispositivo');
   }catch(e){ toast('No se pudo probar: '+e.message); }
   finally{ btn.disabled = false; btn.textContent = 'Guardar clave'; }
 });
-$('bkeydel').addEventListener('click', () => {
+$('bkeydel').addEventListener('click', async () => {
   localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google');
-  pintarConf(); toast('Clave borrada');
+  await guardarCompartido({ apiKey:null });   // que no quede dando vueltas en la base
+  claveCompartida = false; pintarConf(); toast('Clave borrada de los dos lados');
 });
 
 /* ═════════ ARRANQUE ═════════ */
@@ -1273,12 +1284,26 @@ onAuthStateChanged(auth, async user => {
     hayProxy = r.ok;
   }catch(e){ hayProxy = false; }
 
-  // el manual, compartido entre Bárbara y Justo
+  // El manual y la clave son de los dos: se configuran una vez desde cualquier
+  // lado y el resto de los dispositivos los levantan solos.
+  let remoto = null;
   try{
     const d = await getDoc(doc(db,'config','asistente'));
-    if(d.exists() && d.data().manual){ MANUAL = d.data().manual; manualCompartido = true; }
-  }catch(e){ /* las reglas todavia no estan desplegadas: se usa el local */ }
-  if(!MANUAL) MANUAL = localStorage.getItem('india_manual') || '';
+    if(d.exists()) remoto = d.data();
+  }catch(e){ /* las reglas todavia no estan desplegadas: se usa lo local */ }
+
+  if(remoto?.manual){ MANUAL = remoto.manual; manualCompartido = true; localStorage.setItem('india_manual', remoto.manual); }
+  else MANUAL = localStorage.getItem('india_manual') || '';
+
+  if(remoto?.apiKey && !localStorage.getItem('india_key')){
+    localStorage.setItem('india_key', remoto.apiKey);
+  }
+  claveCompartida = !!remoto?.apiKey;
+
+  // lo que se había guardado antes de que existieran las reglas, se sube ahora
+  if(MANUAL && !manualCompartido) manualCompartido = await guardarCompartido({ manual:MANUAL });
+  const kLocal = localStorage.getItem('india_key');
+  if(kLocal && !claveCompartida) claveCompartida = await guardarCompartido({ apiKey:kLocal });
 
   if(!MANUAL) { toast('Falta cargar el manual'); abrirConf(); }
   else if(!hayProxy && !localStorage.getItem('india_key')) { toast('Falta la clave'); abrirConf(); }

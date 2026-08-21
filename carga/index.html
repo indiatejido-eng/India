@@ -33,6 +33,9 @@
   .actions{display:flex;flex-direction:column;gap:12px}
   .act{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:19px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .15s,transform .1s;width:100%;text-align:left}
   .act:hover{border-color:var(--line2)}
+  .act.hero{border:1.5px solid var(--accent);background:linear-gradient(180deg,#fdf8f1,var(--surface))}
+  .act.hero:hover{border-color:var(--accent-d)}
+  .act.hero b{color:var(--accent-d)}
   .act:active{transform:scale(.985)}
   .act b{font-family:var(--disp);font-weight:600;font-size:18px;display:block}
   .act small{color:var(--muted);font-size:13px}
@@ -166,6 +169,12 @@
   </header>
 
   <div class="menu" id="menu">
+    <div class="lead">Responder</div>
+    <div class="sub">Un cliente esperando, la respuesta lista.</div>
+    <div class="actions" style="margin-bottom:30px">
+      <button class="act hero" onclick="location.href='/responder/'"><div><b>Contestar un mensaje</b><small>Decile a quién y te arma la respuesta para copiar</small></div><div class="arr">→</div></button>
+    </div>
+
     <div class="lead">¿Qué anotás?</div>
     <div class="sub">Tocá una opción y completá.</div>
     <div class="actions">
@@ -211,6 +220,28 @@
     <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="number" id="v-sena" inputmode="numeric" placeholder="50000"></div>
     <div class="field"><label>¿Estado?</label><div class="chips" id="v-estado" data-val="En proceso"><div class="chip" onclick="pick(this)">Ya entregado</div><div class="chip sel" onclick="pick(this)">En proceso</div></div></div>
     <button class="save" onclick="send('venta')">Guardar venta</button>
+  </div>
+
+  <div class="screen" id="s-editar">
+    <button class="back" onclick="cerrarEdicion()">← Volver</button>
+    <div class="ttl">Corregir la venta</div>
+    <div class="hint" id="e-quien" style="margin:-10px 0 18px"></div>
+    <div class="field"><label>Cliente</label><input type="text" id="e-cliente"></div>
+    <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="e-tel" inputmode="tel"></div>
+    <div class="field"><label>¿A dónde va?</label>
+      <div class="duo">
+        <div><input type="text" id="e-ciudad" placeholder="Ciudad"></div>
+        <div><select id="e-destino"><option value="">Elegir provincia…</option><option>Buenos Aires</option><option>CABA</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option></select></div>
+      </div>
+    </div>
+    <div class="field"><label>Medidas del chaleco, en cm</label>
+      <div class="duo">
+        <div><input type="text" id="e-ancho" inputmode="decimal" placeholder="Ancho" oninput="soloDecimal(this)"></div>
+        <div><input type="text" id="e-largo" inputmode="decimal" placeholder="Largo" oninput="soloDecimal(this)"></div>
+      </div>
+    </div>
+    <div class="field"><label>Precio</label><input type="number" id="e-precio" inputmode="numeric"></div>
+    <button class="save" onclick="guardarEdicion()">Guardar cambios</button>
   </div>
 
   <div class="screen" id="s-gasto">
@@ -461,9 +492,15 @@
     }
   }
 
+  // Un ID por venta: es lo unico que permite volver a encontrar su fila en el
+  // Sheet para corregirla. Sin esto, el append seria de ida nomas.
+  const nuevoIdVenta = () => 'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  let ID_VENTA_ACTUAL = '';
+
   async function send(accion){
     let d;
-    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value,ciudad:$('v-ciudad').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
+    if(accion==='venta'){ID_VENTA_ACTUAL=nuevoIdVenta();}
+    if(accion==='venta')d={accion,id:ID_VENTA_ACTUAL,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value,ciudad:$('v-ciudad').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
     else{
       const tipo=$('g-tipo').dataset.val;
       d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
@@ -503,6 +540,7 @@
     if(sena<0) sena=0;
     if(sena>total) sena=total;
     const pedido = {
+      idVenta: ID_VENTA_ACTUAL,
       cliente: $('v-cliente').value.trim(),
       telefono: $('v-tel').value.trim(),
       queCompro: `${$('v-modelo').dataset.val}, talle ${$('v-talle').dataset.val}, ${$('v-color').dataset.val}`,
@@ -658,6 +696,7 @@
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
+    btns.push(`<button class="cli-btn" data-id="${id}" data-accion="editar">Corregir datos</button>`);
     if(!rev){
       if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
       else btns.push(`<button class="cli-btn" data-id="${id}" data-accion="resena-copiar">Copiar mensaje</button>`);
@@ -670,6 +709,66 @@
       <div class="cli-chips">${chips.join('')}</div>
       <div class="cli-acciones">${btns.join('')}</div>
     </div>`;
+  }
+
+  // ===== CORREGIR UNA VENTA YA CARGADA =====
+  // La ficha de Firebase se corrige siempre; el Sheet solo si la venta tiene ID
+  // (las importadas y las viejas no lo tienen, y ahi se avisa).
+  const WEBHOOK_EDITAR='https://india-tejidos.duckdns.org/webhook/india-editar';
+  let EDITANDO=null;
+
+  function abrirEdicion(p){
+    EDITANDO=p;
+    $('e-quien').textContent = p.idVenta
+      ? 'Se corrige la ficha y también la fila de la planilla.'
+      : 'Esta venta es anterior al sistema de correcciones: se corrige la ficha, pero la planilla hay que tocarla a mano.';
+    $('e-cliente').value = p.cliente||'';
+    $('e-tel').value     = p.telefono||'';
+    $('e-ciudad').value  = p.ciudad||'';
+    $('e-destino').value = p.destino||'';
+    $('e-ancho').value   = p.ancho||'';
+    $('e-largo').value   = p.largo||'';
+    $('e-precio').value  = p.total||0;
+    document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+    $('s-editar').classList.add('on');
+  }
+  function cerrarEdicion(){
+    EDITANDO=null;
+    $('s-editar').classList.remove('on');
+    $('s-clientes').classList.add('on');
+    renderClientes();
+  }
+
+  async function guardarEdicion(){
+    if(!EDITANDO) return;
+    const p=EDITANDO;
+    const campos={
+      cliente:  $('e-cliente').value.trim(),
+      telefono: $('e-tel').value.trim(),
+      ciudad:   $('e-ciudad').value.trim(),
+      destino:  $('e-destino').value,
+      ancho:    decimal('e-ancho'),
+      largo:    decimal('e-largo'),
+      total:    Number($('e-precio').value||0),
+    };
+    const btn=document.querySelector('#s-editar .save');
+    btn.disabled=true; btn.textContent='Guardando…';
+    try{
+      await window.FB.actualizarPedido(p.id, campos);
+      // El Sheet es el que manda para los numeros del mes: si tiene ID, se corrige alla tambien.
+      if(p.idVenta){
+        try{
+          await fetch(WEBHOOK_EDITAR,{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:p.idVenta,cliente:campos.cliente,telefono:campos.telefono,
+              ciudad:campos.ciudad,destino:campos.destino,ancho:campos.ancho,largo:campos.largo,
+              precio:campos.total})});
+        }catch(e){ console.error('no se pudo corregir el Sheet:',e); alert('La ficha quedó corregida, pero la planilla no. Revisá la conexión.'); }
+      }
+      cerrarEdicion();
+      cargarNumeros();
+    }catch(e){
+      console.error('editar:',e); alert('No se pudo guardar. Probá de nuevo.');
+    }finally{ btn.disabled=false; btn.textContent='Guardar cambios'; }
   }
 
   async function accionCliente(id, accion){
@@ -687,6 +786,7 @@
         } finally { generandoResena.delete(id); }
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena);
+      else if(accion==='editar') abrirEdicion(p);
     }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }
   }
 

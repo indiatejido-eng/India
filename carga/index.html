@@ -53,6 +53,8 @@
   .duo{display:flex;gap:10px}
   .duo>div{flex:1}
   .hint{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}
+  select{width:100%;padding:13px 14px;font-size:16px;font-family:var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:12px;appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%239a8d7d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center}
+  select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(182,91,56,.14)}
   .chips{display:flex;flex-wrap:wrap;gap:7px}
   .chip{padding:10px 15px;border:1px solid var(--line2);border-radius:11px;background:var(--surface);font-size:14px;font-weight:500;cursor:pointer;transition:.12s}
   .chip:active{transform:scale(.96)}
@@ -198,8 +200,12 @@
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
     <div class="field"><label>Precio</label><input type="number" id="v-precio" inputmode="numeric" placeholder="145000"></div>
-    <div class="field"><label>¿A dónde va?</label><input type="text" id="v-destino" placeholder="Ciudad y provincia">
-      <div class="hint">Ej.: General Roca, Río Negro. Sirve para saber a qué provincias conviene anunciar.</div>
+    <div class="field"><label>¿A dónde va?</label>
+      <div class="duo">
+        <div><input type="text" id="v-ciudad" placeholder="Ciudad"></div>
+        <div><select id="v-destino"><option value="">Elegir provincia…</option><option>Buenos Aires</option><option>CABA</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option></select></div>
+      </div>
+      <div class="hint">La provincia es de lista para que después se pueda agrupar. Ej.: General Roca · Río Negro.</div>
     </div>
     <div class="field"><label>¿Cómo pagó?</label><div class="chips" id="v-pago" data-val="Pagó todo" onclick="togglePago()"><div class="chip sel" onclick="pick(this)">Pagó todo</div><div class="chip" onclick="pick(this)">Pagó seña</div></div></div>
     <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="number" id="v-sena" inputmode="numeric" placeholder="50000"></div>
@@ -457,7 +463,7 @@
 
   async function send(accion){
     let d;
-    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
+    if(accion==='venta')d={accion,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value,ciudad:$('v-ciudad').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
     else{
       const tipo=$('g-tipo').dataset.val;
       d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
@@ -506,7 +512,8 @@
       confeccion: $('v-confeccion').dataset.val,
       ancho: decimal('v-ancho'),
       largo: decimal('v-largo'),
-      destino: $('v-destino').value.trim(),
+      destino: $('v-destino').value,
+      ciudad: $('v-ciudad').value.trim(),
       total,
       sena,
       saldoCobrado: pagoTodo,

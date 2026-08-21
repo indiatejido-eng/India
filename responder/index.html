@@ -89,6 +89,14 @@
   .bwa{padding:14px 16px;border-radius:8px;background:transparent;border:1.5px solid var(--line);font-size:1rem}
   .bwa:hover{background:var(--panel2)}
 
+  /* aviso de foto para adjuntar */
+  .adjcard{display:flex;align-items:center;gap:12px;margin:10px 0;padding:10px 14px 10px 10px;border:1.5px dashed var(--line);border-radius:12px;background:var(--panel)}
+  .adjcard img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;background:var(--panel2)}
+  .adjtx{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .adjtx .label{font-size:.62rem;color:var(--tan)}
+  .adjtx b{font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+  .adjtx a{font-size:.85rem;color:var(--accent);margin-top:2px}
+
   /* chips de ajuste */
   .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
   .chip{padding:8px 14px;border-radius:100px;border:1.5px solid var(--line);background:var(--panel);font-size:.88rem;color:var(--soft);transition:all .15s}
@@ -201,10 +209,12 @@
 
     <div class="grupo">
       <h4>El manual</h4>
-      <div class="exp">Todo lo que el asistente sabe de India: cómo se conversa, precios, objeciones, voz. Sale de la bóveda con <code>python tools/compilar-manual.py</code> — pegá acá el contenido de <code>tools/manual.txt</code>. Se guarda para todos, no hace falta subir nada.</div>
+      <div class="exp">Todo lo que el asistente sabe de India: cómo se conversa, precios, objeciones, voz. Sale de la bóveda con <code>python tools/compilar-manual.py</code>, que escribe <code>tools/manual.txt</code>. Elegí ese archivo acá abajo.</div>
       <div class="estado" id="est-manual"></div>
-      <textarea id="ta-manual" placeholder="Pegá acá el manual compilado…"></textarea>
-      <div class="fila"><button class="btn btn-sm" id="bmanual">Guardar manual</button></div>
+      <div class="fila"><button class="btn btn-sm" id="bmanualfile">📄 Elegir manual.txt</button><button class="btn btn-sm btn-ghost" id="bmanualpegar">o pegarlo a mano</button></div>
+      <textarea id="ta-manual" placeholder="Pegá acá el manual compilado…" style="display:none;margin-top:12px"></textarea>
+      <div class="fila" id="fila-pegar" style="display:none"><button class="btn btn-sm" id="bmanual">Guardar lo pegado</button></div>
+      <input type="file" id="file-manual" accept=".txt,text/plain" hidden>
     </div>
 
     <div class="grupo">
@@ -239,6 +249,7 @@ const $ = id => document.getElementById(id);
 const esc = (s='') => (s+'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 let MANUAL = '';
+let manualCompartido = false;   // true = guardado en Firestore (lo ve Barbara); false = solo local
 let hayProxy = false;          // ¿el server ya tiene el endpoint andando?
 let mensajes = [];             // historial que se le manda al modelo
 let adjuntos = [];             // imágenes pendientes de enviar
@@ -262,9 +273,22 @@ Acá va el texto tal cual se manda.
 
 Reglas del bloque:
 - Va el texto pelado, listo para copiar y pegar. Nada de "Hola Bárbara, te propongo:" adentro del bloque.
-- Si conviene mandar dos mensajes separados en WhatsApp (por ejemplo el mensaje y aparte el pedido de medidas, que va solo), usá DOS bloques \`\`\`mensaje\`\`\`.
+- UN MENSAJE, UNA COSA. Si hay que decir dos cosas, van dos bloques \`\`\`mensaje\`\`\` — así se mandan como dos mensajes de WhatsApp. El pedido de medidas SIEMPRE va en su propio bloque.
+- Mensajes cortos. La charla puede ser larga, el mensaje no. Nada de bloques enormes que juntan cinco cosas.
 - Antes del bloque, como mucho UNA línea corta de contexto. Después del bloque, nada — salvo que necesites avisar algo importante.
 - Si te faltan datos y no podés escribir el mensaje, no inventes: preguntá lo que necesitás, sin bloque.
+
+CUANDO HAY QUE MANDAR UNA FOTO
+Avisales aparte, con un bloque así:
+
+\`\`\`adjuntar
+Instructivo de medidas — https://india-tejidos.vercel.app/medidas.jpg
+\`\`\`
+
+Una foto por bloque, con el nombre y el link si lo tenés. Las URLs de los chalecos las devuelve ver_chalecos. Las fotos de lanas NO están cargadas en ningún lado: para esas escribí solo qué lana mandar (ej: "Foto de la lana marrón, de la galería del celular").
+
+EL SALUDO LLEVA EL NOMBRE
+"Hola, Omar, ¿cómo andás?" — el nombre apenas se sepa, buenos días o buenas tardes según la hora. Natural y amable, NUNCA neutro: que no suene a manual de atención ni a robot.
 
 CÓMO SE ESCRIBE
 - Escribís como escribe Bárbara en WhatsApp, no como escribe la web. En la charla SÍ van "¡Hola!", "¡Buenísimo!", signos y calidez. Las reglas de "sin exclamaciones ni emojis" del manual son para la web.
@@ -278,12 +302,23 @@ LO QUE NUNCA HACÉS
 - Mandar un menú de opciones cuando el manual pide pregunta abierta.
 - Apurar a un cliente que está contestando bien.
 
+NO HAY UNA RESPUESTA: HAY UNA BIFURCACIÓN, Y LA DEFINE EL STOCK
+La misma pregunta se contesta distinto según qué haya tejido. Por eso, apenas la charla toca el talle o el precio, MIRÁ EL CATÁLOGO con ver_chalecos antes de escribir.
+
+- "¿cuánto sale?" → depende del talle. No des precio suelto ni la escala: preguntá el talle.
+- Dice el talle Y HAY tejido de ese talle → es el camino corto: se lo ofrecés y mandás la foto de ese chaleco.
+- Dice el talle Y NO HAY, o no le gusta el que hay → pedís la medida y mandás la página, para que elija modelo.
+
+La página se manda así, en la voz de Justo: "Che, acá están los chalecos hechos. ¿Cuál te gustó más? Entrá y fijate y me decís" → https://india-tejidos.vercel.app (sección Anteriores). Sirve para que elija dibujo sin escribirle un menú.
+
+Para saber si un chaleco le sirve, cruzá el talle o las medidas que dio contra el talle y las medidas que trae cada chaleco en su descripción.
+
 HERRAMIENTAS
 Tenés acceso al registro de WhatsApp y al catálogo.
 - Si te nombran a un cliente ("contestale a Ignacio", "el de Coronel Dorrego"), buscalo con buscar_cliente y leé la charla con leer_conversacion antes de escribir nada. No pidas que te peguen la conversación si la podés buscar sola.
 - Si hay varios que coinciden, mostrá los candidatos con su última charla y preguntá cuál es.
-- Si te preguntan qué hay tejido, usá ver_chalecos.
-- Si te pegan una captura o el texto de la charla, trabajá con eso y no busques nada.
+- ver_chalecos: usalo siempre que la charla toque talle, precio o "qué tenés". No contestes de memoria.
+- Si te pegan una captura o el texto de la charla, trabajá con eso y no busques la conversación.
 
 Cuando leas una conversación, fijate bien quién dijo qué: "saliente" es lo que mandó Bárbara, "entrante" es el cliente.`;
 
@@ -301,7 +336,7 @@ const TOOLS = [
   },
   {
     name:'ver_chalecos',
-    description:'Lista los chalecos del catálogo con nombre, descripción, precio y si están listos para enviar o son trabajos anteriores. Usalo para saber qué hay tejido antes de ofrecer algo.',
+    description:'Lista los chalecos del catálogo con nombre, talle y medidas, precio, estado y la URL de la foto. USALO SIEMPRE que la charla toque talle, precio o qué hay tejido: la respuesta correcta depende del stock. Los \"listos para enviar\" se pueden ofrecer; los \"trabajos anteriores\" ya no están y solo sirven de muestra de modelos.',
     input_schema:{ type:'object', properties:{ estado:{type:'string',enum:['disponible','anterior','todos'],description:'Por defecto disponible (los listos para enviar).'} } }
   }
 ];
@@ -346,10 +381,13 @@ async function correrTool(nombre, args){
     snap.forEach(d => items.push(d.data()));
     if(estado !== 'todos') items = items.filter(c => c.estado === estado);
     if(!items.length) return `No hay chalecos con estado "${estado}" en el catálogo.`;
+    items.sort((a,b) => (b.orden||0) - (a.orden||0));
     return JSON.stringify(items.map(c => ({
-      nombre:c.nombre, descripcion:c.desc,
+      nombre:c.nombre,
+      medidas:c.desc || 'sin medidas cargadas',   // ej: "Talle 14. Ancho: 41cm | Largo: 58cm"
       precio:c.precio ? '$'+c.precio.toLocaleString('es-AR') : 'sin precio publicado',
-      estado:c.estado
+      estado:c.estado === 'disponible' ? 'listo para enviar' : 'trabajo anterior (ya no está)',
+      foto:c.foto || undefined
     })));
   }
 
@@ -479,10 +517,18 @@ function pintarAsistente(texto){
   const d = document.createElement('div');
   d.className = 'turn';
   let html = '', hayCard = false;
-  const partes = texto.split(/```(?:mensaje|texto)?\n?([\s\S]*?)```/g);
+  // dos grupos de captura -> el split devuelve de a tres: [prosa, tipo, contenido, prosa, ...]
+  const partes = texto.split(/```(mensaje|texto|adjuntar)?\n?([\s\S]*?)```/g);
   partes.forEach((p, i) => {
-    if(i % 2 === 1){ html += tarjeta(p.trim()); hayCard = true; }
-    else if(p.trim()) html += `<div class="resp">${md(p.trim())}</div>`;
+    const r = i % 3;
+    if(r === 1) return;                                  // el tipo, se usa abajo
+    if(r === 2){
+      const tipo = partes[i-1];
+      if(tipo === 'adjuntar') html += adjunto(p.trim());
+      else { html += tarjeta(p.trim()); hayCard = true; }
+      return;
+    }
+    if(p && p.trim()) html += `<div class="resp">${md(p.trim())}</div>`;
   });
   if(hayCard) html += chips();
   d.innerHTML = html;
@@ -491,6 +537,16 @@ function pintarAsistente(texto){
   d.querySelectorAll('.bwa').forEach(b => b.addEventListener('click', () => abrirWa(b)));
   d.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { mandar(b.dataset.aj, [], true); }));
   abajo();
+}
+
+// aviso de foto para adjuntar: si trae link, se puede abrir y guardar
+function adjunto(txt){
+  const url = (txt.match(/https?:\/\/\S+/)||[])[0];
+  const nombre = txt.replace(/[—-]?\s*https?:\/\/\S+/,'').trim() || 'Foto';
+  const img = url && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url)
+    ? `<img src="${esc(url)}" alt="" loading="lazy">` : '';
+  const link = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">abrir</a>` : '';
+  return `<div class="adjcard">${img}<div class="adjtx"><span class="label">Adjuntar</span><b>${esc(nombre)}</b>${link}</div></div>`;
 }
 
 function tarjeta(txt){
@@ -650,7 +706,13 @@ $('mconf').addEventListener('click', e => { if(e.target === $('mconf')) $('mconf
 
 function pintarConf(){
   const em = $('est-manual');
-  if(MANUAL){ em.className='estado ok'; em.textContent = `Cargado · ${MANUAL.length.toLocaleString('es-AR')} caracteres`; }
+  if(MANUAL){
+    em.className = 'estado ok';
+    const donde = manualCompartido
+      ? 'compartido: lo ve Bárbara también'
+      : 'solo en este dispositivo — falta desplegar las reglas de Firestore para compartirlo';
+    em.textContent = `Cargado · ${MANUAL.length.toLocaleString('es-AR')} caracteres · ${donde}`;
+  }
   else { em.className='estado no'; em.textContent = 'Sin manual. El asistente no sabe nada de India todavía.'; }
 
   const ek = $('est-key'), xk = $('exp-key');
@@ -666,13 +728,31 @@ function pintarConf(){
   }
 }
 
-$('bmanual').addEventListener('click', async () => {
-  const txt = $('ta-manual').value.trim();
-  if(txt.length < 500){ toast('Eso es muy corto para ser el manual'); return; }
+async function guardarManual(txt){
+  if(!txt || txt.trim().length < 500){ toast('Eso es muy corto para ser el manual'); return; }
+  txt = txt.trim();
+  MANUAL = txt;
+  localStorage.setItem('india_manual', txt);      // siempre queda local, asi funciona ya
   try{
     await setDoc(doc(db,'config','asistente'), { manual:txt, actualizado:serverTimestamp(), por:auth.currentUser?.email||'' });
-    MANUAL = txt; $('ta-manual').value=''; pintarConf(); toast('Manual guardado para todos');
-  }catch(e){ toast('No se pudo guardar: '+e.message); }
+    manualCompartido = true; toast('Manual guardado para los dos');
+  }catch(e){
+    manualCompartido = false; toast('Guardado en este dispositivo (faltan las reglas de Firestore)');
+  }
+  $('ta-manual').value=''; pintarConf();
+}
+$('bmanual').addEventListener('click', () => guardarManual($('ta-manual').value));
+$('bmanualfile').addEventListener('click', () => $('file-manual').click());
+$('file-manual').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value='';
+  if(f) await guardarManual(await f.text());
+});
+$('bmanualpegar').addEventListener('click', () => {
+  const ta = $('ta-manual'), fi = $('fila-pegar');
+  const ver = ta.style.display === 'none';
+  ta.style.display = ver ? 'block' : 'none';
+  fi.style.display = ver ? 'flex' : 'none';
+  if(ver) ta.focus();
 });
 $('bkey').addEventListener('click', () => {
   const k = $('in-key').value.trim();
@@ -709,8 +789,9 @@ onAuthStateChanged(auth, async user => {
   // el manual, compartido entre Bárbara y Justo
   try{
     const d = await getDoc(doc(db,'config','asistente'));
-    if(d.exists()) MANUAL = d.data().manual || '';
-  }catch(e){ /* reglas viejas: se avisa abajo */ }
+    if(d.exists() && d.data().manual){ MANUAL = d.data().manual; manualCompartido = true; }
+  }catch(e){ /* las reglas todavia no estan desplegadas: se usa el local */ }
+  if(!MANUAL) MANUAL = localStorage.getItem('india_manual') || '';
 
   if(!MANUAL) { toast('Falta cargar el manual'); abrirConf(); }
   else if(!hayProxy && !localStorage.getItem('india_key')) { toast('Falta la clave'); abrirConf(); }

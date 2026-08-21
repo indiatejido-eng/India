@@ -996,7 +996,7 @@ $('bkey').addEventListener('click', async () => {
   if(!k){ toast('Pegá la clave primero'); return; }
   const prov = proveedorDe(k);
   if(!prov){
-    toast(`Eso no es una API key: empieza con "${k.slice(0,4)}…". Las válidas empiezan con AIza (Google), gsk_ (Groq), sk-or- (OpenRouter) o sk-ant- (Anthropic).`);
+    toast(`Eso no es una API key: lo que pegaste empieza con "${k.slice(0,5)}…". La de Google empieza con AIzaSy, la de Groq con gsk_, OpenRouter sk-or- y Anthropic sk-ant-. Mirá los links de arriba.`);
     return;
   }
   const btn = $('bkey'); btn.disabled = true; btn.textContent = 'Probando…';

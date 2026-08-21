@@ -276,7 +276,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, collection, addDoc, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 /* ═════════ CONFIG ═════════ */
 const CRM   = 'https://crm.india-tejidos.duckdns.org/api';
@@ -290,6 +290,7 @@ const $ = id => document.getElementById(id);
 const esc = (s='') => (s+'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 let MANUAL = '';
+let CORRECCIONES = [];   // lo que nos fueron enseñando: entra al prompt en caliente
 let manualCompartido = false;
 let claveCompartida  = false;   // true = guardado en Firestore (lo ve Barbara); false = solo local
 let hayProxy = false;          // ¿el server ya tiene el endpoint andando?
@@ -362,6 +363,7 @@ Tenés acceso al registro de WhatsApp y al catálogo.
 - Si te nombran a un cliente ("contestale a Ignacio", "el de Coronel Dorrego"), buscalo con buscar_cliente y leé la charla con leer_conversacion antes de escribir nada. No pidas que te peguen la conversación si la podés buscar sola.
 - Si hay varios que coinciden, mostrá los candidatos con su última charla y preguntá cuál es.
 - ver_chalecos: usalo siempre que la charla toque talle, precio o "qué tenés". No contestes de memoria.
+- recordar: CADA VEZ que te corrijan algo, guardalo. Si te dicen "no, eso se dice así", "faltó pedirle tal cosa", "no uses esa palabra", "acordate que ahora cobramos tal", eso vale para siempre y para los dos: guardalo sin preguntar y avisá en una línea. Es la única forma de que no te lo tengan que repetir. No guardes cosas de una sola charla ("a este decile que sí"), solo lo que sirve siempre.
 - marcar_cliente: cuando alguien pide algo que NO tejemos (sweater, pulóver, campera, cardigan, saco) o pregunta por venta al por mayor, marcalo en el CRM con la categoría que corresponda, además de contestarle. Son casi una de cada cinco charlas y hoy se pierden. Si no sabés qué categorías hay, llamalo sin categoría y te devuelve la lista. No hace falta pedir permiso para esto.
 - Si te pegan una captura o el texto de la charla, trabajá con eso y no busques la conversación.
 
@@ -378,6 +380,14 @@ const TOOLS = [
     name:'leer_conversacion',
     description:'Trae los últimos mensajes de una conversación de WhatsApp. Cada mensaje dice si es "entrante" (lo escribió el cliente) o "saliente" (lo escribió Bárbara). Necesita el jid que devuelve buscar_cliente.',
     input_schema:{ type:'object', properties:{ jid:{type:'string'}, cantidad:{type:'number',description:'Cuántos mensajes traer del final. Por defecto 40.'} }, required:['jid'] }
+  },
+  {
+    name:'recordar',
+    description:'Guarda una corrección para no volver a equivocarte igual. Usalo CADA VEZ que Bárbara o Justo te enseñen algo sobre cómo responder: te corrigen una palabra, te dicen que algo no se dice así, te dan un dato del negocio que no sabías, o te marcan que faltó algo. No preguntes si querés guardarlo: guardalo y avisá en una línea. No lo uses para cosas de una sola charla ("a este cliente decile X"), solo para lo que vale siempre.',
+    input_schema:{ type:'object', properties:{
+      regla:{type:'string',description:'La corrección redactada como instrucción clara y corta, para que la entienda alguien que no vio esta charla. Ej: "Al pedir los datos del envío hay que pedir también quién retira, teléfono y mail."'},
+      tema:{type:'string',description:'Una o dos palabras: envíos, precios, medidas, tono, lanas, etc.'}
+    }, required:['regla'] }
   },
   {
     name:'marcar_cliente',
@@ -426,6 +436,22 @@ async function correrTool(nombre, args){
       if(media) t = MEDIA[media[1]] || '['+media[1]+']';
       return `[${m.fecha||''}] ${quien}: ${t}`;
     }).join('\n');
+  }
+
+  if(nombre === 'recordar'){
+    const regla = (args.regla||'').trim();
+    if(regla.length < 10) return 'Esa corrección es muy corta, redactala mejor.';
+    const nueva = { regla, tema:(args.tema||'general').toLowerCase().trim(),
+                    fecha:new Date().toISOString(), por:auth.currentUser?.email||'' };
+    try{
+      await updateDoc(doc(db,'config','asistente'), { correcciones: arrayUnion(nueva) });
+    }catch(e){
+      // si el documento todavía no existe, se crea con la primera
+      try{ await setDoc(doc(db,'config','asistente'), { correcciones:[nueva] }, { merge:true }); }
+      catch(e2){ return 'No pude guardarla: '+e2.message; }
+    }
+    CORRECCIONES.push(nueva);
+    return `Guardada. De ahora en más la vas a tener siempre presente, en cualquier charla y también cuando conteste Bárbara desde su teléfono. Van ${CORRECCIONES.length}.`;
   }
 
   if(nombre === 'marcar_cliente'){
@@ -626,6 +652,14 @@ async function pensar(){
     { type:'text', text:ENCARGO },
     { type:'text', text:'Todo lo que sabés de India Tejidos:\n\n'+MANUAL, cache_control:{type:'ephemeral'} }
   ];
+  // Lo corregido va ÚLTIMO y a propósito: si choca con el manual, gana esto,
+  // porque es más nuevo y salió de un caso real.
+  if(CORRECCIONES.length){
+    const lista = CORRECCIONES.map((c,i) => `${i+1}. [${c.tema||'general'}] ${c.regla}`).join('\n');
+    system.push({ type:'text', text:
+      'LO QUE NOS FUERON CORRIGIENDO. Son cosas que te enseñaron Bárbara o Justo usando esta ' +
+      'herramienta. Si algo de acá contradice al manual, MANDA ESTO.\n\n' + lista });
+  }
   const cuerpo = { model:MODELO, max_tokens:2000, system, tools:TOOLS, messages:mensajes };
 
   if(hayProxy){
@@ -708,6 +742,7 @@ async function turno(){
         buscar_cliente:'buscando a '+(u.input.nombre||''),
         leer_conversacion:'leyendo la conversación',
         marcar_cliente:'marcando en el CRM',
+        recordar:'anotando la corrección',
         ver_chalecos:'mirando el catálogo'
       })[u.name] || 'buscando datos');
       pintarTool(avisos.join(' · '));
@@ -789,9 +824,27 @@ function pintarAsistente(texto){
   if(hayCard) html += chips();
   d.innerHTML = html;
   hilo().appendChild(d);
+
+  // queda registrado apenas se sugiere, con lo último que le pidieron
+  if(hayCard){
+    const tarjetas = [...d.querySelectorAll('.card-b')].map(c => c.dataset.txt).join('\n\n---\n\n');
+    const ultimo = [...mensajes].reverse().find(m => m.role === 'user' && Array.isArray(m.content)
+                    && m.content.some(b => b.type === 'text'));
+    const pedido = ultimo?.content.filter(b => b.type === 'text').map(b => b.text).join('\n') || '';
+    registrar(tarjetas, pedido).then(id => { if(id) d.dataset.uso = id; });
+  }
   d.querySelectorAll('.bcopy').forEach(b => b.addEventListener('click', () => copiar(b)));
   d.querySelectorAll('.bwa').forEach(b => b.addEventListener('click', () => abrirWa(b)));
-  d.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { mandar(b.dataset.aj, [], true); }));
+  d.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    if(b.dataset.aj === '__corregir'){    // no es un ajuste: le estás enseñando algo
+      $('txt').value = 'No, eso está mal. Lo correcto es: ';
+      $('txt').focus();
+      $('txt').setSelectionRange($('txt').value.length, $('txt').value.length);
+      refrescarComposer(); abajo();
+      return;
+    }
+    mandar(b.dataset.aj, [], true);
+  }));
   abajo();
 }
 
@@ -820,7 +873,8 @@ const AJUSTES = [
   ['Más corta','Hacela más corta, sin perder lo importante.'],
   ['Más cálida','Hacela un poco más cálida y cercana, como escribe Bárbara.'],
   ['Pedile las medidas','Sumale el pedido de medidas, en un mensaje aparte.'],
-  ['Otra versión','Dame otra versión distinta de ese mensaje.']
+  ['Otra versión','Dame otra versión distinta de ese mensaje.'],
+  ['✎ Corregirte','__corregir']
 ];
 function chips(){
   return `<div class="chips">${AJUSTES.map(([l,p]) => `<button class="chip" data-aj="${esc(p)}">${l}</button>`).join('')}</div>`;
@@ -844,22 +898,31 @@ async function copiar(btn){
   catch(e){ const t=document.createElement('textarea'); t.value=txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
   btn.textContent = '✓ Copiado'; btn.classList.add('ok');
   setTimeout(()=>{ btn.textContent='📋 Copiar'; btn.classList.remove('ok'); }, 2000);
-  registrar(txt);
+  marcarCopiado(btn.closest('.turn')?.dataset.uso);
 }
 
 function abrirWa(btn){
   window.open('https://wa.me/?text='+encodeURIComponent(textoDe(btn)), '_blank');
 }
 
-// cada respuesta copiada queda registrada: es el material para mejorar el manual
-async function registrar(texto){
+// Se registra TODO lo que se sugiere, no solo lo que se copia: la diferencia
+// entre una y otra cosa es justamente el dato que sirve para mejorar el manual.
+async function registrar(sugerido, pedido){
   try{
-    await addDoc(collection(db,'asistente_uso'), {
-      texto, modelo: proveedorDe(localStorage.getItem('india_key')) || 'server', fecha:serverTimestamp(),
-      usuario:auth.currentUser?.email || '',
+    const d = await addDoc(collection(db,'asistente_uso'), {
+      sugerido, pedido: (pedido||'').slice(0,4000),
+      copiado:false, corregido:false,
+      modelo: proveedorDe(localStorage.getItem('india_key')) || 'server',
+      fecha:serverTimestamp(), usuario:auth.currentUser?.email || '',
       turnos:mensajes.filter(m=>m.role==='user').length
     });
-  }catch(e){ /* si falla, no molestamos: es telemetría */ }
+    return d.id;
+  }catch(e){ return null; }   // es telemetría: si falla, no molestamos
+}
+
+async function marcarCopiado(id){
+  if(!id) return;
+  try{ await updateDoc(doc(db,'asistente_uso',id), { copiado:true }); }catch(e){}
 }
 
 /* ═════════ MANDAR ═════════ */
@@ -1305,6 +1368,7 @@ onAuthStateChanged(auth, async user => {
     localStorage.setItem('india_key', remoto.apiKey);
   }
   claveCompartida = !!remoto?.apiKey;
+  CORRECCIONES = Array.isArray(remoto?.correcciones) ? remoto.correcciones : [];
 
   // lo que se había guardado antes de que existieran las reglas, se sube ahora
   if(MANUAL && !manualCompartido) manualCompartido = await guardarCompartido({ manual:MANUAL });

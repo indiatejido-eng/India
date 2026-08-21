@@ -150,7 +150,9 @@
   .grupo{margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--line2)}
   .grupo:last-of-type{border-bottom:0}
   .grupo h4{font-size:.95rem;font-weight:600;margin-bottom:5px}
-  .grupo .exp{font-size:.86rem;color:var(--muted);line-height:1.5;margin-bottom:12px}
+  .grupo .exp{font-size:.86rem;color:var(--muted);line-height:1.6;margin-bottom:12px}
+  .grupo .exp a{color:var(--accent);font-weight:500}
+  .grupo .exp b{color:var(--soft)}
   .grupo textarea{width:100%;min-height:110px;padding:12px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-size:.88rem;line-height:1.5;font-family:ui-monospace,Menlo,monospace;resize:vertical}
   .grupo input[type=password],.grupo input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-size:.95rem}
   .grupo textarea:focus,.grupo input:focus{outline:none;border-color:var(--green)}
@@ -925,10 +927,10 @@ function pintarConf(){
     $('in-key').style.display='none'; $('bkey').style.display='none'; $('bkeydel').style.display='none';
   } else {
     xk.innerHTML = 'La clave se guarda <b>en este dispositivo</b>. Sirve cualquiera de estas cuatro:<br>' +
-      '<b>Google Gemini</b> — <code>aistudio.google.com</code>. Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
-      '<b>Groq</b> — <code>console.groq.com</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
-      '<b>OpenRouter</b> — <code>openrouter.ai</code>. Modelos gratis, pero también entrenan.<br>' +
-      '<b>Anthropic</b> — <code>console.anthropic.com</code>. Es paga y no entrena con tus datos.';
+      '<b>Google Gemini</b> — <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>AIza</code>. Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
+      '<b>Groq</b> — <a href="https://console.groq.com/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>gsk_</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
+      '<b>OpenRouter</b> — <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-or-</code>. Modelos gratis, pero también entrenan.<br>' +
+      '<b>Anthropic</b> — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-ant-</code>. Es paga y no entrena con tus datos.';
     const k = localStorage.getItem('india_key');
     const prov = proveedorDe(k);
     if(k && prov){ ek.className='estado ok'; ek.textContent = PROVEEDORES[prov].nombre+' · ····'+k.slice(-6); }
@@ -963,13 +965,50 @@ $('bmanualpegar').addEventListener('click', () => {
   fi.style.display = ver ? 'flex' : 'none';
   if(ver) ta.focus();
 });
-$('bkey').addEventListener('click', () => {
-  const k = $('in-key').value.trim();
+// la gente pega la clave con comillas, con "Bearer " adelante o con saltos: se limpia
+const limpiarClave = s => (s||'').trim().replace(/^["'`]|["'`]$/g,'').replace(/^Bearer\s+/i,'').replace(/\s/g,'');
+
+// prueba de verdad contra el proveedor, así no se guarda una clave que no anda
+async function probarClave(k, prov){
+  if(prov === 'google'){
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(k)+'&pageSize=1');
+    if(r.ok) return { ok:true };
+    const d = await r.json().catch(()=>({}));
+    return { ok:false, msg: d?.error?.message || ('la rechazó con un '+r.status) };
+  }
+  if(prov === 'anthropic'){
+    const r = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+      headers:{ 'x-api-key':k, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' }});
+    if(r.ok) return { ok:true };
+    const d = await r.json().catch(()=>({}));
+    return { ok:false, msg: d?.error?.message || ('la rechazó con un '+r.status) };
+  }
+  const base = PROVEEDORES[prov].url.replace(/\/chat\/completions$/,'/models');
+  const r = await fetch(base, { headers:{ 'authorization':'Bearer '+k } }).catch(()=>null);
+  if(!r) return { ok:false, msg:'no se pudo conectar (puede que no permita llamadas desde el navegador)' };
+  if(r.ok) return { ok:true };
+  const d = await r.json().catch(()=>({}));
+  return { ok:false, msg: d?.error?.message || ('la rechazó con un '+r.status) };
+}
+
+$('bkey').addEventListener('click', async () => {
+  const k = limpiarClave($('in-key').value);
+  if(!k){ toast('Pegá la clave primero'); return; }
   const prov = proveedorDe(k);
-  if(!prov){ toast('No reconozco esa clave. Tiene que empezar con sk-ant-, AIza, gsk_ o sk-or-'); return; }
-  localStorage.setItem('india_key', k);
-  localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
-  $('in-key').value=''; pintarConf(); toast('Clave de '+PROVEEDORES[prov].nombre+' guardada');
+  if(!prov){
+    toast(`Eso no es una API key: empieza con "${k.slice(0,4)}…". Las válidas empiezan con AIza (Google), gsk_ (Groq), sk-or- (OpenRouter) o sk-ant- (Anthropic).`);
+    return;
+  }
+  const btn = $('bkey'); btn.disabled = true; btn.textContent = 'Probando…';
+  try{
+    const r = await probarClave(k, prov);
+    if(!r.ok){ toast(`${PROVEEDORES[prov].nombre} ${r.msg}`); return; }
+    localStorage.setItem('india_key', k);
+    localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
+    $('in-key').value=''; pintarConf();
+    toast('Listo, la clave de '+PROVEEDORES[prov].nombre+' funciona');
+  }catch(e){ toast('No se pudo probar: '+e.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Guardar clave'; }
 });
 $('bkeydel').addEventListener('click', () => {
   localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google');

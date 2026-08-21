@@ -442,6 +442,134 @@ async function crm(path, opts={}){
   return r.json();
 }
 
+/* ═════════ PROVEEDORES ═════════
+   Se soportan dos y se detecta por la forma de la clave. El historial se
+   guarda SIEMPRE en formato Anthropic; para Google se traduce al vuelo. */
+const PROVEEDORES = {
+  anthropic:  { test:k => k.startsWith('sk-ant-'), nombre:'Anthropic' },
+  google:     { test:k => k.startsWith('AIza'),    nombre:'Google (Gemini)' },
+  groq:       { test:k => k.startsWith('gsk_'),    nombre:'Groq', url:'https://api.groq.com/openai/v1/chat/completions', modelo:'llama-3.3-70b-versatile' },
+  openrouter: { test:k => k.startsWith('sk-or-'),  nombre:'OpenRouter', url:'https://openrouter.ai/api/v1/chat/completions', modelo:'meta-llama/llama-3.3-70b-instruct:free' }
+};
+const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEEDORES[p].test(k)) || null);
+const toolNames = {};   // id del tool_use -> nombre, que es lo que Google pide de vuelta
+
+// Google no expone un id de modelo estable en el tiempo: se le pregunta cuál tiene.
+async function modeloGoogle(key){
+  const guardado = localStorage.getItem('india_modelo_google');
+  if(guardado) return guardado;
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key)+'&pageSize=200');
+  const d = await r.json();
+  if(!r.ok) throw new Error(d?.error?.message || 'No pude leer los modelos de Google');
+  const aptos = (d.models||[])
+    .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
+    .map(m => m.name.replace(/^models\//,''))
+    .filter(n => /gemini/.test(n) && !/embedding|aqa|vision|image|tts|live|native-audio/.test(n));
+  // el Flash más nuevo: barato, rápido y el que el tier gratis banca mejor
+  const puntaje = n => {
+    const ver = parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/)||[])[1] || 0);
+    return ver*100 + (/flash/.test(n) ? 50 : 0) - (/lite|preview|exp|thinking/.test(n) ? 30 : 0);
+  };
+  const mejor = aptos.sort((a,b) => puntaje(b) - puntaje(a))[0];
+  if(!mejor) throw new Error('Esa clave de Google no tiene ningún modelo de Gemini habilitado.');
+  localStorage.setItem('india_modelo_google', mejor);
+  return mejor;
+}
+
+// Anthropic -> Gemini
+function aGoogle(cuerpo){
+  const contents = cuerpo.messages.map(m => {
+    const bloques = Array.isArray(m.content) ? m.content : [{type:'text', text:m.content}];
+    const parts = [];
+    for(const b of bloques){
+      if(b.type === 'text' && b.text) parts.push({ text:b.text });
+      else if(b.type === 'image') parts.push({ inlineData:{ mimeType:b.source.media_type, data:b.source.data } });
+      else if(b.type === 'tool_use') parts.push({ functionCall:{ name:b.name, args:b.input || {} } });
+      else if(b.type === 'tool_result') parts.push({ functionResponse:{
+        name: toolNames[b.tool_use_id] || 'herramienta',
+        response:{ result: String(b.content) }
+      }});
+    }
+    // en Gemini el que contesta es "model"; los resultados de herramienta van como "user"
+    return { role: m.role === 'assistant' ? 'model' : 'user', parts };
+  }).filter(c => c.parts.length);
+
+  return {
+    systemInstruction:{ parts: cuerpo.system.map(s => ({ text:s.text })) },
+    contents,
+    tools:[{ functionDeclarations: cuerpo.tools.map(t => ({
+      name:t.name, description:t.description,
+      parameters: Object.keys(t.input_schema.properties||{}).length ? t.input_schema : undefined
+    })) }],
+    generationConfig:{ maxOutputTokens: cuerpo.max_tokens, temperature:0.7 }
+  };
+}
+
+// Gemini -> Anthropic, para que el resto del código no se entere
+function deGoogle(data){
+  const parts = data?.candidates?.[0]?.content?.parts || [];
+  const content = [];
+  let n = 0;
+  for(const p of parts){
+    if(p.text) content.push({ type:'text', text:p.text });
+    else if(p.functionCall){
+      const id = 'g'+(++n)+'_'+Math.round(performance.now());
+      toolNames[id] = p.functionCall.name;
+      content.push({ type:'tool_use', id, name:p.functionCall.name, input:p.functionCall.args || {} });
+    }
+  }
+  const fin = data?.candidates?.[0]?.finishReason;
+  if(!content.length){
+    if(fin === 'SAFETY' || fin === 'PROHIBITED_CONTENT') throw new Error('Google bloqueó la respuesta por sus filtros. Probá de nuevo o cambiá de proveedor.');
+    if(fin === 'MAX_TOKENS') throw new Error('La respuesta salió cortada por largo.');
+    throw new Error('Google no devolvió nada'+(fin ? ' ('+fin+')' : '')+'.');
+  }
+  return { content };
+}
+
+/* ── Anthropic <-> formato OpenAI (sirve para Groq, OpenRouter, Cerebras…) ── */
+function aOpenAI(cuerpo, modelo){
+  const messages = [{ role:'system', content: cuerpo.system.map(s => s.text).join('\n\n') }];
+  for(const m of cuerpo.messages){
+    const bloques = Array.isArray(m.content) ? m.content : [{type:'text', text:m.content}];
+    const resultados = bloques.filter(b => b.type === 'tool_result');
+    if(resultados.length){   // cada resultado es su propio mensaje role:tool
+      for(const r of resultados) messages.push({ role:'tool', tool_call_id:r.tool_use_id, content:String(r.content) });
+      continue;
+    }
+    const usos = bloques.filter(b => b.type === 'tool_use');
+    const texto = bloques.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    if(m.role === 'assistant'){
+      const msg = { role:'assistant', content: texto || null };
+      if(usos.length) msg.tool_calls = usos.map(u => ({ id:u.id, type:'function', function:{ name:u.name, arguments:JSON.stringify(u.input||{}) } }));
+      messages.push(msg);
+    } else {
+      const imgs = bloques.filter(b => b.type === 'image');
+      messages.push(imgs.length
+        ? { role:'user', content:[ ...imgs.map(i => ({ type:'image_url', image_url:{ url:`data:${i.source.media_type};base64,${i.source.data}` } })), ...(texto ? [{type:'text', text:texto}] : []) ] }
+        : { role:'user', content: texto });
+    }
+  }
+  return {
+    model: modelo, messages, max_tokens: cuerpo.max_tokens,
+    tools: cuerpo.tools.map(t => ({ type:'function', function:{ name:t.name, description:t.description, parameters:t.input_schema } }))
+  };
+}
+
+function deOpenAI(data){
+  const msg = data?.choices?.[0]?.message;
+  if(!msg) throw new Error(data?.error?.message || 'No devolvió nada.');
+  const content = [];
+  if(msg.content) content.push({ type:'text', text:msg.content });
+  for(const c of (msg.tool_calls||[])){
+    let input = {};
+    try{ input = JSON.parse(c.function.arguments || '{}'); }catch(e){}
+    content.push({ type:'tool_use', id:c.id, name:c.function.name, input });
+  }
+  if(!content.length) throw new Error('Vino una respuesta vacía. Probá de nuevo.');
+  return { content };
+}
+
 /* ═════════ LLAMADA AL MODELO ═════════ */
 async function pensar(){
   const system = [
@@ -459,6 +587,40 @@ async function pensar(){
 
   const key = localStorage.getItem('india_key');
   if(!key) throw new Error('SIN_CLAVE');
+
+  const prov = proveedorDe(key);
+  if(!prov) throw new Error('Esa clave no la reconozco. Tiene que ser de Anthropic (sk-ant-), Google (AIza), Groq (gsk_) u OpenRouter (sk-or-).');
+
+  if(PROVEEDORES[prov].url){    // los que hablan formato OpenAI
+    const cfg = PROVEEDORES[prov];
+    const modelo = localStorage.getItem('india_modelo_'+prov) || cfg.modelo;
+    const r = await fetch(cfg.url, {
+      method:'POST',
+      headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
+      body: JSON.stringify(aOpenAI(cuerpo, modelo))
+    }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
+    const data = await r.json();
+    if(!r.ok){
+      if(r.status === 429) throw new Error(`Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`);
+      throw new Error(data?.error?.message || ('Error '+r.status));
+    }
+    return deOpenAI(data);
+  }
+
+  if(prov === 'google'){
+    const modelo = await modeloGoogle(key);
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(key)}`, {
+      method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify(aGoogle(cuerpo))
+    });
+    const data = await r.json();
+    if(!r.ok){
+      const msg = data?.error?.message || ('Error '+r.status);
+      if(r.status === 429) throw new Error('Te pasaste del límite gratis de Google por hoy o por minuto. Esperá un rato y probá de nuevo.');
+      throw new Error(msg);
+    }
+    return deGoogle(data);
+  }
+
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{ 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
@@ -640,7 +802,7 @@ function abrirWa(btn){
 async function registrar(texto){
   try{
     await addDoc(collection(db,'asistente_uso'), {
-      texto, modelo:MODELO, fecha:serverTimestamp(),
+      texto, modelo: proveedorDe(localStorage.getItem('india_key')) || 'server', fecha:serverTimestamp(),
       usuario:auth.currentUser?.email || '',
       turnos:mensajes.filter(m=>m.role==='user').length
     });
@@ -762,9 +924,15 @@ function pintarConf(){
     ek.className='estado ok'; ek.textContent = 'Conectado por el server. Todo bien.';
     $('in-key').style.display='none'; $('bkey').style.display='none'; $('bkeydel').style.display='none';
   } else {
-    xk.innerHTML = 'Todavía no está el endpoint en el server, así que la página le habla directo a Claude con una clave guardada <b>en este teléfono</b>. Sacala de <code>console.anthropic.com</code>. Cuando montemos el server, esto desaparece solo.';
+    xk.innerHTML = 'La clave se guarda <b>en este dispositivo</b>. Sirve cualquiera de estas cuatro:<br>' +
+      '<b>Google Gemini</b> — <code>aistudio.google.com</code>. Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
+      '<b>Groq</b> — <code>console.groq.com</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
+      '<b>OpenRouter</b> — <code>openrouter.ai</code>. Modelos gratis, pero también entrenan.<br>' +
+      '<b>Anthropic</b> — <code>console.anthropic.com</code>. Es paga y no entrena con tus datos.';
     const k = localStorage.getItem('india_key');
-    if(k){ ek.className='estado ok'; ek.textContent = 'Clave cargada (····'+k.slice(-6)+')'; }
+    const prov = proveedorDe(k);
+    if(k && prov){ ek.className='estado ok'; ek.textContent = PROVEEDORES[prov].nombre+' · ····'+k.slice(-6); }
+    else if(k){ ek.className='estado no'; ek.textContent = 'La clave guardada no la reconozco.'; }
     else { ek.className='estado no'; ek.textContent = 'Sin clave: el asistente no puede pensar.'; }
   }
 }
@@ -797,10 +965,16 @@ $('bmanualpegar').addEventListener('click', () => {
 });
 $('bkey').addEventListener('click', () => {
   const k = $('in-key').value.trim();
-  if(!k.startsWith('sk-ant-')){ toast('Esa no parece una clave de Anthropic'); return; }
-  localStorage.setItem('india_key', k); $('in-key').value=''; pintarConf(); toast('Clave guardada');
+  const prov = proveedorDe(k);
+  if(!prov){ toast('No reconozco esa clave. Tiene que empezar con sk-ant-, AIza, gsk_ o sk-or-'); return; }
+  localStorage.setItem('india_key', k);
+  localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
+  $('in-key').value=''; pintarConf(); toast('Clave de '+PROVEEDORES[prov].nombre+' guardada');
 });
-$('bkeydel').addEventListener('click', () => { localStorage.removeItem('india_key'); pintarConf(); toast('Clave borrada'); });
+$('bkeydel').addEventListener('click', () => {
+  localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google');
+  pintarConf(); toast('Clave borrada');
+});
 
 /* ═════════ ARRANQUE ═════════ */
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2600); }

@@ -449,7 +449,8 @@ async function crm(path, opts={}){
    guarda SIEMPRE en formato Anthropic; para Google se traduce al vuelo. */
 const PROVEEDORES = {
   anthropic:  { test:k => k.startsWith('sk-ant-'), nombre:'Anthropic' },
-  google:     { test:k => k.startsWith('AIza'),    nombre:'Google (Gemini)' },
+    // Google emite dos formatos: las nuevas de AI Studio arrancan con AQ. y las viejas con AIza
+  google:     { test:k => k.startsWith('AQ.') || k.startsWith('AIza'), nombre:'Google (Gemini)' },
   groq:       { test:k => k.startsWith('gsk_'),    nombre:'Groq', url:'https://api.groq.com/openai/v1/chat/completions', modelo:'llama-3.3-70b-versatile' },
   openrouter: { test:k => k.startsWith('sk-or-'),  nombre:'OpenRouter', url:'https://openrouter.ai/api/v1/chat/completions', modelo:'meta-llama/llama-3.3-70b-instruct:free' }
 };
@@ -591,7 +592,7 @@ async function pensar(){
   if(!key) throw new Error('SIN_CLAVE');
 
   const prov = proveedorDe(key);
-  if(!prov) throw new Error('Esa clave no la reconozco. Tiene que ser de Anthropic (sk-ant-), Google (AIza), Groq (gsk_) u OpenRouter (sk-or-).');
+  if(!prov) throw new Error('Esa clave no la reconozco. Tiene que ser de Google (AQ. o AIza), Groq (gsk_), OpenRouter (sk-or-) o Anthropic (sk-ant-).');
 
   if(PROVEEDORES[prov].url){    // los que hablan formato OpenAI
     const cfg = PROVEEDORES[prov];
@@ -927,7 +928,7 @@ function pintarConf(){
     $('in-key').style.display='none'; $('bkey').style.display='none'; $('bkeydel').style.display='none';
   } else {
     xk.innerHTML = 'La clave se guarda <b>en este dispositivo</b>. Sirve cualquiera de estas cuatro:<br>' +
-      '<b>Google Gemini</b> — <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>AIza</code>. Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
+      '<b>Google Gemini</b> — <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>AQ.</code> (las nuevas) o <code>AIza</code> (las viejas). Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
       '<b>Groq</b> — <a href="https://console.groq.com/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>gsk_</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
       '<b>OpenRouter</b> — <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-or-</code>. Modelos gratis, pero también entrenan.<br>' +
       '<b>Anthropic</b> — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-ant-</code>. Es paga y no entrena con tus datos.';
@@ -996,7 +997,7 @@ $('bkey').addEventListener('click', async () => {
   if(!k){ toast('Pegá la clave primero'); return; }
   const prov = proveedorDe(k);
   if(!prov){
-    toast(`Eso no es una API key: lo que pegaste empieza con "${k.slice(0,5)}…". La de Google empieza con AIzaSy, la de Groq con gsk_, OpenRouter sk-or- y Anthropic sk-ant-. Mirá los links de arriba.`);
+    toast(`Eso no es una API key: lo que pegaste empieza con "${k.slice(0,5)}…". La de Google empieza con AQ. o AIza, la de Groq con gsk_, OpenRouter sk-or- y Anthropic sk-ant-. Mirá los links de arriba.`);
     return;
   }
   const btn = $('bkey'); btn.disabled = true; btn.textContent = 'Probando…';

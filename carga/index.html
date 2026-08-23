@@ -313,6 +313,7 @@
       <div style="font-family:var(--disp);font-weight:600;font-size:18px" id="n-pub-txt"></div>
     </div>
     <div class="stat-period" id="n-anuncios" style="margin-top:10px"></div>
+    <div class="mini" id="n-pub-pie"></div>
 
     <div class="stat-sec gap">Cuánto deja cada chaleco</div>
     <div class="seg" id="n-seg-envio">
@@ -548,6 +549,10 @@
     else $('n-pub-box').style.display='none';
     const an=d.ventasDeAnuncios;
     $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+    $('n-pub-pie').innerHTML=
+      '<b>Por chaleco vendido</b>: la publicidad repartida entre <u>todos</u> los chalecos ('+chalecos+'). Es lo que le carga a cada uno.<br>'+
+      '<b>Por venta de anuncio</b>: la misma plata dividida solo por las '+(an||0)+' que vinieron de un anuncio. Es lo que sale traer un cliente pagando.<br>'+
+      '<b>Conviene gastar hasta</b>: un tercio de lo que deja el chaleco sin contar publicidad ('+pesos(techoPublicidad(d))+'). Pagando más que eso queda poco para reponer la lana; pagando '+pesos(techoPublicidad(d))+' se gana cero.';
 
     barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
     barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);

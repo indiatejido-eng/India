@@ -91,6 +91,27 @@
   .bar-track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
   .bar-fill{height:100%;background:var(--accent);border-radius:4px}
   .bar-num{font-size:13px;font-weight:600;width:18px;text-align:right}
+  .stat-sec.gap{margin-top:26px}
+  .seg{display:flex;gap:6px;margin-bottom:10px}
+  .seg button{flex:1;padding:9px 6px;font-size:12.5px;font-family:var(--body);border:1px solid var(--line2);background:var(--surface);border-radius:10px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--sel);color:#faf6ee;border-color:var(--sel)}
+  .rent-wrap{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .rent{width:100%;border-collapse:collapse;font-size:13.5px}
+  .rent th{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 7px;text-align:right;border-bottom:1px solid var(--line)}
+  .rent th:first-child{text-align:left;padding-left:13px}
+  .rent td{padding:11px 7px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .rent td:first-child{text-align:left;padding-left:13px;font-weight:600}
+  .rent tr:last-child td{border-bottom:none}
+  .rent .q{font-family:var(--disp);font-weight:600}
+  .rent .pc{color:var(--muted);width:40px}
+  .rent tr.best td{background:#f4ece0}
+  .rent tr.sold td:first-child::after{content:"•";color:var(--accent);margin-left:5px;font-size:16px;line-height:0}
+  .mini{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:10px}
+  .tip{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:11px;padding:12px 14px;margin-bottom:9px;font-size:13.5px;line-height:1.5}
+  .tip b{font-family:var(--disp);font-weight:600}
+  .tip.ok{border-left-color:#5f7d4b}
+  .tip.warn{border-left-color:#c08a2c}
+  .tip.info{border-left-color:var(--line2)}
   footer{margin-top:auto;padding-top:32px}
   .cfg{font-size:13px;color:var(--muted);font-family:var(--body);padding:6px 0}
   .logout{font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--body);padding:6px 0;text-decoration:underline}
@@ -195,7 +216,7 @@
     <div class="field"><label>Cliente</label><input type="text" id="v-cliente" placeholder="Nombre y apellido"></div>
     <div class="field"><label>Teléfono / WhatsApp</label><input type="tel" id="v-tel" inputmode="tel" placeholder="3454 123456"></div>
     <div class="field"><label>Modelo</label><div class="chips" id="v-modelo" data-val="Liso"><div class="chip sel" onclick="pick(this)">Liso</div><div class="chip" onclick="pick(this)">Trenza</div><div class="chip" onclick="pick(this)">Ochos</div><div class="chip" onclick="pick(this)">Guardapampa</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
-    <div class="field"><label>Talle</label><div class="chips" id="v-talle" data-val="M"><div class="chip" onclick="pick(this)">S</div><div class="chip sel" onclick="pick(this)">M</div><div class="chip" onclick="pick(this)">L</div><div class="chip" onclick="pick(this)">Único</div></div></div>
+    <div class="field"><label>Talle</label><div class="chips" id="v-talle" data-val="M"><div class="chip" onclick="pick(this)">6-10</div><div class="chip" onclick="pick(this)">12-14</div><div class="chip" onclick="pick(this)">S</div><div class="chip sel" onclick="pick(this)">M</div><div class="chip" onclick="pick(this)">L</div><div class="chip" onclick="pick(this)">XL</div><div class="chip" onclick="pick(this)">XXL</div><div class="chip" onclick="pick(this)">Único</div></div></div>
     <div class="field"><label>Medidas del chaleco, en cm</label>
       <div class="duo">
         <div><input type="text" id="v-ancho" inputmode="decimal" placeholder="Ancho" oninput="soloDecimal(this)"></div>
@@ -266,28 +287,59 @@
     <div class="ttl">Tus números</div>
     <select class="n-sel" id="n-periodo-sel" onchange="cambiarPeriodo()"></select>
     <div class="stat-period" id="n-periodo">Cargando…</div>
+
+    <div class="stat-sec">La plata</div>
     <div class="stat-grid">
       <div class="stat"><div class="sl">Vendido</div><div class="sv" id="n-vendido">—</div></div>
-      <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
       <div class="stat"><div class="sl">Ganancia</div><div class="sv green" id="n-ganancia">—</div></div>
-      <div class="stat"><div class="sl">Por cobrar</div><div class="sv" id="n-porcobrar">—</div></div>
-      <div class="stat wide"><div class="sl">Hay en caja</div><div class="sv green" id="n-encaja">—</div></div>
+      <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
       <div class="stat"><div class="sl">Margen</div><div class="sv" id="n-margen">—</div></div>
       <div class="stat"><div class="sl">Chalecos</div><div class="sv" id="n-chalecos">—</div></div>
-      <div class="stat"><div class="sl">Costo x chaleco</div><div class="sv" id="n-costo">—</div></div>
+      <div class="stat"><div class="sl">Precio promedio</div><div class="sv" id="n-ticket">—</div></div>
+      <div class="stat"><div class="sl">Por cobrar</div><div class="sv" id="n-porcobrar">—</div></div>
       <div class="stat"><div class="sl">Lana $/kg</div><div class="sv" id="n-lanakg">—</div></div>
+      <div class="stat wide"><div class="sl">Hay en caja</div><div class="sv green" id="n-encaja">—</div></div>
     </div>
-    <div class="stat-sec">En qué gastaste</div>
-    <div id="n-gastos-bars"></div>
-    <div id="n-pub-box" style="background:var(--accent);color:#faf6ee;border-radius:13px;padding:14px 16px;margin:18px 0;display:none">
+
+    <div class="stat-sec gap">La publicidad</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="sl">Gastado</div><div class="sv" id="n-pub-gasto">—</div></div>
+      <div class="stat"><div class="sl">Por chaleco vendido</div><div class="sv" id="n-pub-chaleco">—</div></div>
+      <div class="stat"><div class="sl">Costo por venta de anuncio</div><div class="sv" id="n-pub-cac">—</div></div>
+      <div class="stat"><div class="sl">Conviene gastar hasta</div><div class="sv green" id="n-pub-techo">—</div></div>
+    </div>
+    <div id="n-pub-box" style="background:var(--accent);color:#faf6ee;border-radius:13px;padding:14px 16px;margin:2px 0 4px;display:none">
       <div style="font-size:12px;opacity:.85;margin-bottom:3px">Retorno de la publicidad</div>
       <div style="font-family:var(--disp);font-weight:600;font-size:18px" id="n-pub-txt"></div>
     </div>
-    <div class="stat-sec">Qué se vende más</div>
+    <div class="stat-period" id="n-anuncios" style="margin-top:10px"></div>
+
+    <div class="stat-sec gap">Cuánto deja cada chaleco</div>
+    <div class="seg" id="n-seg-envio">
+      <button class="on" onclick="segRent('envio','envio',this)">Con envío</button>
+      <button onclick="segRent('envio','local',this)">Acá en Concordia</button>
+    </div>
+    <div class="seg" id="n-seg-teje">
+      <button class="on" onclick="segRent('teje','barbara',this)">Lo teje Bárbara</button>
+      <button onclick="segRent('teje','tejedora',this)">Lo teje la tejedora</button>
+    </div>
+    <div class="rent-wrap">
+      <table class="rent">
+        <thead><tr><th>Talle</th><th>Precio</th><th>Cuesta</th><th>Te queda</th><th></th></tr></thead>
+        <tbody id="n-rent"></tbody>
+      </table>
+    </div>
+    <div class="mini" id="n-rent-pie"></div>
+
+    <div class="stat-sec gap">Qué dicen los números</div>
+    <div id="n-tips"></div>
+
+    <div class="stat-sec gap">En qué gastaste</div>
+    <div id="n-gastos-bars"></div>
+    <div class="stat-sec gap">Qué se vende más</div>
     <div id="n-modelos"></div>
     <div class="stat-sec" style="font-size:15px;margin-top:20px">Cómo llegaron</div>
     <div id="n-canales"></div>
-    <div class="stat-period" id="n-anuncios" style="margin-top:12px"></div>
   </div>
 
   <div class="screen" id="s-clientes">
@@ -324,6 +376,21 @@
   // Lo que cobra la tejedora por chaleco tejido. Es una sola tejedora y la tarifa es fija:
   // si cambia, se toca SOLO acá (las etiquetas del formulario se escriben desde estos números).
   const TARIFA_TEJEDORA={nino:9000,adulto:18000};
+
+  // ── Costos de producción ────────────────────────────────────────────────
+  // Es lo ÚNICO que hay que tocar cuando cambien los precios o la lista.
+  // Lo demás (transporte, publicidad, lana $/kg) sale solo de lo que se carga.
+  const COSTOS={
+    lanaKg:60800,   // $/kg de respaldo. Si el período tiene compras de lana, manda el real
+    etiqueta:500,   // etiqueta de cuero por chaleco  ⚠️ estimado, falta saber cuántas trae cada compra
+    envio:10000,    // solo cuando sale de Concordia
+    gramos:{'6-10':200,'12-14':300,'S':450,'M':500,'L':550,'XL':650,'XXL':700,'Único':500},
+  };
+  const PRECIOS_LISTA={'6-10':80000,'12-14':95000,'S':150000,'M':160000,'L':160000,'XL':175000,'XXL':180000};
+  const esNino=t=>String(t).indexOf('-')>0;
+  const gramosDe=t=>COSTOS.gramos[t]||COSTOS.gramos['M'];
+  // Concordia y alrededores: se entrega en mano, no se paga envío.
+  const esLocal=v=>/concordia|entre\s*r[ií]os/i.test(String(v.Destino||'')+' '+String(v.Ciudad||''));
 
   // Ajusta los campos del gasto según el tipo: kilos solo para Lana, contador de chalecos
   // solo para Tejedora.
@@ -419,12 +486,32 @@
     const sumarTipo=arr=>{const m={};arr.forEach(r=>{const k=r.Tipo||'Otro';m[k]=(m[k]||0)+numero(r['Monto ($)'])});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
     const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
+
+    // ── Los fijos que se pagan una vez por venta, sacados de lo que se cargó ──
+    const transporte=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='transporte').reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const transportePorVenta=chalecos>0?Math.round(transporte/chalecos):0;
+    const publicidadPorChaleco=chalecos>0?Math.round(pub/chalecos):0;
+    const cac=anuncios>0?Math.round(pub/anuncios):0;
+    const ticket=chalecos>0?Math.round(vendido/chalecos):0;
+    const locales=ventas.filter(esLocal).length;
+
+    // ── Cuánta lana se compró de más: es stock, no costo de lo vendido ──
+    const lanaPorKgReal=lanaKg>0?Math.round(lanaMonto/lanaKg):COSTOS.lanaKg;
+    const kgUsados=ventas.reduce((a,r)=>a+gramosDe(r.Talle)/1000,0);
+    const lanaStockKg=Math.max(0,lanaKg-kgUsados);
+    const lanaStock=Math.round(lanaStockKg*lanaPorKgReal);
+
+    // ── Qué talles se vendieron, para saber contra qué comparar ──
+    const tallesVendidos={};
+    ventas.forEach(r=>{const t=r.Talle||'M';tallesVendidos[t]=(tallesVendidos[t]||0)+1});
+
     return {
+      transportePorVenta, publicidadPorChaleco, cac, ticket,
+      locales, lanaStock, lanaStockKg:Math.round(lanaStockKg*100)/100, tallesVendidos,
       periodo: mes?etiquetaMes(mes):'Todo el año', mes, mesesDisponibles:meses,
       vendido,gastos:costos,ganancia,caja:ganancia-retiros,
       margen:vendido>0?Math.round(ganancia/vendido*100):0,
       chalecos,
-      costoPorChaleco:chalecos>0?Math.round(costos/chalecos):null,
       lanaPorKg:lanaKg>0?Math.round(lanaMonto/lanaKg):null,
       gastosPorTipo:sumarTipo(costosRows).map(([tipo,monto])=>({tipo,monto})),
       publicidad:{gasto:pub,ventas:vendido},
@@ -439,7 +526,6 @@
     d=d||{};
     const vendido=Number(d.vendido)||0, gastos=Number(d.gastos)||0;
     const ganancia=d.ganancia!=null?Number(d.ganancia):vendido-gastos;
-    const caja=d.caja!=null?Number(d.caja):ganancia;
     const margen=d.margen!=null?Number(d.margen):(vendido>0?Math.round(ganancia/vendido*100):0);
     const chalecos=d.chalecos!=null?Number(d.chalecos):(d.modelos||[]).reduce((a,m)=>a+(Number(m.cantidad)||0),0);
     $('n-periodo').textContent='';
@@ -448,16 +534,118 @@
     $('n-ganancia').textContent=pesos(ganancia);
     $('n-margen').textContent=margen+'%';
     $('n-chalecos').textContent=chalecos;
-    $('n-costo').textContent=d.costoPorChaleco!=null?pesos(d.costoPorChaleco):(chalecos>0?pesos(gastos/chalecos):'—');
+    $('n-ticket').textContent=d.ticket?pesos(d.ticket):'—';
     $('n-lanakg').textContent=d.lanaPorKg!=null?pesos(d.lanaPorKg):'—';
-    barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
-    barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);
-    barras('n-canales',d.canales,it=>it.canal,it=>it.cantidad,false);
-    const pub=d.publicidad;
-    if(pub&&Number(pub.gasto)>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(pub.gasto)+' → '+pesos(pub.ventas)+' en ventas';}
+
+    // Publicidad
+    const pub=d.publicidad||{}, gastoPub=Number(pub.gasto)||0;
+    $('n-pub-gasto').textContent=gastoPub?pesos(gastoPub):'—';
+    $('n-pub-chaleco').textContent=d.publicidadPorChaleco?pesos(d.publicidadPorChaleco):'—';
+    $('n-pub-cac').textContent=d.cac?pesos(d.cac):'—';
+    $('n-pub-techo').textContent=pesos(techoSano(d));
+    if(gastoPub>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(gastoPub)+' → '+pesos(pub.ventas)+' en ventas';}
     else $('n-pub-box').style.display='none';
     const an=d.ventasDeAnuncios;
     $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+
+    barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
+    barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);
+    barras('n-canales',d.canales,it=>it.canal,it=>it.cantidad,false);
+    renderRentabilidad(d);
+    renderTips(d);
+  }
+
+  // ── Cuánto deja cada chaleco ────────────────────────────────────────────
+  // No sale de dividir gastos por ventas: eso mezcla la lana que quedó sin usar.
+  // Se arma pieza por pieza: lana + los fijos de esa venta + la mano de obra.
+  let RENT={envio:'envio',teje:'barbara'};
+  function segRent(cual,val,btn){
+    RENT[cual]=val;
+    Array.from(btn.parentNode.children).forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    if(ULTIMO_NUM) renderRentabilidad(ULTIMO_NUM);
+  }
+  function fijosPorVenta(d,conEnvio){
+    return (conEnvio?COSTOS.envio:0)+(d.transportePorVenta||0)+(d.publicidadPorChaleco||0)+COSTOS.etiqueta;
+  }
+  function filaTalle(d,talle,conEnvio,tejedora){
+    const lanaKg=d.lanaPorKg||COSTOS.lanaKg;
+    const lana=gramosDe(talle)/1000*lanaKg;
+    const mano=tejedora?(esNino(talle)?TARIFA_TEJEDORA.nino:TARIFA_TEJEDORA.adulto):0;
+    const precio=PRECIOS_LISTA[talle];
+    const costo=Math.round(lana+fijosPorVenta(d,conEnvio)+mano);
+    return {talle,precio,costo,queda:precio-costo,pc:Math.round((precio-costo)/precio*100)};
+  }
+  function renderRentabilidad(d){
+    const cuerpo=$('n-rent'); if(!cuerpo) return;
+    const conEnvio=RENT.envio==='envio', tejedora=RENT.teje==='tejedora';
+    const filas=Object.keys(PRECIOS_LISTA).map(t=>filaTalle(d,t,conEnvio,tejedora));
+    const mejor=Math.max.apply(null,filas.map(f=>f.queda));
+    const vendidos=d.tallesVendidos||{};
+    cuerpo.innerHTML=filas.map(f=>
+      '<tr class="'+(f.queda===mejor?'best ':'')+(vendidos[f.talle]?'sold':'')+'">'+
+      '<td>'+f.talle+'</td><td>'+pesos(f.precio)+'</td><td>'+pesos(f.costo)+'</td>'+
+      '<td class="q">'+pesos(f.queda)+'</td><td class="pc">'+f.pc+'%</td></tr>').join('');
+    const detalle=conEnvio
+      ? 'envío '+pesos(COSTOS.envio)+' + transporte '+pesos(d.transportePorVenta||0)+' + publicidad '+pesos(d.publicidadPorChaleco||0)+' + etiqueta '+pesos(COSTOS.etiqueta)
+      : 'transporte '+pesos(d.transportePorVenta||0)+' + publicidad '+pesos(d.publicidadPorChaleco||0)+' + etiqueta '+pesos(COSTOS.etiqueta)+', sin envío';
+    const mano=tejedora
+      ? ' y '+pesos(TARIFA_TEJEDORA.adulto)+' de la tejedora ('+pesos(TARIFA_TEJEDORA.nino)+' el de niño).'
+      : '. <b>El trabajo de Bárbara no se cobra</b>, por eso queda más.';
+    $('n-rent-pie').innerHTML=
+      'Cada chaleco paga <b>'+pesos(fijosPorVenta(d,conEnvio))+'</b> de gastos fijos ('+detalle+'), '+
+      'más la lana a '+pesos(d.lanaPorKg||COSTOS.lanaKg)+' el kilo'+mano+
+      '<br>El punto • marca los talles que vendiste en este período. Los gramos por talle todavía son estimados.';
+  }
+  // Lo máximo que se puede pagar por traer una venta antes de perder plata:
+  // lo que deja el chaleco típico, sin descontar la publicidad que ya se pagó.
+  function techoPublicidad(d){
+    const vend=d.tallesVendidos||{};
+    let talles=Object.keys(vend).filter(t=>PRECIOS_LISTA[t]);
+    if(!talles.length) talles=['M'];
+    let suma=0,n=0;
+    talles.forEach(t=>{
+      const f=filaTalle(d,t,true,false), cant=vend[t]||1;
+      suma+=(f.queda+(d.publicidadPorChaleco||0))*cant; n+=cant;
+    });
+    return n?Math.round(suma/n/1000)*1000:0;
+  }
+  // Lo que conviene pagar de verdad: un tercio de lo que deja el chaleco.
+  // El resto tiene que quedar para reponer la lana y para el negocio.
+  const techoSano=d=>Math.round(techoPublicidad(d)*0.3/1000)*1000;
+
+  // ── Los consejos: qué mirar y qué hacer ─────────────────────────────────
+  function renderTips(d){
+    const cont=$('n-tips'); if(!cont) return;
+    const chalecos=Number(d.chalecos)||0;
+    if(!chalecos){ cont.innerHTML='<div class="tip info">Todavía no hay ventas cargadas en este período.</div>'; return; }
+    const t=[], pub=Number((d.publicidad||{}).gasto)||0;
+    const techo=techoPublicidad(d), cac=Number(d.cac)||0, margen=Number(d.margen)||0;
+    const fijos=fijosPorVenta(d,true);
+
+    if(pub<=0){
+      t.push(['warn','<b>No cargaste publicidad en este período.</b> Si pagaste anuncios y no están acá, la ganancia que ves está inflada y no sabés cuánto te sale traer un cliente.']);
+    }else if(cac>0){
+      const sano=techoSano(d), veces=Math.floor(sano/cac);
+      if(cac<sano*0.5) t.push(['ok','<b>Podés gastar mucho más en publicidad.</b> Traer una venta por anuncio te sale '+pesos(cac)+' y el chaleco deja '+pesos(techo)+'. Conviene pagar hasta '+pesos(sano)+' por venta: hay lugar para <b>gastar '+veces+' veces más</b> y seguir ganando igual de bien.']);
+      else if(cac<=sano) t.push(['ok','<b>La publicidad está justo donde tiene que estar.</b> Cada venta te sale '+pesos(cac)+' y lo recomendado es hasta '+pesos(sano)+'. Seguí así.']);
+      else if(cac<techo) t.push(['warn','<b>La publicidad se está encareciendo.</b> Cada venta te sale '+pesos(cac)+', arriba de los '+pesos(sano)+' recomendados. Todavía ganás (recién perdés arriba de '+pesos(techo)+'), pero queda menos para reponer lana.']);
+      else t.push(['warn','<b>Pará: la publicidad se comió el margen.</b> Cada venta por anuncio te sale '+pesos(cac)+' y el chaleco deja '+pesos(techo)+'. O mejora el anuncio, o sube el precio.']);
+    }
+    if(d.lanaStock>15000) t.push(['info','<b>Tenés '+d.lanaStockKg+' kg de lana comprada y sin vender</b> ('+pesos(d.lanaStock)+'). No es plata perdida, es stock, pero por eso el margen de este período se ve más bajo de lo que en realidad es.']);
+    if(d.locales>0) t.push(['ok','<b>'+d.locales+' de las '+chalecos+' ventas '+(d.locales===1?'fue':'fueron')+' acá en Concordia.</b> Cada una deja '+pesos(COSTOS.envio)+' más, porque no paga envío.']);
+
+    const filas=Object.keys(PRECIOS_LISTA).map(x=>filaTalle(d,x,true,RENT.teje==='tejedora'));
+    let peor=filas[0], mejor=filas[0];
+    filas.forEach(f=>{ if(f.queda<peor.queda)peor=f; if(f.queda>mejor.queda)mejor=f; });
+    if(peor.queda<mejor.queda*0.55) t.push(['info','<b>El talle '+peor.talle+' deja '+pesos(peor.queda)+' y el '+mejor.talle+' deja '+pesos(mejor.queda)+'</b>: menos de la mitad, por casi el mismo trabajo. Los '+pesos(fijos)+' de gastos fijos pesan igual en un chaleco barato que en uno caro. Por eso conviene venderlo pegado a uno de adulto, en el mismo envío.']);
+
+    if(margen>0&&margen<35) t.push(['warn','<b>El margen del período es '+margen+'%.</b> Fijate si no hay una compra grande de lana metida adentro: eso lo hunde sin que el negocio ande mal.']);
+    else if(margen>=50) t.push(['ok','<b>Margen del '+margen+'%.</b> Está muy bien para algo hecho a mano. La lista de precios está bien puesta.']);
+
+    if(d.ticket&&d.ticket<PRECIOS_LISTA['M']*0.94&&chalecos>=2) t.push(['warn','<b>El precio promedio ('+pesos(d.ticket)+') quedó abajo de la lista ('+pesos(PRECIOS_LISTA['M'])+' el adulto).</b> O se está vendiendo con descuento, o hay que revisar qué se está cobrando.']);
+
+    cont.innerHTML=t.map(par=>'<div class="tip '+par[0]+'">'+par[1]+'</div>').join('');
   }
 
   function poblarSelectorPeriodo(meses){

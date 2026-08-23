@@ -124,6 +124,27 @@
   .atajo .tx b{display:block;font-weight:600;font-size:.98rem;margin-bottom:2px}
   .atajo .tx span{font-size:.86rem;color:var(--muted);line-height:1.35}
 
+  /* ---------- PENDIENTES ---------- */
+  .pin{display:none;min-width:19px;height:19px;padding:0 5px;border-radius:100px;background:#b5473a;color:#fff;font-size:.7rem;font-weight:700;align-items:center;justify-content:center;line-height:1}
+  .pin.on{display:inline-flex}
+  #lista{flex:1;min-height:0;overflow-y:auto;padding:18px 16px 24px;display:none;-webkit-overflow-scrolling:touch}
+  #lista.on{display:block}
+  .grupo-t{display:flex;align-items:baseline;gap:9px;margin:22px 2px 10px}
+  .grupo-t:first-child{margin-top:2px}
+  .grupo-t h3{font-family:'Fraunces',serif;font-weight:400;font-size:1.28rem}
+  .grupo-t .cnt{font-size:.8rem;color:var(--muted)}
+  .grupo-t .porq{font-size:.82rem;color:var(--muted);font-style:italic;margin:-4px 2px 12px;line-height:1.4}
+  .fila{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--panel);border:1px solid var(--line);border-radius:11px;margin-bottom:8px}
+  .fila.urge{border-left:3px solid #b5473a}
+  .fila .quien{flex:1;min-width:0}
+  .fila .quien b{display:block;font-weight:600;font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fila .quien .meta{font-size:.78rem;color:var(--muted);margin-top:1px}
+  .fila .quien .ult{font-size:.83rem;color:var(--soft);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
+  .fila .besc{padding:9px 14px;border-radius:8px;background:var(--green);color:#f5f0e8;font-size:.88rem;font-weight:600;flex-shrink:0}
+  .fila .bya{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--line);color:var(--muted);flex-shrink:0;font-size:1rem}
+  .fila .bya:hover{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .vacio{text-align:center;color:var(--muted);padding:40px 20px;font-style:italic}
+
   /* ---------- COMPOSER ---------- */
   .comp{flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
   .comp-in{max-width:720px;margin:0 auto;display:flex;align-items:flex-end;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:5px 5px 5px 6px;transition:border-color .15s}
@@ -208,12 +229,15 @@
   <div class="top">
     <div class="brand">India<span class="it">respuestas</span></div>
     <div class="sp"></div>
+    <button class="iconbtn txt" id="blista" title="Gente que espera respuesta">Pendientes <span class="pin" id="pin"></span></button>
     <button class="iconbtn txt" id="bnueva" title="Empezar de cero">＋ Nueva</button>
     <button class="iconbtn" id="bconf" title="Ajustes">⚙</button>
     <button class="iconbtn" id="bout" title="Salir">⏻</button>
   </div>
 
   <div id="chat"><div class="wrap" id="hilo"></div></div>
+
+  <div id="lista"><div class="wrap" id="listaw"></div></div>
 
   <div class="comp">
     <div class="adjuntos" id="adjuntos"></div>
@@ -1205,6 +1229,132 @@ function bienvenida(){
 }
 
 $('bnueva').addEventListener('click', () => { mensajes=[]; adjuntos=[]; pintarAdjuntos(); bienvenida(); toast('Listo, arrancamos de cero'); });
+
+/* ═════════ PENDIENTES ═════════
+   Recontactar es el 44% de las ventas y hoy depende de que alguien se acuerde
+   (ver "La reactivación es la mitad del negocio" en el manual). Esto lo pone
+   a la vista, ordenado por lo que más rinde. */
+
+// "Ok muchas gracias" cierra la charla: no es alguien esperando respuesta.
+// Se mira palabra por palabra en vez de con frases hechas, porque las
+// combinaciones son infinitas ("dale gracias", "okey mil gracias", …).
+const CORTESIA = /^(ok|okey|okay|oka|okis|dale|listo|perfecto|barbaro|bárbaro|genial|joya|gracias|muchas|mucha|mil|buenisimo|buenísimo|excelente|si|sí|claro|ya|esta|está|bien|de|nada|muy|amable|bueno|buenas|abrazo|saludos|igualmente|vos|tambien|también)$/i;
+function esCortesia(t){
+  const limpio = (t||'').replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+  if(!limpio) return true;                       // solo emojis o signos
+  if(limpio.length > 45) return false;
+  return limpio.split(/\s+/).every(p => CORTESIA.test(p));
+}
+
+// "cuando pueda te paso las medidas" no es esperar respuesta: la pelota la
+// tiene el cliente. Va a recontactar — y son los que menos vuelven solos.
+const ES_PROMESA = /\b(te (paso|aviso|mando|digo|confirmo|escribo)|le (paso|aviso)|cuando pueda|m[áa]s tarde|ma[ñn]ana|en un rato|ahora te|lo (veo|miro|consulto)|me f[ií]jo|consulto y)\b/i;
+
+// mensajes de sistema, no los escribió nadie
+const ES_SISTEMA = /^\[(reaction|protocol|sticker|placeholder|associated|template|interactive)\w*\]$/i;
+
+const horasDesde = f => {
+  const m = (f||'').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if(!m) return 1e6;
+  return (Date.now() - new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]).getTime()) / 36e5;
+};
+const haceCuanto = h => h < 1 ? 'recién' : h < 24 ? `hace ${Math.round(h)} h`
+  : h < 48 ? 'ayer' : h < 720 ? `hace ${Math.round(h/24)} días` : `hace ${Math.round(h/720)} meses`;
+
+function clasificar(clientes){
+  const yo = (auth.currentUser?.email||'').split('@')[0];
+  const fuera = new Set(JSON.parse(localStorage.getItem('india_ocultos')||'[]'));
+  const esperan = [], recontactar = [], frios = [];
+
+  for(const c of clientes){
+    if(c.categoria_id === 1) continue;                       // ya compró
+    if(fuera.has(c.jid)) continue;                           // lo sacaste vos
+    if((c.nombre||'').toLowerCase() === 'justo') continue;   // charla propia, no es cliente
+    const h = horasDesde(c.ultima_fecha);
+    const txt = c.ultimo_texto || '';
+
+    if(c.ultima_dir === 'entrante'){
+      if(ES_SISTEMA.test(txt)) continue;              // no lo escribió nadie
+      if(esCortesia(txt)) continue;                   // "ok, muchas gracias" cierra
+      if(ES_PROMESA.test(txt)){                       // quedó en mandarte algo él
+        if(h > 48) recontactar.push({ ...c, h, promesa:true });
+        continue;
+      }
+      // pasados 15 días ya no te están esperando: es historia, y rinde como frío
+      if(h > 2 && h < 24*15) esperan.push({ ...c, h });
+      else if(h >= 24*15 && h < 24*60) frios.push({ ...c, h });
+    } else {
+      if(h < 48) continue;                                   // todavía puede contestar
+      if(h < 24*15) recontactar.push({ ...c, h });
+      else if(h < 24*60) frios.push({ ...c, h });             // más de dos meses ya no rinde
+    }
+  }
+  // los que más lejos llegaron valen más: primero por recorrido, después por fecha
+  const orden = (a,b) => (+b.mensajes||0) - (+a.mensajes||0) || a.h - b.h;
+  esperan.sort((a,b) => a.h - b.h);          // acá manda la urgencia
+  recontactar.sort(orden); frios.sort(orden);
+  return { esperan, recontactar, frios };
+}
+
+let CLIENTES = [];
+
+async function verLista(){
+  $('chat').style.display = 'none';
+  $('lista').classList.add('on');
+  $('listaw').innerHTML = '<div class="vacio">Buscando…</div>';
+  try{ CLIENTES = await crm('/clientes'); }
+  catch(e){ $('listaw').innerHTML = `<div class="vacio">No se pudo leer el registro de WhatsApp.<br>${esc(e.message)}</div>`; return; }
+  pintarLista();
+}
+
+function pintarLista(){
+  const { esperan, recontactar, frios } = clasificar(CLIENTES);
+  const pin = $('pin');
+  pin.textContent = esperan.length; pin.classList.toggle('on', esperan.length > 0);
+
+  const grupo = (titulo, porq, gente, urge) => !gente.length ? '' :
+    `<div class="grupo-t"><h3>${titulo}</h3><span class="cnt">${gente.length}</span></div>
+     <div class="grupo-t porq">${porq}</div>` +
+    gente.map(c => `<div class="fila ${urge?'urge':''}" data-jid="${esc(c.jid)}">
+        <div class="quien">
+          <b>${esc(c.nombre || 'Sin nombre ·'+(c.numero||'').slice(-5))}</b>
+          <div class="meta">${haceCuanto(c.h)} · ${c.mensajes} mensajes</div>
+          <div class="ult">${esc((c.ultimo_texto||'').slice(0,70))}</div>
+        </div>
+        <button class="besc">Escribirle</button>
+        <button class="bya" title="Sacar de la lista">✓</button>
+      </div>`).join('');
+
+  const html =
+    grupo('Te están esperando', 'Escribieron y nadie les contestó. Pasadas 12 horas solo sigue el 20%.', esperan, true) +
+    grupo('Para recontactar', 'Se colgaron hace menos de 15 días. De cada 10 que reescribís, 3 contestan.', recontactar) +
+    grupo('Fríos', 'Más de 15 días. Rinden menos, pero 4 de las 9 ventas salieron de reactivar.', frios);
+
+  $('listaw').innerHTML = html || '<div class="vacio">No hay nadie pendiente. Está todo al día.</div>';
+
+  $('listaw').querySelectorAll('.besc').forEach(b => b.addEventListener('click', () => {
+    const f = b.closest('.fila'), c = CLIENTES.find(x => x.jid === f.dataset.jid);
+    volverAlChat(); mensajes = []; bienvenida();
+    mandar(`Escribile a ${c.nombre || c.numero}. Se colgó ${haceCuanto(horasDesde(c.ultima_fecha))} y no contestó. Leé la charla, fijate en qué quedaron y armá el mensaje para retomar.`);
+  }));
+  $('listaw').querySelectorAll('.bya').forEach(b => b.addEventListener('click', () => {
+    const f = b.closest('.fila');
+    const fuera = JSON.parse(localStorage.getItem('india_ocultos')||'[]');
+    fuera.push(f.dataset.jid);
+    localStorage.setItem('india_ocultos', JSON.stringify(fuera));
+    f.remove(); pintarLista();
+    toast('Listo, sale de la lista');
+  }));
+}
+
+function volverAlChat(){
+  $('lista').classList.remove('on');
+  $('chat').style.display = '';
+}
+
+$('blista').addEventListener('click', () => {
+  if($('lista').classList.contains('on')) volverAlChat(); else verLista();
+});
 
 /* ═════════ AJUSTES ═════════ */
 function abrirConf(){ $('mconf').classList.add('on'); pintarConf(); }

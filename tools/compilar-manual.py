@@ -34,6 +34,7 @@ PAGINAS = [
     ("Marca/Voz y tono.md",               "VOZ Y TONO — como escribe la marca"),
     ("Producto/Lana e hilado.md",         "LANA — la materia prima"),
     ("Operaciones/Envíos.md",             "ENVIOS"),
+    ("Operaciones/Devoluciones y garantía.md", "DEVOLUCIONES — que pasa si no queda bien"),
     ("Clientes/Público objetivo.md",      "A QUIEN LE VENDEMOS"),
 ]
 

@@ -304,9 +304,9 @@
     <div class="stat-sec gap">La publicidad</div>
     <div class="stat-grid">
       <div class="stat"><div class="sl">Gastado</div><div class="sv" id="n-pub-gasto">—</div></div>
-      <div class="stat"><div class="sl">Por chaleco vendido</div><div class="sv" id="n-pub-chaleco">—</div></div>
-      <div class="stat"><div class="sl">Costo por venta de anuncio</div><div class="sv" id="n-pub-cac">—</div></div>
-      <div class="stat"><div class="sl">Conviene gastar hasta</div><div class="sv green" id="n-pub-techo">—</div></div>
+      <div class="stat"><div class="sl">Cada venta te salió</div><div class="sv" id="n-pub-cac">—</div></div>
+      <div class="stat"><div class="sl">Podés gastar por mes</div><div class="sv green" id="n-pub-mes">—</div></div>
+      <div class="stat"><div class="sl">…o sea por día</div><div class="sv green" id="n-pub-dia">—</div></div>
     </div>
     <div id="n-pub-box" style="background:var(--accent);color:#faf6ee;border-radius:13px;padding:14px 16px;margin:2px 0 4px;display:none">
       <div style="font-size:12px;opacity:.85;margin-bottom:3px">Retorno de la publicidad</div>
@@ -492,8 +492,15 @@
     // ── Los fijos que se pagan una vez por venta, sacados de lo que se cargó ──
     const transporte=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='transporte').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const transportePorVenta=chalecos>0?Math.round(transporte/chalecos):0;
-    const publicidadPorChaleco=chalecos>0?Math.round(pub/chalecos):0;
     const cac=anuncios>0?Math.round(pub/anuncios):0;
+    // Lo que cada venta carga de publicidad. Si hubo ventas de anuncio, es lo que
+    // salio traerlas; si no, se reparte lo gastado entre todo lo que se vendio.
+    const publicidadPorChaleco=cac||(chalecos>0?Math.round(pub/chalecos):0);
+    // Ritmo de venta, para saber cuanta publicidad aguanta un mes.
+    const mesesConVenta=m=>[...new Set(rows.filter(r=>r.Info==='Ventas').map(mesDe).filter(Boolean))].length;
+    const mesesEnPeriodo=mes?1:Math.max(1,mesesConVenta());
+    const chalecosHistorico=rows.filter(r=>r.Info==='Ventas').length;
+    const mesesHistorico=Math.max(1,mesesConVenta());
     const ticket=chalecos>0?Math.round(vendido/chalecos):0;
     const locales=ventas.filter(esLocal).length;
 
@@ -509,6 +516,7 @@
 
     return {
       transportePorVenta, publicidadPorChaleco, cac, ticket,
+      mesesEnPeriodo, chalecosHistorico, mesesHistorico,
       locales, lanaStock, lanaStockKg:Math.round(lanaStockKg*100)/100, tallesVendidos,
       periodo: mes?etiquetaMes(mes):'Todo el año', mes, mesesDisponibles:meses,
       vendido,gastos:costos,ganancia,caja:ganancia-retiros,
@@ -542,17 +550,18 @@
     // Publicidad
     const pub=d.publicidad||{}, gastoPub=Number(pub.gasto)||0;
     $('n-pub-gasto').textContent=gastoPub?pesos(gastoPub):'—';
-    $('n-pub-chaleco').textContent=d.publicidadPorChaleco?pesos(d.publicidadPorChaleco):'—';
     $('n-pub-cac').textContent=d.cac?pesos(d.cac):'—';
-    $('n-pub-techo').textContent=pesos(techoSano(d));
+    $('n-pub-mes').textContent=pesos(techoMensual(d));
+    $('n-pub-dia').textContent=pesos(Math.round(techoMensual(d)/30/100)*100);
     if(gastoPub>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(gastoPub)+' → '+pesos(pub.ventas)+' en ventas';}
     else $('n-pub-box').style.display='none';
     const an=d.ventasDeAnuncios;
     $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+    const ritmo=ritmoMensual(d);
     $('n-pub-pie').innerHTML=
-      '<b>Por chaleco vendido</b>: la publicidad repartida entre <u>todos</u> los chalecos ('+chalecos+'). Es lo que le carga a cada uno.<br>'+
-      '<b>Por venta de anuncio</b>: la misma plata dividida solo por las '+(an||0)+' que vinieron de un anuncio. Es lo que sale traer un cliente pagando.<br>'+
-      '<b>Conviene gastar hasta</b>: un tercio de lo que deja el chaleco sin contar publicidad ('+pesos(techoPublicidad(d))+'). Pagando más que eso queda poco para reponer la lana; pagando '+pesos(techoPublicidad(d))+' se gana cero.';
+      '<b>Cada venta te salió</b>: lo gastado en publicidad dividido por las '+(an||0)+' ventas que vinieron de un anuncio.<br>'+
+      '<b>Podés gastar por mes</b>: '+pesos(techoSano(d))+' por venta × <b>'+(Math.round(ritmo*10)/10)+' chalecos por mes</b> que venís vendiendo. Cuanto más vendas, más sube.<br>'+
+      'Los '+pesos(techoSano(d))+' por venta son un tercio de lo que deja el chaleco sin contar publicidad ('+pesos(techoPublicidad(d))+'). Pagando '+pesos(techoPublicidad(d))+' por una venta se gana cero, por eso el techo es más abajo.';
 
     barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
     barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);
@@ -619,6 +628,15 @@
   // Lo que conviene pagar de verdad: un tercio de lo que deja el chaleco.
   // El resto tiene que quedar para reponer la lana y para el negocio.
   const techoSano=d=>Math.round(techoPublicidad(d)*0.3/1000)*1000;
+  // Chalecos por mes. Se toma el mejor entre el ritmo del período elegido y el
+  // histórico, para que un mes flojo no achique el presupuesto justo cuando hay
+  // que empujar más.
+  function ritmoMensual(d){
+    const propio=(Number(d.chalecos)||0)/Math.max(1,Number(d.mesesEnPeriodo)||1);
+    const hist=(Number(d.chalecosHistorico)||0)/Math.max(1,Number(d.mesesHistorico)||1);
+    return Math.max(propio,hist);
+  }
+  const techoMensual=d=>Math.round(techoSano(d)*ritmoMensual(d)/1000)*1000;
 
   // ── Los consejos: qué mirar y qué hacer ─────────────────────────────────
   function renderTips(d){
@@ -632,11 +650,14 @@
     if(pub<=0){
       t.push(['warn','<b>No cargaste publicidad en este período.</b> Si pagaste anuncios y no están acá, la ganancia que ves está inflada y no sabés cuánto te sale traer un cliente.']);
     }else if(cac>0){
-      const sano=techoSano(d), veces=Math.floor(sano/cac);
-      if(cac<sano*0.5) t.push(['ok','<b>Podés gastar mucho más en publicidad.</b> Traer una venta por anuncio te sale '+pesos(cac)+' y el chaleco deja '+pesos(techo)+'. Conviene pagar hasta '+pesos(sano)+' por venta: hay lugar para <b>gastar '+veces+' veces más</b> y seguir ganando igual de bien.']);
-      else if(cac<=sano) t.push(['ok','<b>La publicidad está justo donde tiene que estar.</b> Cada venta te sale '+pesos(cac)+' y lo recomendado es hasta '+pesos(sano)+'. Seguí así.']);
-      else if(cac<techo) t.push(['warn','<b>La publicidad se está encareciendo.</b> Cada venta te sale '+pesos(cac)+', arriba de los '+pesos(sano)+' recomendados. Todavía ganás (recién perdés arriba de '+pesos(techo)+'), pero queda menos para reponer lana.']);
-      else t.push(['warn','<b>Pará: la publicidad se comió el margen.</b> Cada venta por anuncio te sale '+pesos(cac)+' y el chaleco deja '+pesos(techo)+'. O mejora el anuncio, o sube el precio.']);
+      const sano=techoSano(d), porMes=techoMensual(d), porDia=Math.round(porMes/30/100)*100;
+      const meses=Math.max(1,Number(d.mesesEnPeriodo)||1), gastoMes=Math.round(pub/meses);
+      const sobra=porMes-gastoMes;
+      if(sobra>porMes*0.25) t.push(['ok','<b>Te sobra presupuesto de publicidad.</b> Venís gastando '+pesos(gastoMes)+' por mes y podés poner hasta <b>'+pesos(porMes)+'</b> — o sea '+pesos(porDia)+' por día en Meta. Te quedan <b>'+pesos(sobra)+' por mes</b> sin usar.']);
+      else if(gastoMes<=porMes) t.push(['ok','<b>Estás gastando lo justo en publicidad</b>: '+pesos(gastoMes)+' por mes contra los '+pesos(porMes)+' que aguanta el negocio. Bien ahí.']);
+      else t.push(['warn','<b>Te pasaste del presupuesto de publicidad.</b> Venís gastando '+pesos(gastoMes)+' por mes y lo sano son '+pesos(porMes)+'. Con este ritmo de venta, cada peso de más sale del margen.']);
+      if(cac>sano) t.push(['warn','<b>Traer una venta te está saliendo caro:</b> '+pesos(cac)+', arriba de los '+pesos(sano)+' que conviene pagar'+(cac<techo?'. Todavía ganás — recién perdés arriba de '+pesos(techo)+' — pero queda menos para reponer lana.':'. Arriba de '+pesos(techo)+' se pierde plata: hay que mejorar el anuncio o subir el precio.')]);
+      else if(cac<sano*0.5) t.push(['ok','<b>Los anuncios están rindiendo muy bien:</b> cada venta sale '+pesos(cac)+' y podrías pagar hasta '+pesos(sano)+'. Es <b>'+Math.floor(sano/cac)+' veces más barato</b> de lo que aguanta el negocio.']);
     }
     if(d.lanaStock>15000) t.push(['info','<b>Tenés '+d.lanaStockKg+' kg de lana comprada y sin vender</b> ('+pesos(d.lanaStock)+'). No es plata perdida, es stock, pero por eso el margen de este período se ve más bajo de lo que en realidad es.']);
     if(d.locales>0) t.push(['ok','<b>'+d.locales+' de las '+chalecos+' ventas '+(d.locales===1?'fue':'fueron')+' acá en Concordia.</b> Cada una deja '+pesos(COSTOS.envio)+' más, porque no paga envío.']);

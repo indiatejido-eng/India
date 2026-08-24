@@ -543,8 +543,14 @@ const PROVEEDORES = {
   anthropic:  { test:k => k.startsWith('sk-ant-'), nombre:'Anthropic' },
     // Google emite dos formatos: las nuevas de AI Studio arrancan con AQ. y las viejas con AIza
   google:     { test:k => k.startsWith('AQ.') || k.startsWith('AIza'), nombre:'Google (Gemini)' },
-  groq:       { test:k => k.startsWith('gsk_'),    nombre:'Groq', url:'https://api.groq.com/openai/v1/chat/completions', modelo:'llama-3.3-70b-versatile' },
-  openrouter: { test:k => k.startsWith('sk-or-'),  nombre:'OpenRouter', url:'https://openrouter.ai/api/v1/chat/completions', modelo:'meta-llama/llama-3.3-70b-instruct:free' }
+  groq:       { test:k => k.startsWith('gsk_'),    nombre:'Groq',
+                url:'https://api.groq.com/openai/v1/chat/completions',
+                catalogo:'https://api.groq.com/openai/v1/models',
+                modelo:'llama-3.3-70b-versatile' },
+  openrouter: { test:k => k.startsWith('sk-or-'),  nombre:'OpenRouter',
+                url:'https://openrouter.ai/api/v1/chat/completions',
+                catalogo:'https://openrouter.ai/api/v1/models', soloGratis:true,
+                modelo:'meta-llama/llama-3.3-70b-instruct:free' }
 };
 const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEEDORES[p].test(k)) || null);
 const toolNames = {};   // id del tool_use -> nombre, que es lo que Google pide de vuelta
@@ -575,6 +581,54 @@ async function modelosGoogle(key){
   const pref = localStorage.getItem('india_modelo_google');   // el último que anduvo va de titular
   return pref ? [pref, ...lista.filter(m => m !== pref)] : lista;
 }
+
+/* Groq y OpenRouter renuevan el catálogo seguido y jubilan modelos sin avisar.
+   `llama-3.3-70b-versatile` estuvo escrito a mano acá hasta que dejó de existir, y
+   la herramienta quedó muerta con un error que no le dice nada a nadie: "the model
+   does not exist". Así que se hace lo mismo que con Google: se le pregunta al
+   proveedor qué tiene. Un modelo escrito a mano es una bomba de tiempo. */
+async function modelosOpenAI(prov, key, forzar){
+  const cfg = PROVEEDORES[prov];
+  const cache = 'india_modelos_' + prov;
+  let lista = [];
+  if(!forzar){ try{ lista = JSON.parse(localStorage.getItem(cache) || '[]'); }catch(e){} }
+
+  if(!lista.length && cfg.catalogo){
+    try{
+      const r = await fetch(cfg.catalogo, { headers:{ 'authorization':'Bearer ' + key } });
+      const d = await r.json();
+      if(r.ok && Array.isArray(d?.data)){
+        lista = d.data
+          .filter(m => m.active !== false)
+          // whisper, text-to-speech, moderación y embeddings no sirven para conversar
+          .filter(m => !/whisper|tts|guard|embed|moderation|rerank/i.test(m.id || ''))
+          // el manual son ~17.000 tokens: lo que no tenga ventana grande no entra
+          .filter(m => (m.context_window || m.context_length || 0) >= 32000)
+          .filter(m => !cfg.soloGratis || /:free$/.test(m.id || ''))
+          .sort((a, b) => puntajeModelo(b) - puntajeModelo(a))
+          .map(m => m.id);
+        if(lista.length) localStorage.setItem(cache, JSON.stringify(lista));
+      }
+    }catch(e){ /* si no se puede preguntar, se cae al de siempre */ }
+  }
+
+  if(!lista.length) lista = cfg.modelo ? [cfg.modelo] : [];
+  const pref = localStorage.getItem('india_modelo_' + prov);   // el último que anduvo va de titular
+  return pref ? [pref, ...lista.filter(m => m !== pref)] : lista;
+}
+
+// Se busca el más grande que banque el manual entero. Los "instant" y los "mini"
+// contestan rápido pero se pierden con 17.000 tokens de contexto y siete herramientas.
+function puntajeModelo(m){
+  const id = m.id || '';
+  const params  = parseFloat((id.match(/(\d+(?:\.\d+)?)\s*b\b/i) || [])[1] || 0);
+  const ventana = (m.context_window || m.context_length || 0) / 1000;
+  return params * 10 + Math.min(ventana, 200)
+       - (/instant|mini|small|tiny|lite|preview|distill|exp\b/i.test(id) ? 120 : 0);
+}
+
+// Lo que dice un proveedor cuando el modelo que le pediste ya no existe.
+const MODELO_JUBILADO = /does not exist|do not have access|decommissioned|deprecated|model_not_found|no longer/i;
 
 // Anthropic -> Gemini
 function aGoogle(cuerpo){
@@ -780,20 +834,42 @@ async function pensar(){
 
   if(PROVEEDORES[prov].url){    // los que hablan formato OpenAI
     const cfg = PROVEEDORES[prov];
-    const modelo = localStorage.getItem('india_modelo_'+prov) || cfg.modelo;
-    const data = await reintentando(cfg.nombre, async () => {
-      const r = await fetch(cfg.url, {
-        method:'POST',
-        headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
-        body: JSON.stringify(aOpenAI(cuerpo, modelo))
-      }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
-      const d = await r.json();
-      const msg = r.status === 429
-        ? `Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`
-        : (d?.error?.message || ('Error '+r.status));
-      return { ok:r.ok, status:r.status, msg, valor:d };
-    });
-    return deOpenAI(data);
+    let ultimo = null;
+
+    // Dos rondas: la segunda pide el catálogo de nuevo, por si el guardado quedó viejo.
+    for(let ronda = 0; ronda < 2; ronda++){
+      const modelos = (await modelosOpenAI(prov, key, ronda > 0)).slice(0, 3);
+      if(!modelos.length) throw new Error(`${cfg.nombre} no me devolvió ningún modelo que sirva para esto. Probá con Google en Ajustes.`);
+      let jubilado = false;
+
+      for(const modelo of modelos){
+        try{
+          const data = await reintentando(cfg.nombre, async () => {
+            const r = await fetch(cfg.url, {
+              method:'POST',
+              headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
+              body: JSON.stringify(aOpenAI(cuerpo, modelo))
+            }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
+            const d = await r.json();
+            const msg = r.status === 429
+              ? `Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`
+              : (d?.error?.message || ('Error '+r.status));
+            return { ok:r.ok, status:r.status, msg, valor:d };
+          });
+          localStorage.setItem('india_modelo_'+prov, modelo);   // el que anduvo queda de titular
+          return deOpenAI(data);
+        }catch(e){
+          ultimo = e;
+          if(!MODELO_JUBILADO.test(e.message || '')) throw e;   // esto es un error de verdad
+          jubilado = true;                                      // ese modelo ya no está: probamos el siguiente
+        }
+      }
+
+      if(!jubilado) break;
+      localStorage.removeItem('india_modelos_'+prov);
+      localStorage.removeItem('india_modelo_'+prov);
+    }
+    throw ultimo || new Error(`${cfg.nombre} no me contestó con ningún modelo.`);
   }
 
   if(prov === 'google') return llamarGoogle(key, cuerpo);

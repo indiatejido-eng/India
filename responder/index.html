@@ -550,25 +550,30 @@ const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEED
 const toolNames = {};   // id del tool_use -> nombre, que es lo que Google pide de vuelta
 
 // Google no expone un id de modelo estable en el tiempo: se le pregunta cuál tiene.
-async function modeloGoogle(key){
-  const guardado = localStorage.getItem('india_modelo_google');
-  if(guardado) return guardado;
-  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key)+'&pageSize=200');
-  const d = await r.json();
-  if(!r.ok) throw new Error(d?.error?.message || 'No pude leer los modelos de Google');
-  const aptos = (d.models||[])
-    .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
-    .map(m => m.name.replace(/^models\//,''))
-    .filter(n => /gemini/.test(n) && !/embedding|aqa|vision|image|tts|live|native-audio/.test(n));
-  // el Flash más nuevo: barato, rápido y el que el tier gratis banca mejor
-  const puntaje = n => {
-    const ver = parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/)||[])[1] || 0);
-    return ver*100 + (/flash/.test(n) ? 50 : 0) - (/lite|preview|exp|thinking/.test(n) ? 30 : 0);
-  };
-  const mejor = aptos.sort((a,b) => puntaje(b) - puntaje(a))[0];
-  if(!mejor) throw new Error('Esa clave de Google no tiene ningún modelo de Gemini habilitado.');
-  localStorage.setItem('india_modelo_google', mejor);
-  return mejor;
+// Se guarda la lista entera y no solo el mejor: el tier gratis se satura seguido
+// y hay que poder caer al de al lado sin volver a preguntar.
+async function modelosGoogle(key){
+  let lista = [];
+  try{ lista = JSON.parse(localStorage.getItem('india_modelos_google') || '[]'); }catch(e){}
+  if(!lista.length){
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key)+'&pageSize=200');
+    const d = await r.json();
+    if(!r.ok) throw new Error(d?.error?.message || 'No pude leer los modelos de Google');
+    const aptos = (d.models||[])
+      .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
+      .map(m => m.name.replace(/^models\//,''))
+      .filter(n => /gemini/.test(n) && !/embedding|aqa|vision|image|tts|live|native-audio/.test(n));
+    // el Flash más nuevo primero: barato, rápido y el que el tier gratis banca mejor
+    const puntaje = n => {
+      const ver = parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/)||[])[1] || 0);
+      return ver*100 + (/flash/.test(n) ? 50 : 0) - (/lite|preview|exp|thinking/.test(n) ? 30 : 0);
+    };
+    lista = aptos.sort((a,b) => puntaje(b) - puntaje(a));
+    if(!lista.length) throw new Error('Esa clave de Google no tiene ningún modelo de Gemini habilitado.');
+    localStorage.setItem('india_modelos_google', JSON.stringify(lista));
+  }
+  const pref = localStorage.getItem('india_modelo_google');   // el último que anduvo va de titular
+  return pref ? [pref, ...lista.filter(m => m !== pref)] : lista;
 }
 
 // Anthropic -> Gemini
@@ -670,6 +675,79 @@ function deOpenAI(data){
   return { content };
 }
 
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+
+// Aviso corto adentro del hilo. Se mete ANTES de la burbuja de "pensando" para
+// que esa siga siendo la última, que es lo que el resto del código asume.
+function avisarEspera(txt){
+  const p = hilo().querySelector('.pensando')?.closest('.turn');
+  const d = document.createElement('div');
+  d.className = 'turn';
+  d.innerHTML = `<div class="tool"><span class="dot"></span>${esc(txt)}</div>`;
+  if(p) hilo().insertBefore(d, p); else hilo().appendChild(d);
+  abajo();
+  return d;
+}
+
+// Los 429/500/502/503/529 no son errores: son "estoy lleno, volvé en un rato".
+// Se reintenta acá adentro para que no le lleguen a quien está escribiendo.
+const SATURADO = [429, 500, 502, 503, 529];
+async function reintentando(quien, tirar){
+  let avisado = false;
+  for(let intento = 0; ; intento++){
+    const r = await tirar();
+    if(r.ok) return r.valor;
+    if(intento === 2 || !SATURADO.includes(r.status)) throw new Error(r.msg);
+    if(!avisado){ avisarEspera(quien + ' está saturado, esperando un toque…'); avisado = true; }
+    await dormir(2500 * (intento + 1));
+  }
+}
+
+/* El plan gratis de Google contesta 503 "the model is overloaded" bastante
+   seguido: no es la clave ni el manual, es que el modelo está lleno, y se
+   arregla solo esperando unos segundos. Antes eso le llegaba a Bárbara como un
+   error crudo y tenía que escribir todo de nuevo. Ahora esperamos nosotros, y
+   si el modelo sigue caído se prueba con el siguiente: cada uno tiene su propia
+   cola y su propia cuota por minuto. El que contesta queda de titular. */
+async function llamarGoogle(key, cuerpo){
+  const modelos = (await modelosGoogle(key)).slice(0, 3);
+  const body = JSON.stringify(aGoogle(cuerpo));
+  let avisado = false;
+
+  for(const modelo of modelos){
+    for(let intento = 0; intento < 2; intento++){
+      let r, data;
+      try{
+        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(key)}`, {
+          method:'POST', headers:{ 'content-type':'application/json' }, body
+        });
+        data = await r.json();
+      }catch(e){ throw new Error('No se pudo conectar con Google. Fijate si tenés internet.'); }
+
+      if(r.ok){
+        localStorage.setItem('india_modelo_google', modelo);
+        return deGoogle(data);
+      }
+
+      const err = data?.error || {};
+      const msg = err.message || ('Error '+r.status);
+      // 429 es límite de uso. Si es el cupo del DÍA no hay nada que esperar; si es
+      // el del minuto, cambiar de modelo lo saltea porque la cuota es por modelo.
+      if(r.status === 429){
+        if(/per\s*day|PerDay/i.test(JSON.stringify(err.details||[]) + msg))
+          throw new Error('Se terminó el cupo gratis de Google por hoy. Se renueva a la madrugada. Mientras tanto podés poner la clave de Groq, que también es gratis, en Ajustes.');
+        break;
+      }
+      if(r.status !== 503 && r.status !== 500) throw new Error(msg);   // esto sí es un error de verdad
+
+      if(intento === 1) break;                  // sigue saturado: probamos con otro modelo
+      if(!avisado){ avisarEspera('Google está saturado, esperando un toque…'); avisado = true; }
+      await dormir(2500);
+    }
+  }
+  throw new Error('Google viene saturado y no me contestó con ningún modelo. Probá de nuevo en un minuto, o pasate a Groq en Ajustes: también es gratis.');
+}
+
 /* ═════════ LLAMADA AL MODELO ═════════ */
 async function pensar(){
   const system = [
@@ -688,9 +766,10 @@ async function pensar(){
 
   if(hayProxy){
     const tok = await auth.currentUser.getIdToken();
-    const r = await fetch(PROXY, { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(cuerpo) });
-    if(!r.ok) throw new Error('El server contestó '+r.status);
-    return r.json();
+    return reintentando('El server', async () => {
+      const r = await fetch(PROXY, { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(cuerpo) });
+      return { ok:r.ok, status:r.status, msg:'El server contestó '+r.status, valor: r.ok ? await r.json() : null };
+    });
   }
 
   const key = localStorage.getItem('india_key');
@@ -702,42 +781,33 @@ async function pensar(){
   if(PROVEEDORES[prov].url){    // los que hablan formato OpenAI
     const cfg = PROVEEDORES[prov];
     const modelo = localStorage.getItem('india_modelo_'+prov) || cfg.modelo;
-    const r = await fetch(cfg.url, {
-      method:'POST',
-      headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
-      body: JSON.stringify(aOpenAI(cuerpo, modelo))
-    }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
-    const data = await r.json();
-    if(!r.ok){
-      if(r.status === 429) throw new Error(`Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`);
-      throw new Error(data?.error?.message || ('Error '+r.status));
-    }
+    const data = await reintentando(cfg.nombre, async () => {
+      const r = await fetch(cfg.url, {
+        method:'POST',
+        headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
+        body: JSON.stringify(aOpenAI(cuerpo, modelo))
+      }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
+      const d = await r.json();
+      const msg = r.status === 429
+        ? `Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`
+        : (d?.error?.message || ('Error '+r.status));
+      return { ok:r.ok, status:r.status, msg, valor:d };
+    });
     return deOpenAI(data);
   }
 
-  if(prov === 'google'){
-    const modelo = await modeloGoogle(key);
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(key)}`, {
-      method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify(aGoogle(cuerpo))
-    });
-    const data = await r.json();
-    if(!r.ok){
-      const msg = data?.error?.message || ('Error '+r.status);
-      if(r.status === 429) throw new Error('Te pasaste del límite gratis de Google por hoy o por minuto. Esperá un rato y probá de nuevo.');
-      throw new Error(msg);
-    }
-    return deGoogle(data);
-  }
+  if(prov === 'google') return llamarGoogle(key, cuerpo);
 
   const limpio = { ...cuerpo, messages: cuerpo.messages.map(({role,content}) => ({role,content})) };
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{ 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-    body:JSON.stringify(limpio)
+  return reintentando('Anthropic', async () => {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body:JSON.stringify(limpio)
+    });
+    const data = await r.json();
+    return { ok:r.ok, status:r.status, msg: data?.error?.message || ('Error '+r.status), valor:data };
   });
-  const data = await r.json();
-  if(!r.ok) throw new Error(data?.error?.message || ('Error '+r.status));
-  return data;
 }
 
 /* ═════════ EL TURNO ═════════ */
@@ -1464,6 +1534,7 @@ $('bkey').addEventListener('click', async () => {
     if(!r.ok){ toast(`${PROVEEDORES[prov].nombre} ${r.msg}`); return; }
     localStorage.setItem('india_key', k);
     localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
+    localStorage.removeItem('india_modelos_google');
     claveCompartida = await guardarCompartido({ apiKey:k });
     $('in-key').value=''; pintarConf();
     toast(claveCompartida
@@ -1473,7 +1544,7 @@ $('bkey').addEventListener('click', async () => {
   finally{ btn.disabled = false; btn.textContent = 'Guardar clave'; }
 });
 $('bkeydel').addEventListener('click', async () => {
-  localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google');
+  localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google'); localStorage.removeItem('india_modelos_google');
   await guardarCompartido({ apiKey:null });   // que no quede dando vueltas en la base
   claveCompartida = false; pintarConf(); toast('Clave borrada de los dos lados');
 });

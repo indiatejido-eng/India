@@ -553,6 +553,51 @@ const PROVEEDORES = {
                 modelo:'meta-llama/llama-3.3-70b-instruct:free' }
 };
 const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEEDORES[p].test(k)) || null);
+
+/* Se guarda UNA clave por proveedor, no una sola en total. El motivo es el cupo:
+   el plan gratis de Google se agota a media tarde y hasta ahora había que entrar a
+   Ajustes y pegar la de Groq a mano — y peor, quedarse en Groq para siempre porque
+   nadie se acuerda de volver. Ahora se cae solo al siguiente y **vuelve solo a
+   Google cuando el cupo se renueva**, que es a la medianoche del Pacífico. */
+const ORDEN_PROVEEDORES = ['google', 'anthropic', 'groq', 'openrouter'];
+
+function claves(){
+  try{ return JSON.parse(localStorage.getItem('india_keys') || '{}'); }catch(e){ return {}; }
+}
+function guardarClaveLocal(prov, k){
+  const c = claves();
+  if(k) c[prov] = k; else delete c[prov];
+  localStorage.setItem('india_keys', JSON.stringify(c));
+}
+function migrarClave(k){           // de la época en que había una sola
+  const prov = proveedorDe(k);
+  if(prov && !claves()[prov]) guardarClaveLocal(prov, k);
+}
+
+// Google renueva el cupo gratis a la medianoche del Pacífico; los demás, a la de UTC.
+function proximoCupo(prov){
+  const ahora = new Date();
+  if(prov === 'google'){
+    const allá = new Date(ahora.toLocaleString('en-US', { timeZone:'America/Los_Angeles' }));
+    const desfasaje = ahora.getTime() - allá.getTime();
+    const medianoche = new Date(allá); medianoche.setHours(24, 0, 0, 0);
+    return medianoche.getTime() + desfasaje;
+  }
+  return Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate() + 1);
+}
+const agotado      = prov => Number(localStorage.getItem('india_agotado_' + prov) || 0) > Date.now();
+const marcarAgotado = prov => localStorage.setItem('india_agotado_' + prov, String(proximoCupo(prov)));
+
+// El primero que tenga clave y cupo. Si están todos agotados igual se intenta con
+// el preferido: más vale que conteste el error del proveedor y no uno inventado.
+function proveedoresConClave(){
+  const c = claves();
+  return ORDEN_PROVEEDORES.filter(p => c[p]);
+}
+function proveedorActivo(){
+  const hay = proveedoresConClave();
+  return hay.find(p => !agotado(p)) || hay[0] || null;
+}
 const toolNames = {};   // id del tool_use -> nombre, que es lo que Google pide de vuelta
 
 // Google no expone un id de modelo estable en el tiempo: se le pregunta cuál tiene.
@@ -788,8 +833,11 @@ async function llamarGoogle(key, cuerpo){
       // 429 es límite de uso. Si es el cupo del DÍA no hay nada que esperar; si es
       // el del minuto, cambiar de modelo lo saltea porque la cuota es por modelo.
       if(r.status === 429){
-        if(/per\s*day|PerDay/i.test(JSON.stringify(err.details||[]) + msg))
-          throw new Error('Se terminó el cupo gratis de Google por hoy. Se renueva a la madrugada. Mientras tanto podés poner la clave de Groq, que también es gratis, en Ajustes.');
+        if(/per\s*day|PerDay/i.test(JSON.stringify(err.details||[]) + msg)){
+          const e = new Error('Se terminó el cupo gratis de Google por hoy. Se renueva a la madrugada.');
+          e.cupoDiario = true;   // que pensar() lo marque y se pase al siguiente proveedor
+          throw e;
+        }
         break;
       }
       if(r.status !== 503 && r.status !== 500) throw new Error(msg);   // esto sí es un error de verdad
@@ -803,7 +851,7 @@ async function llamarGoogle(key, cuerpo){
 }
 
 /* ═════════ LLAMADA AL MODELO ═════════ */
-async function pensar(){
+async function pensar(reintento){
   const system = [
     { type:'text', text:ENCARGO },
     { type:'text', text:'Todo lo que sabés de India Tejidos:\n\n'+MANUAL, cache_control:{type:'ephemeral'} }
@@ -826,11 +874,22 @@ async function pensar(){
     });
   }
 
-  const key = localStorage.getItem('india_key');
-  if(!key) throw new Error('SIN_CLAVE');
+  const prov = proveedorActivo();
+  if(!prov) throw new Error('SIN_CLAVE');
+  const key = claves()[prov];
 
-  const prov = proveedorDe(key);
-  if(!prov) throw new Error('Esa clave no la reconozco. Tiene que ser de Google (AQ. o AIza), Groq (gsk_), OpenRouter (sk-or-) o Anthropic (sk-ant-).');
+  // Si a este se le acabó el cupo del día, se marca y se sigue con el que venga.
+  // Cuando el cupo se renueva, el orden vuelve solo a Google: no hay que tocar nada.
+  const rotar = async (e) => {
+    if(!e.cupoDiario || reintento) throw e;
+    marcarAgotado(prov);
+    const queda = proveedoresConClave().find(o => o !== prov && !agotado(o));
+    if(!queda) throw new Error(e.message + (proveedoresConClave().length > 1
+      ? ' Y a los otros también. Mañana se renuevan.'
+      : ' Podés cargar la clave de Groq en Ajustes, que también es gratis: cuando el cupo de Google vuelva, se usa Google solo.'));
+    avisarEspera(`Se acabó el cupo de ${PROVEEDORES[prov].nombre}, sigo con ${PROVEEDORES[queda].nombre}…`);
+    return pensar(true);
+  };
 
   if(PROVEEDORES[prov].url){    // los que hablan formato OpenAI
     const cfg = PROVEEDORES[prov];
@@ -851,15 +910,23 @@ async function pensar(){
               body: JSON.stringify(aOpenAI(cuerpo, modelo))
             }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
             const d = await r.json();
+            const crudo = d?.error?.message || '';
+            // el cupo del DÍA no se arregla esperando: se marca y se pasa al siguiente
+            if(r.status === 429 && /per\s*day|daily|TPD|RPD/i.test(crudo)){
+              const e = new Error(`Se terminó el cupo gratis de ${cfg.nombre} por hoy.`);
+              e.cupoDiario = true;
+              throw e;
+            }
             const msg = r.status === 429
-              ? `Te pasaste del límite gratis de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que el límite por minuto se llena rápido.)`
-              : (d?.error?.message || ('Error '+r.status));
+              ? `Te pasaste del límite por minuto de ${cfg.nombre}. Esperá un rato. (El manual son ~17.000 tokens por consulta, así que se llena rápido.)`
+              : (crudo || ('Error '+r.status));
             return { ok:r.ok, status:r.status, msg, valor:d };
           });
           localStorage.setItem('india_modelo_'+prov, modelo);   // el que anduvo queda de titular
           return deOpenAI(data);
         }catch(e){
           ultimo = e;
+          if(e.cupoDiario) return rotar(e);
           if(!MODELO_JUBILADO.test(e.message || '')) throw e;   // esto es un error de verdad
           jubilado = true;                                      // ese modelo ya no está: probamos el siguiente
         }
@@ -869,10 +936,11 @@ async function pensar(){
       localStorage.removeItem('india_modelos_'+prov);
       localStorage.removeItem('india_modelo_'+prov);
     }
+    if(ultimo && ultimo.cupoDiario) return rotar(ultimo);
     throw ultimo || new Error(`${cfg.nombre} no me contestó con ningún modelo.`);
   }
 
-  if(prov === 'google') return llamarGoogle(key, cuerpo);
+  if(prov === 'google') return llamarGoogle(key, cuerpo).catch(rotar);
 
   const limpio = { ...cuerpo, messages: cuerpo.messages.map(({role,content}) => ({role,content})) };
   return reintentando('Anthropic', async () => {
@@ -1082,7 +1150,7 @@ async function registrar(sugerido, pedido){
     const d = await addDoc(collection(db,'asistente_uso'), {
       sugerido, pedido: (pedido||'').slice(0,4000),
       copiado:false, corregido:false,
-      modelo: proveedorDe(localStorage.getItem('india_key')) || 'server',
+      modelo: proveedorActivo() || 'server',
       fecha:serverTimestamp(), usuario:auth.currentUser?.email || '',
       turnos:mensajes.filter(m=>m.role==='user').length
     });
@@ -1118,8 +1186,8 @@ async function mandar(texto, adj=[], esAjuste=false){
 
   const imgs   = adj.filter(a => a.tipoAdj !== 'audio');
   let audios   = adj.filter(a => a.tipoAdj === 'audio');
-  const key    = localStorage.getItem('india_key');
-  const prov   = proveedorDe(key);
+  const prov   = proveedorActivo();
+  const key    = prov ? claves()[prov] : null;
 
   pintarYo(esAjuste ? '↻ '+texto : texto, imgs, audios);
 
@@ -1219,7 +1287,7 @@ let fijado = false, cancelando = false, abortar = false, x0 = 0, y0 = 0;
 
 async function grabarAudio(){
   if(rec) return;
-  const prov = hayProxy ? null : proveedorDe(localStorage.getItem('india_key'));
+  const prov = hayProxy ? null : proveedorActivo();
   if(prov && !['google','groq'].includes(prov)){
     toast('Para mandar audio necesitás la clave de Google o de Groq. Con '+PROVEEDORES[prov].nombre+' escribí el mensaje.');
     return;
@@ -1525,15 +1593,22 @@ function pintarConf(){
     ek.className='estado ok'; ek.textContent = 'Conectado por el server. Todo bien.';
     $('in-key').style.display='none'; $('bkey').style.display='none'; $('bkeydel').style.display='none';
   } else {
-    xk.innerHTML = 'La clave se guarda <b>en este dispositivo</b>. Sirve cualquiera de estas cuatro:<br>' +
+    xk.innerHTML = 'Pod\u00e9s cargar <b>varias</b>: se usa la de arriba y, cuando se le acaba el cupo del d\u00eda, se pasa sola a la siguiente y vuelve sola cuando el cupo se renueva.<br>' +
       '<b>Google Gemini</b> — <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>AQ.</code> (las nuevas) o <code>AIza</code> (las viejas). Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
       '<b>Groq</b> — <a href="https://console.groq.com/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>gsk_</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
       '<b>OpenRouter</b> — <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-or-</code>. Modelos gratis, pero también entrenan.<br>' +
       '<b>Anthropic</b> — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-ant-</code>. Es paga y no entrena con tus datos.';
-    const k = localStorage.getItem('india_key');
-    const prov = proveedorDe(k);
-    if(k && prov){ ek.className='estado ok'; ek.textContent = PROVEEDORES[prov].nombre+' · ····'+k.slice(-6)+' · '+(claveCompartida ? 'compartida: Bárbara no tiene que cargar nada' : 'solo en este dispositivo'); }
-    else if(k){ ek.className='estado no'; ek.textContent = 'La clave guardada no la reconozco.'; }
+    const cargadas = proveedoresConClave();
+    const enUso = proveedorActivo();
+    if(cargadas.length){
+      ek.className = 'estado ok';
+      ek.textContent = cargadas.map(pr => {
+        const cuando = agotado(pr)
+          ? ' (sin cupo hasta la madrugada)'
+          : (pr === enUso ? ' — en uso' : '');
+        return PROVEEDORES[pr].nombre + ' ····' + claves()[pr].slice(-4) + cuando;
+      }).join(' · ') + ' · ' + (claveCompartida ? 'compartidas con Bárbara' : 'solo en este dispositivo');
+    }
     else { ek.className='estado no'; ek.textContent = 'Sin clave: el asistente no puede pensar.'; }
   }
 }
@@ -1608,21 +1683,28 @@ $('bkey').addEventListener('click', async () => {
   try{
     const r = await probarClave(k, prov);
     if(!r.ok){ toast(`${PROVEEDORES[prov].nombre} ${r.msg}`); return; }
-    localStorage.setItem('india_key', k);
-    localStorage.removeItem('india_modelo_google');   // que vuelva a elegir modelo con la clave nueva
-    localStorage.removeItem('india_modelos_google');
-    claveCompartida = await guardarCompartido({ apiKey:k });
+    guardarClaveLocal(prov, k);                       // se SUMA: no pisa las otras
+    localStorage.removeItem('india_agotado_'+prov);   // clave nueva, cupo limpio
+    localStorage.removeItem('india_modelo_'+prov);    // que vuelva a elegir modelo
+    localStorage.removeItem('india_modelos_'+prov);
+    claveCompartida = await guardarCompartido({ apiKeys:claves(), apiKey:k });
     $('in-key').value=''; pintarConf();
-    toast(claveCompartida
-      ? 'Listo, la clave de '+PROVEEDORES[prov].nombre+' funciona y queda para los dos'
-      : 'La clave funciona, pero quedó solo en este dispositivo');
+    const otras = proveedoresConClave().length - 1;
+    toast('Listo, la clave de '+PROVEEDORES[prov].nombre+' funciona'
+      + (otras > 0 ? ' y queda junto a las otras ' + otras : '')
+      + (claveCompartida ? ' · también le sirve a Bárbara' : ' · solo en este dispositivo'));
   }catch(e){ toast('No se pudo probar: '+e.message); }
   finally{ btn.disabled = false; btn.textContent = 'Guardar clave'; }
 });
 $('bkeydel').addEventListener('click', async () => {
-  localStorage.removeItem('india_key'); localStorage.removeItem('india_modelo_google'); localStorage.removeItem('india_modelos_google');
-  await guardarCompartido({ apiKey:null });   // que no quede dando vueltas en la base
-  claveCompartida = false; pintarConf(); toast('Clave borrada de los dos lados');
+  localStorage.removeItem('india_key'); localStorage.removeItem('india_keys');
+  for(const pr of ORDEN_PROVEEDORES){
+    localStorage.removeItem('india_modelo_'+pr);
+    localStorage.removeItem('india_modelos_'+pr);
+    localStorage.removeItem('india_agotado_'+pr);
+  }
+  await guardarCompartido({ apiKey:null, apiKeys:null });   // que no queden dando vueltas en la base
+  claveCompartida = false; pintarConf(); toast('Claves borradas de los dos lados');
 });
 
 /* ═════════ ARRANQUE ═════════ */
@@ -1661,19 +1743,22 @@ onAuthStateChanged(auth, async user => {
   if(remoto?.manual){ MANUAL = remoto.manual; manualCompartido = true; localStorage.setItem('india_manual', remoto.manual); }
   else MANUAL = localStorage.getItem('india_manual') || '';
 
-  if(remoto?.apiKey && !localStorage.getItem('india_key')){
-    localStorage.setItem('india_key', remoto.apiKey);
+  // las guardadas antes de que se pudiera tener más de una
+  migrarClave(localStorage.getItem('india_key'));
+  if(remoto?.apiKeys && typeof remoto.apiKeys === 'object'){
+    for(const [pr, k] of Object.entries(remoto.apiKeys)) if(k && !claves()[pr]) guardarClaveLocal(pr, k);
   }
-  claveCompartida = !!remoto?.apiKey;
+  migrarClave(remoto?.apiKey);
+  claveCompartida = !!(remoto?.apiKeys && Object.keys(remoto.apiKeys).length) || !!remoto?.apiKey;
   CORRECCIONES = Array.isArray(remoto?.correcciones) ? remoto.correcciones : [];
 
   // lo que se había guardado antes de que existieran las reglas, se sube ahora
   if(MANUAL && !manualCompartido) manualCompartido = await guardarCompartido({ manual:MANUAL });
-  const kLocal = localStorage.getItem('india_key');
-  if(kLocal && !claveCompartida) claveCompartida = await guardarCompartido({ apiKey:kLocal });
+  const locales = claves();
+  if(Object.keys(locales).length && !claveCompartida) claveCompartida = await guardarCompartido({ apiKeys:locales });
 
   if(!MANUAL) { toast('Falta cargar el manual'); abrirConf(); }
-  else if(!hayProxy && !localStorage.getItem('india_key')) { toast('Falta la clave'); abrirConf(); }
+  else if(!hayProxy && !proveedorActivo()) { toast('Falta la clave'); abrirConf(); }
 });
 </script>
 </body>

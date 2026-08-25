@@ -92,6 +92,38 @@
   .bar-fill{height:100%;background:var(--accent);border-radius:4px}
   .bar-num{font-size:13px;font-weight:600;width:18px;text-align:right}
   .stat-sec.gap{margin-top:26px}
+
+  /* ===== Mapa del país ===== */
+  .geo-wrap{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .geo-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .geo-tbl th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:9px 6px;text-align:right;border-bottom:1px solid var(--line)}
+  .geo-tbl th:first-child{text-align:left;padding-left:12px}
+  .geo-tbl td{padding:10px 6px;text-align:right;border-bottom:1px solid var(--line)}
+  .geo-tbl td:first-child{text-align:left;padding-left:12px;font-weight:500}
+  .geo-tbl tr:last-child td{border-bottom:none}
+  .geo-tbl tr.fuera td:first-child{color:var(--muted)}
+  .geo-tbl tr.fuera{background:rgba(0,0,0,.018)}
+  .geo-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
+  .geo-dot.in{background:var(--accent)}
+  .geo-dot.out{background:var(--line2)}
+  .geo-vende{font-weight:600;color:var(--accent)}
+  .geo-note{font-size:12px;color:var(--muted);line-height:1.5;margin:10px 2px 0}
+  .geo-alert{background:#fdf4ee;border:1px solid #e8c5ad;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:#7a4a2c}
+  .geo-alert b{font-weight:600}
+  .geo-seg{display:flex;gap:6px;margin-bottom:12px}
+  .geo-seg button{flex:1;padding:9px 6px;font-size:12.5px;font-family:var(--body);border:1px solid var(--line2);background:var(--surface);border-radius:10px;cursor:pointer;color:var(--muted)}
+  .geo-seg button.on{background:var(--sel);color:#faf6ee;border-color:var(--sel)}
+  .hall{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:11px}
+  .hall-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+  .hall-t{font-family:var(--disp);font-weight:600;font-size:15.5px;letter-spacing:-.2px;line-height:1.3}
+  .hall-f{font-size:11px;color:var(--muted);flex:none}
+  .hall-var{display:flex;gap:8px;font-size:12.5px;margin-bottom:8px;line-height:1.5}
+  .hall-var .k{color:var(--muted);flex:none;width:74px}
+  .hall-r{font-size:13px;line-height:1.55;padding-top:9px;border-top:1px solid var(--line)}
+  .hall-v{display:inline-block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+  .hall-v.ok{background:#e8f0e4;color:#4a6b3d}
+  .hall-v.no{background:#f5e6e0;color:#8a4a35}
+  .hall-v.mid{background:var(--line);color:var(--muted)}
   .seg{display:flex;gap:6px;margin-bottom:10px}
   .seg button{flex:1;padding:9px 6px;font-size:12.5px;font-family:var(--body);border:1px solid var(--line2);background:var(--surface);border-radius:10px;cursor:pointer;color:var(--muted)}
   .seg button.on{background:var(--sel);color:#faf6ee;border-color:var(--sel)}
@@ -202,6 +234,7 @@
       <button class="act" onclick="go('venta')"><div><b>Vendí un chaleco</b><small>Suma a las ventas</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('gasto')"><div><b>Anoté un gasto</b><small>Lana, tejedora, envío, publicidad, retiro</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('stats')"><div><b>Ver mis números</b><small>Ventas, ganancia, qué se vende más</small></div><div class="arr">→</div></button>
+      <button class="act" onclick="go('geo')"><div><b>Mapa del país</b><small>Quién escribe, quién compra, y qué fuimos probando</small></div><div class="arr">→</div></button>
       <button class="act" onclick="location.href='/admin.html#stats'"><div><b>Estadísticas de la web</b><small>Visitas, fuentes de tráfico, dispositivos</small></div><div class="arr">→</div></button>
       <button class="act" onclick="go('clientes')"><div><b>Clientes</b><small>Pedidos, señas, envíos y reseñas</small></div><div class="arr">→</div></button>
       <button class="act" onclick="location.href='/crm.html'"><div><b>CRM · WhatsApp</b><small>Chats y contactos de Evolution</small></div><div class="arr">→</div></button>
@@ -350,6 +383,51 @@
     <div id="n-canales"></div>
   </div>
 
+  <div class="screen" id="s-geo">
+    <button class="back" onclick="home()">← Volver</button>
+    <div class="ttl">Mapa del país</div>
+    <div class="stat-period" id="geo-sub">Cargando…</div>
+
+    <div id="geo-alert"></div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="sl">Nos escribieron</div><div class="sv" id="geo-charlas">—</div></div>
+      <div class="stat"><div class="sl">Provincias que compraron</div><div class="sv" id="geo-provs">—</div></div>
+    </div>
+
+    <div class="stat-sec">Provincia por provincia</div>
+    <div class="geo-seg" id="geo-orden">
+      <button class="on" onclick="geoOrden('escriben',this)">Quién escribe</button>
+      <button onclick="geoOrden('ventas',this)">Quién compra</button>
+      <button onclick="geoOrden('costo',this)">$ por charla</button>
+    </div>
+    <div class="geo-wrap">
+      <table class="geo-tbl">
+        <thead><tr><th>Provincia</th><th>Escriben</th><th>Vendió</th><th>Cierre</th><th>$/charla</th></tr></thead>
+        <tbody id="geo-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="geo-note" id="geo-pie"></div>
+
+    <div class="stat-sec gap">Los centímetros</div>
+    <div class="stat-period">El ancho y el largo que pasaron las clientas. Es el dato que define el talle de verdad.</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="sl">Ancho promedio</div><div class="sv" id="geo-ancho">—</div></div>
+      <div class="stat"><div class="sl">Largo promedio</div><div class="sv" id="geo-largo">—</div></div>
+    </div>
+    <div class="geo-wrap">
+      <table class="geo-tbl">
+        <thead><tr><th>Talle</th><th>Ancho</th><th>Largo</th><th>Chalecos</th></tr></thead>
+        <tbody id="geo-cm"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="geo-note" id="geo-cm-pie"></div>
+
+    <div class="stat-sec gap">Lo que fuimos descubriendo</div>
+    <div class="stat-period">Una prueba por vez: se mueve una sola variable y el resto queda quieto. Si no, no se sabe qué la movió.</div>
+    <div id="geo-hall"></div>
+  </div>
+
   <div class="screen" id="s-clientes">
     <button class="back" onclick="home()">← Volver</button>
     <div class="ttl">Clientes</div>
@@ -378,7 +456,7 @@
   const WEBHOOK_NUMEROS='https://india-tejidos.duckdns.org/webhook/india-numeros';
   ['v-fecha','g-fecha'].forEach(i=>$(i).value=new Date().toISOString().slice(0,10));
 
-  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes()}
+  function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes();if(k==='geo')cargarGeo()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
   // Lo que cobra la tejedora por chaleco tejido. Es una sola tejedora y la tarifa es fija:
@@ -798,6 +876,239 @@
     catch(e){ console.error('No se pudo crear el pedido:', e); return ' · ⚠️ ficha no creada (' + (e && (e.code || e.message) || 'error') + ')'; }
   }
 
+  // ===== MAPA DEL PAÍS =====
+  // Tres fuentes distintas, cada una con su nivel de confianza:
+  //   1. Ventas por provincia  -> Firestore `pedidos`. Dato duro, lo carga Justo.
+  //   2. Quién escribe         -> CRM (Evolution). La provincia NO se guarda: se deduce
+  //                               del código de área del teléfono. Es aproximado y la
+  //                               pantalla lo dice.
+  //   3. Plata de Meta         -> Firestore `geo`, que escribe n8n. Mientras no exista,
+  //                               se muestran los números de la campaña de julio-agosto.
+
+  const CRM_API = 'https://crm.india-tejidos.duckdns.org/api';
+
+  // Códigos de área de 3 dígitos (cubren las ciudades grandes, que son casi todo el volumen).
+  const AREA3 = {
+    '11':'Buenos Aires',
+    '220':'Buenos Aires','221':'Buenos Aires','223':'Buenos Aires','230':'Buenos Aires',
+    '236':'Buenos Aires','237':'Buenos Aires','249':'Buenos Aires','291':'Buenos Aires',
+    '260':'Mendoza','261':'Mendoza','263':'Mendoza',
+    '264':'San Juan','266':'San Luis',
+    '280':'Chubut','297':'Chubut',
+    '298':'Río Negro','299':'Neuquén',
+    '340':'Santa Fe','341':'Santa Fe','342':'Santa Fe',
+    '343':'Entre Ríos','345':'Entre Ríos',
+    '351':'Córdoba','353':'Córdoba','354':'Córdoba','356':'Córdoba','357':'Córdoba','358':'Córdoba',
+    '362':'Chaco','364':'Chaco',
+    '370':'Formosa','376':'Misiones','379':'Corrientes','380':'La Rioja',
+    '381':'Tucumán','383':'Catamarca','385':'Santiago del Estero','387':'Salta','388':'Jujuy'
+  };
+  // Los de 4 dígitos que importan: toda la Patagonia y La Pampa, que es donde se juega
+  // la estrategia. El resto de los 4 dígitos cae en la regla de abajo.
+  const AREA4 = {
+    '2901':'Tierra del Fuego','2964':'Tierra del Fuego',
+    '2902':'Santa Cruz','2962':'Santa Cruz','2963':'Santa Cruz','2966':'Santa Cruz',
+    '2920':'Río Negro','2940':'Río Negro','2944':'Río Negro','2946':'Río Negro','2948':'Río Negro',
+    '2942':'Neuquén','2972':'Neuquén',
+    '2945':'Chubut',
+    '2302':'La Pampa','2952':'La Pampa','2953':'La Pampa','2954':'La Pampa'
+  };
+
+  // De un teléfono a una provincia. Devuelve null si no se puede afirmar.
+  function provinciaDeTel(tel){
+    let n = String(tel||'').replace(/\D/g,'');
+    if(!n) return null;
+    if(n.startsWith('54')) n = n.slice(2);      // país
+    if(n.startsWith('9'))  n = n.slice(1);      // el 9 de celular
+    if(n.startsWith('0'))  n = n.slice(1);
+    if(AREA4[n.slice(0,4)]) return AREA4[n.slice(0,4)];
+    if(AREA3[n.slice(0,3)]) return AREA3[n.slice(0,3)];
+    if(AREA3[n.slice(0,2)]) return AREA3[n.slice(0,2)];
+    // 29xx desconocido es Patagonia seguro, pero no sabemos cuál: no se inventa.
+    if(n.startsWith('29')) return null;
+    if(n.startsWith('2'))  return 'Buenos Aires';   // el resto de los 2xxx es provincia de Bs As
+    return null;
+  }
+
+  // Estado de cada provincia en la cuenta de Meta, con el motivo. Es la decisión
+  // estratégica, no un dato medido: por eso vive acá y no en Firestore.
+  const GEO_ESTADO = {
+    'Buenos Aires':{in:true}, 'CABA':{in:true}, 'Córdoba':{in:true}, 'Santa Fe':{in:true},
+    'Entre Ríos':{in:true}, 'Neuquén':{in:true}, 'Río Negro':{in:true}, 'Chubut':{in:true},
+    'Santa Cruz':{in:true}, 'Misiones':{in:true},
+    'Jujuy':{in:true,  nota:'Adentro por descuido: nunca se evaluó'},
+    'Catamarca':{in:true, nota:'Adentro por descuido: nunca se evaluó'},
+    'Mendoza':{in:false, alerta:true, nota:'Se decidió devolverla el 23/8 y no se aplicó'},
+    'La Pampa':{in:false, alerta:true, nota:'Se decidió devolverla el 23/8 y no se aplicó'},
+    'Chaco':{in:false, nota:'La charla más barata del país. Afuera por pobreza y temporada'},
+    'Corrientes':{in:false, nota:'Confirmado afuera con dato propio'},
+    'Salta':{in:false, nota:'Afuera sin dato propio'},
+    'San Luis':{in:false, nota:'Afuera sin dato propio'},
+    'Formosa':{in:false, nota:'Gastó sin una sola charla'},
+    'La Rioja':{in:false, nota:'Gastó sin una sola charla'},
+    'San Juan':{in:false, nota:'Gastó sin una sola charla'},
+    'Santiago del Estero':{in:false, nota:'Gastó sin una sola charla'},
+    'Tucumán':{in:false, nota:'Gastó sin una sola charla'},
+    'Tierra del Fuego':{in:false, nota:'Área Aduanera Especial: trámite por envío'}
+  };
+  // Lo medido en `Mensaje de whatsapp` (julio-agosto), la única campaña que corrió sin
+  // excluir nada. Es el piso hasta que n8n empiece a escribir `geo`.
+  const GEO_COSTO_BASE = { 'Chaco':100, 'Mendoza':131, 'La Pampa':156, 'Corrientes':324 };
+
+  let GEO_CLIENTES=null, GEO_DB={}, GEO_HALL=null, GEO_ORDEN='escriben', geoIniciado=false,
+      unsubGeo=null, unsubHall=null;
+
+  function iniciarGeo(){
+    if(geoIniciado) return; geoIniciado=true;
+    asegurarPedidos();   // un solo listener de pedidos para toda la app
+    if(window.FB && window.FB.escucharGeo)       unsubGeo  = window.FB.escucharGeo(m => { GEO_DB=m||{}; renderGeo(); });
+    if(window.FB && window.FB.escucharHallazgos) unsubHall = window.FB.escucharHallazgos(l => { GEO_HALL=l||[]; renderHallazgos(); });
+    cargarClientesCRM();
+  }
+
+  function limpiarGeo(){
+    if(unsubGeo)unsubGeo(); if(unsubHall)unsubHall();
+    unsubGeo=unsubHall=null; geoIniciado=false;
+    GEO_CLIENTES=null; GEO_DB={}; GEO_HALL=null;
+  }
+
+  async function cargarClientesCRM(){
+    try{
+      const tok = await window.FB.tokenApi();
+      const r = await fetch(CRM_API+'/clientes', { headers:{ 'Authorization':'Bearer '+tok } });
+      if(!r.ok) throw new Error('api '+r.status);
+      GEO_CLIENTES = await r.json();
+    }catch(e){ console.error('CRM no disponible:', e); GEO_CLIENTES=[]; }
+    renderGeo();
+  }
+
+  function cargarGeo(){ iniciarGeo(); renderGeo(); renderHallazgos(); }
+
+  function geoOrden(k,btn){
+    GEO_ORDEN=k;
+    document.querySelectorAll('#geo-orden button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    renderGeo();
+  }
+
+  function renderGeo(){
+    if(!$('geo-body')) return;
+    const provincias = Object.keys(GEO_ESTADO);
+
+    // Charlas por provincia, deducidas del código de área.
+    const charlas={}; let sinProv=0;
+    (GEO_CLIENTES||[]).forEach(c=>{
+      const p = provinciaDeTel(c.telefono || c.jid);
+      if(p) charlas[p]=(charlas[p]||0)+1; else sinProv++;
+    });
+
+    // Ventas por provincia.
+    const ventas={}, facturado={};
+    (PEDIDOS||[]).forEach(p=>{
+      const d=p.destino; if(!d) return;
+      ventas[d]=(ventas[d]||0)+1;
+      facturado[d]=(facturado[d]||0)+(Number(p.total)||0);
+    });
+
+    const filas = provincias.map(prov=>{
+      const est=GEO_ESTADO[prov], db=GEO_DB[prov]||{};
+      const esc = charlas[prov]||0, ven = ventas[prov]||0;
+      const costo = (db.costoCharla!=null && db.costoCharla>0) ? Number(db.costoCharla) : (GEO_COSTO_BASE[prov]||null);
+      return { prov, est, esc, ven, costo, fact:facturado[prov]||0,
+               cierre: esc>0 ? (ven/esc*100) : null, vivo: db.costoCharla!=null };
+    });
+
+    filas.sort((a,b)=>{
+      if(GEO_ORDEN==='ventas') return b.ven-a.ven || b.fact-a.fact || a.prov.localeCompare(b.prov);
+      if(GEO_ORDEN==='costo'){
+        if(a.costo==null && b.costo==null) return a.prov.localeCompare(b.prov);
+        if(a.costo==null) return 1; if(b.costo==null) return -1;
+        return a.costo-b.costo;
+      }
+      return b.esc-a.esc || b.ven-a.ven || a.prov.localeCompare(b.prov);
+    });
+
+    const cargando = GEO_CLIENTES===null || PEDIDOS===null;
+    const tb=$('geo-body');
+    tb.innerHTML = filas.map(f=>{
+      const dot = `<span class="geo-dot ${f.est.in?'in':'out'}"></span>`;
+      const ven = f.ven ? `<span class="geo-vende">${f.ven}</span>` : '<span style="color:var(--muted)">—</span>';
+      const cie = f.cierre==null ? '—' : (f.cierre===0 ? '0%' : (f.cierre>=10 ? f.cierre.toFixed(0) : f.cierre.toFixed(1))+'%');
+      const cos = f.costo==null ? '—' : '$'+f.costo.toLocaleString('es-AR');
+      return `<tr class="${f.est.in?'':'fuera'}" title="${f.est.nota?esc0(f.est.nota):(f.est.in?'Adentro':'Afuera')}">
+        <td>${dot}${f.prov}</td><td>${f.esc||'—'}</td><td>${ven}</td><td>${cie}</td><td>${cos}</td></tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin datos.</td></tr>';
+
+    const totCharlas = Object.values(charlas).reduce((a,b)=>a+b,0);
+    const provsVenta = Object.keys(ventas).length;
+    $('geo-charlas').textContent = cargando ? '—' : totCharlas;
+    $('geo-provs').textContent   = PEDIDOS===null ? '—' : provsVenta;
+    $('geo-sub').textContent = cargando ? 'Cargando…'
+      : `${totCharlas} contactos de WhatsApp ubicados · ${(PEDIDOS||[]).length} ventas`;
+
+    // El punto lleno es "le llega el anuncio". Si hay algo decidido y no aplicado, se avisa.
+    const rotas = provincias.filter(p=>GEO_ESTADO[p].alerta);
+    $('geo-alert').innerHTML = rotas.length
+      ? `<div class="geo-alert"><b>Ojo:</b> ${rotas.join(' y ')} ${rotas.length>1?'están excluidas':'está excluida'} en Meta, pero el 23/8 se decidió devolver${rotas.length>1?'las':'la'} con los datos en la mano. <b>La decisión no está aplicada en la cuenta.</b></div>`
+      : '';
+
+    const partes = [];
+    partes.push('El punto lleno es que le llega el anuncio; el vacío, que está excluida.');
+    if(sinProv) partes.push(`<b>${sinProv}</b> contacto${sinProv>1?'s':''} sin provincia: el código de área no alcanza para saberlo.`);
+    partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
+    if(!filas.some(f=>f.vivo)) partes.push('Los <b>$/charla</b> son los de la campaña de julio-agosto, la única que corrió sin excluir nada. Se actualizan solos cuando conectemos n8n.');
+    $('geo-pie').innerHTML = partes.join(' ');
+
+    renderCentimetros();
+  }
+
+  function renderCentimetros(){
+    if(!$('geo-cm')) return;
+    const conMed=(PEDIDOS||[]).filter(p=>Number(p.ancho)>0 && Number(p.largo)>0);
+    const prom=(arr,k)=>arr.length? arr.reduce((a,p)=>a+Number(p[k]),0)/arr.length : null;
+    const a=prom(conMed,'ancho'), l=prom(conMed,'largo');
+    $('geo-ancho').textContent = a==null?'—':a.toFixed(1)+' cm';
+    $('geo-largo').textContent = l==null?'—':l.toFixed(1)+' cm';
+
+    const porTalle={};
+    conMed.forEach(p=>{ const t=p.talle||'Sin talle'; (porTalle[t]=porTalle[t]||[]).push(p); });
+    const orden=['6-10','12-14','S','M','L','XL','XXL','Único'];
+    const talles=Object.keys(porTalle).sort((x,y)=>{
+      const ix=orden.indexOf(x), iy=orden.indexOf(y);
+      return (ix<0?99:ix)-(iy<0?99:iy) || x.localeCompare(y);
+    });
+    $('geo-cm').innerHTML = talles.length ? talles.map(t=>{
+      const g=porTalle[t];
+      return `<tr><td>${t}</td><td>${prom(g,'ancho').toFixed(1)}</td><td>${prom(g,'largo').toFixed(1)}</td><td>${g.length}</td></tr>`;
+    }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">${PEDIDOS===null?'Cargando…':'Todavía no cargaste medidas en ninguna venta.'}</td></tr>`;
+
+    const faltan=(PEDIDOS||[]).length-conMed.length;
+    $('geo-cm-pie').innerHTML = PEDIDOS===null ? ''
+      : (faltan>0 ? `${conMed.length} de ${(PEDIDOS||[]).length} ventas tienen las medidas cargadas. ${faltan===1?'La otra queda afuera':`Las otras ${faltan} quedan afuera`} de este promedio.`
+                  : 'Todas las ventas tienen las medidas cargadas.');
+  }
+
+  function renderHallazgos(){
+    const c=$('geo-hall'); if(!c) return;
+    if(GEO_HALL===null){ c.innerHTML='<div class="stat-period">Cargando…</div>'; return; }
+    if(!GEO_HALL.length){ c.innerHTML='<div class="stat-period">Todavía no hay pruebas anotadas. Las va cargando Claude al cerrar cada conversación.</div>'; return; }
+    const orden=[...GEO_HALL].sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+    c.innerHTML=orden.map(h=>{
+      const v=(h.veredicto||'').toLowerCase();
+      const cls = v==='funcionó'||v==='funciono'||v==='confirmado' ? 'ok'
+                : v==='no funcionó'||v==='no funciono'||v==='descartado' ? 'no' : 'mid';
+      return `<div class="hall">
+        <div class="hall-top"><div class="hall-t">${esc0(h.titulo||'')}</div><div class="hall-f">${esc0(h.fecha||'')}</div></div>
+        ${h.veredicto?`<div class="hall-v ${cls}">${esc0(h.veredicto)}</div>`:''}
+        ${h.variable?`<div class="hall-var"><span class="k">Se movió</span><span>${esc0(h.variable)}</span></div>`:''}
+        ${h.fijo?`<div class="hall-var"><span class="k">Quieto</span><span>${esc0(h.fijo)}</span></div>`:''}
+        ${h.resultado?`<div class="hall-r">${esc0(h.resultado)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  function esc0(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
   // ===== CLIENTES / PEDIDOS =====
   let PEDIDOS=null, RESENAS_MAP={}, cliIniciado=false, unsubPedidos=null, unsubResenasCli=null, ULTIMO_NUM=null, ULTIMO_ROWS=null, PERIODO_SEL='';
   const generandoResena = new Set();
@@ -814,13 +1125,14 @@
   function limpiarClientes(){
     if(unsubPedidos)unsubPedidos(); if(unsubResenasCli)unsubResenasCli();
     unsubPedidos=unsubResenasCli=null; cliIniciado=false; PEDIDOS=null; RESENAS_MAP={};
+    limpiarGeo();
   }
   window.limpiarClientes = limpiarClientes;
 
   function asegurarPedidos(){
     if(!window.FB || cliIniciado) return;
     cliIniciado=true;
-    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); renderCaja(); });
+    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); renderCaja(); renderGeo(); });
     unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
@@ -1056,6 +1368,13 @@
     usuario: () => (auth.currentUser ? auth.currentUser.email : null),
     escucharPedidos: (cb) => onSnapshot(collection(db, 'pedidos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => {}),
     escucharResenas: (cb) => onSnapshot(collection(db, 'resenas'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }, () => {}),
+    // Mapa del país. `geo` la escribe n8n con lo que devuelve la API de Meta (gasto y
+    // charlas por provincia); `hallazgos` es la bitácora de pruebas, la carga Claude
+    // al cerrar cada chat. Sin orderBy a propósito: ordenar acá evita pedir un índice.
+    escucharGeo: (cb) => onSnapshot(collection(db, 'geo'), s => { const m = {}; s.forEach(d => m[d.id] = d.data()); cb(m); }, () => cb({})),
+    escucharHallazgos: (cb) => onSnapshot(collection(db, 'hallazgos'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb([])),
+    // El CRM (Evolution, en el server propio) usa el mismo idToken de Firebase que /carga.
+    tokenApi: () => (auth.currentUser ? auth.currentUser.getIdToken() : Promise.reject(new Error('sin sesión'))),
     actualizarPedido: (id, patch) => updateDoc(doc(db, 'pedidos', id), patch),
     // Crea la invitación y guarda tokenResena en el pedido en UN batch atómico (sin huérfanas ni token perdido).
     generarLinkResena: async (pedidoId, nombre) => {

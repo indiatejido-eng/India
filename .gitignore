@@ -10,3 +10,7 @@ tools/manual.txt
 
 # Credenciales del panel para subir el manual solo. NUNCA se sube.
 tools/credenciales.json
+
+# La bitácora de pruebas: sale de la bóveda y lleva los números adentro
+# (costo por venta, gasto en pauta). Vive en Firestore; esto es solo la fuente.
+tools/hallazgos.json

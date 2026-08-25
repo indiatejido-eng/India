@@ -229,7 +229,7 @@
     <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida" onclick="toggleMedidas()"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
-    <div class="field"><label>Precio</label><input type="number" id="v-precio" inputmode="numeric" placeholder="145000"></div>
+    <div class="field"><label>Precio</label><input type="text" id="v-precio" inputmode="numeric" placeholder="145.000" oninput="fmtPesos(this)"></div>
     <div class="field"><label>¿A dónde va?</label>
       <div class="duo">
         <div><input type="text" id="v-ciudad" placeholder="Ciudad"></div>
@@ -238,7 +238,7 @@
       <div class="hint">La provincia es de lista para que después se pueda agrupar. Ej.: General Roca · Río Negro.</div>
     </div>
     <div class="field"><label>¿Cómo pagó?</label><div class="chips" id="v-pago" data-val="Pagó todo" onclick="togglePago()"><div class="chip sel" onclick="pick(this)">Pagó todo</div><div class="chip" onclick="pick(this)">Pagó seña</div></div></div>
-    <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="number" id="v-sena" inputmode="numeric" placeholder="50000"></div>
+    <div class="field" id="v-senawrap" style="display:none"><label>Monto de la seña</label><input type="text" id="v-sena" inputmode="numeric" placeholder="50.000" oninput="fmtPesos(this)"></div>
     <div class="field"><label>¿Estado?</label><div class="chips" id="v-estado" data-val="En proceso"><div class="chip" onclick="pick(this)">Ya entregado</div><div class="chip sel" onclick="pick(this)">En proceso</div></div></div>
     <button class="save" onclick="send('venta')">Guardar venta</button>
   </div>
@@ -261,7 +261,10 @@
         <div><input type="text" id="e-largo" inputmode="decimal" placeholder="Largo" oninput="soloDecimal(this)"></div>
       </div>
     </div>
-    <div class="field"><label>Precio</label><input type="number" id="e-precio" inputmode="numeric"></div>
+    <div class="field"><label>Precio</label><input type="text" id="e-precio" inputmode="numeric" oninput="fmtPesos(this)"></div>
+    <div class="field"><label>Seña cobrada</label><input type="text" id="e-sena" inputmode="numeric" placeholder="0" oninput="fmtPesos(this)">
+      <div class="hint">Lo que ya pagó a cuenta. Si pagó todo junto, dejalo vacío.</div>
+    </div>
     <button class="save" onclick="guardarEdicion()">Guardar cambios</button>
   </div>
 
@@ -277,7 +280,7 @@
         <div><span id="g-tej-adulto-lbl"></span><input type="number" id="g-tej-adulto" inputmode="numeric" min="0" step="1" value="0" oninput="calcTejedora()"></div>
       </div>
     </div>
-    <div class="field"><label>Monto</label><input type="number" id="g-monto" inputmode="numeric" placeholder="19200"></div>
+    <div class="field"><label>Monto</label><input type="text" id="g-monto" inputmode="numeric" placeholder="19.200" oninput="fmtPesos(this)"></div>
     <div class="field"><label>Detalle (opcional)</label><input type="text" id="g-detalle" placeholder="Proveedora, correo..."></div>
     <button class="save" onclick="send('gasto')">Guardar gasto</button>
   </div>
@@ -429,6 +432,13 @@
     if(el.value!==v)el.value=v;
   }
   const decimal=id=>Number(String($(id).value).trim().replace(',','.'))||0;
+
+  // La plata se tipea con separador de miles ("175.000") y adentro se guarda pelada.
+  // Eran inputs type=number: el navegador leia ese punto como coma decimal y "175.000"
+  // entraba como 175. Mismo criterio que admin.html: se queda solo con los digitos.
+  const soloPesos = v => Number(String(v==null?'':v).replace(/\D/g,'')) || 0;
+  const pesosDe = id => soloPesos($(id).value);
+  function fmtPesos(el){ const n=soloPesos(el.value); el.value = n>0 ? n.toLocaleString('es-AR') : ''; }
 
   // La ayuda de las medidas cambia según de dónde salen: de la clienta o de la ficha.
   function toggleMedidas(){setTimeout(()=>{
@@ -714,11 +724,17 @@
 
   async function send(accion){
     let d;
-    if(accion==='venta'){ID_VENTA_ACTUAL=nuevoIdVenta();}
-    if(accion==='venta')d={accion,id:ID_VENTA_ACTUAL,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:Number($('v-precio').value||0),destino:$('v-destino').value,ciudad:$('v-ciudad').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
+    if(accion==='venta'){
+      // La seña no puede superar el precio: antes se recortaba en silencio y quedaba
+      // guardada mal (un precio mal tipeado se llevaba puesta la seña). Ahora se avisa.
+      const pr=pesosDe('v-precio'), se=$('v-pago').dataset.val==='Pagó todo'?0:pesosDe('v-sena');
+      if(se>pr){ alert('La seña ($'+se.toLocaleString('es-AR')+') no puede ser mayor al precio ($'+pr.toLocaleString('es-AR')+'). Revisá los dos números.'); return; }
+      ID_VENTA_ACTUAL=nuevoIdVenta();
+    }
+    if(accion==='venta')d={accion,id:ID_VENTA_ACTUAL,fecha:$('v-fecha').value,cliente:$('v-cliente').value,telefono:$('v-tel').value,modelo:$('v-modelo').dataset.val,talle:$('v-talle').dataset.val,color:$('v-color').dataset.val,paraQuien:$('v-genero').dataset.val,confeccion:$('v-confeccion').dataset.val,canal:$('v-canal').dataset.val,anuncio:$('v-anuncio').dataset.val,precio:pesosDe('v-precio'),destino:$('v-destino').value,ciudad:$('v-ciudad').value.trim(),ancho:decimal('v-ancho'),largo:decimal('v-largo')};
     else{
       const tipo=$('g-tipo').dataset.val;
-      d={accion,fecha:$('g-fecha').value,tipo,monto:Number($('g-monto').value||0),
+      d={accion,fecha:$('g-fecha').value,tipo,monto:pesosDe('g-monto'),
          kg:tipo==='Lana'?decimal('g-kg'):'',
          detalle:tipo==='Tejedora'?detalleTejedora():$('g-detalle').value};
     }
@@ -746,14 +762,13 @@
   // Crea la ficha de seguimiento en Firebase (pedidos). El Sheet ya recibió el total vía n8n.
   // Si esto falla, la venta igual quedó guardada en el Sheet (solo se pierde la ficha).
   async function crearPedidoDesdeForm(){
-    const total = Number($('v-precio').value||0);
+    const total = pesosDe('v-precio');
     const pagoTodo = $('v-pago').dataset.val==='Pagó todo';
     // La elección explícita manda: si eligió "Pagó seña" el saldo NO está cobrado,
     // aunque deje el monto vacío (así el pedido igual aparece en "Por cobrar").
-    // La seña se clampea al rango [0, total] para no romper (total - sena).
-    let sena = pagoTodo ? 0 : Number($('v-sena').value||0);
-    if(sena<0) sena=0;
-    if(sena>total) sena=total;
+    // La seña se guarda tal cual se escribió: si no entra en el precio, send() ya frenó
+    // el guardado y avisó. Recortarla acá era perder el dato sin que nadie se enterara.
+    const sena = pagoTodo ? 0 : pesosDe('v-sena');
     const pedido = {
       idVenta: ID_VENTA_ACTUAL,
       cliente: $('v-cliente').value.trim(),
@@ -943,7 +958,8 @@
     $('e-destino').value = p.destino||'';
     $('e-ancho').value   = p.ancho||'';
     $('e-largo').value   = p.largo||'';
-    $('e-precio').value  = p.total||0;
+    $('e-precio').value  = Number(p.total)>0 ? Math.round(p.total).toLocaleString('es-AR') : '';
+    $('e-sena').value    = Number(p.sena)>0  ? Math.round(p.sena).toLocaleString('es-AR')  : '';
     document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
     $('s-editar').classList.add('on');
   }
@@ -964,8 +980,10 @@
       destino:  $('e-destino').value,
       ancho:    decimal('e-ancho'),
       largo:    decimal('e-largo'),
-      total:    Number($('e-precio').value||0),
+      total:    pesosDe('e-precio'),
+      sena:     pesosDe('e-sena'),
     };
+    if(campos.sena>campos.total){ alert('La seña ($'+campos.sena.toLocaleString('es-AR')+') no puede ser mayor al precio ($'+campos.total.toLocaleString('es-AR')+').'); return; }
     const btn=document.querySelector('#s-editar .save');
     btn.disabled=true; btn.textContent='Guardando…';
     try{

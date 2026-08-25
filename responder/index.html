@@ -386,6 +386,7 @@ HERRAMIENTAS
 Tenés acceso al registro de WhatsApp y al catálogo.
 - Si te nombran a un cliente ("contestale a Ignacio", "el de Coronel Dorrego"), buscalo con buscar_cliente y leé la charla con leer_conversacion antes de escribir nada. No pidas que te peguen la conversación si la podés buscar sola.
 - Si hay varios que coinciden, mostrá los candidatos con su última charla y preguntá cuál es.
+- Si te piden contestarle a gente sin nombrarla ("los que escribieron", "los nuevos", "los del anuncio"), usá charlas_recientes para saber quiénes son y leé cada charla antes de escribir. NO pidas que te pasen los nombres: los podés ver solo.
 - ver_chalecos: usalo siempre que la charla toque talle, precio o "qué tenés". No contestes de memoria.
 - recordar: CADA VEZ que te corrijan algo, guardalo. Si te dicen "no, eso se dice así", "faltó pedirle tal cosa", "no uses esa palabra", "acordate que ahora cobramos tal", eso vale para siempre y para los dos: guardalo sin preguntar y avisá en una línea. Es la única forma de que no te lo tengan que repetir. No guardes cosas de una sola charla ("a este decile que sí"), solo lo que sirve siempre.
 - marcar_cliente: cuando alguien pide algo que NO tejemos (sweater, pulóver, campera, cardigan, saco) o pregunta por venta al por mayor, marcalo en el CRM con la categoría que corresponda, además de contestarle. Son casi una de cada cinco charlas y hoy se pierden. Si no sabés qué categorías hay, llamalo sin categoría y te devuelve la lista. No hace falta pedir permiso para esto.
@@ -399,6 +400,14 @@ const TOOLS = [
     name:'buscar_cliente',
     description:'Busca un cliente en el registro de WhatsApp por nombre, apodo o número. Devuelve los que coinciden con su identificador (jid), cuántos mensajes tiene y de cuándo es la última charla. Usalo cuando te nombren a alguien.',
     input_schema:{ type:'object', properties:{ nombre:{type:'string',description:'Nombre, parte del nombre o número del cliente'} }, required:['nombre'] }
+  },
+  {
+    name:'charlas_recientes',
+    description:'Lista las conversaciones de WhatsApp ordenadas de la más nueva a la más vieja, con el jid de cada una. Usalo cuando te pidan contestarle a gente SIN nombrarla: "los que escribieron", "los nuevos", "los del anuncio", "los que quedaron sin responder". Es la única forma de saber quiénes son, porque buscar_cliente necesita que le des un nombre. Después leé cada charla con leer_conversacion antes de escribir nada.',
+    input_schema:{ type:'object', properties:{
+      cantidad:{type:'number',description:'Cuántas traer. Por defecto 15.'},
+      dias:{type:'number',description:'Solo las que tuvieron mensajes en los últimos N días. Si no se pone, trae las más nuevas sin importar la fecha.'}
+    } }
   },
   {
     name:'leer_conversacion',
@@ -441,6 +450,23 @@ async function correrTool(nombre, args){
     ).slice(0, 12);
     if(!hits.length) return `No hay ningún cliente que coincida con "${args.nombre}". Puede que en el registro figure con el número en vez del nombre; pediles que te peguen la charla o la captura.`;
     return JSON.stringify(hits.map(c => ({
+      jid:c.jid, nombre:c.nombre||('sin nombre · '+(c.numero||'').slice(-5)),
+      alias:c.alias||undefined, nota:c.nota||undefined,
+      mensajes:c.mensajes, ultima:c.ultima_fecha||c.fecha||undefined
+    })));
+  }
+
+  if(nombre === 'charlas_recientes'){
+    const todos = await crm('/clientes');
+    const cuando = c => new Date(c.ultima_fecha || c.fecha || 0).getTime() || 0;
+    let lista = todos.filter(c => cuando(c) > 0).sort((a,b) => cuando(b) - cuando(a));
+    if(args.dias){
+      const desde = Date.now() - args.dias * 86400000;
+      lista = lista.filter(c => cuando(c) >= desde);
+    }
+    lista = lista.slice(0, args.cantidad || 15);
+    if(!lista.length) return 'No hay ninguna charla en ese período.';
+    return JSON.stringify(lista.map(c => ({
       jid:c.jid, nombre:c.nombre||('sin nombre · '+(c.numero||'').slice(-5)),
       alias:c.alias||undefined, nota:c.nota||undefined,
       mensajes:c.mensajes, ultima:c.ultima_fecha||c.fecha||undefined
@@ -938,8 +964,15 @@ async function pensar(reintento){
         }catch(e){
           ultimo = e;
           if(e.cupoDiario || e.noEntra) return rotar(e);
-          if(!MODELO_JUBILADO.test(e.message || '')) throw e;   // esto es un error de verdad
-          jubilado = true;                                      // ese modelo ya no está: probamos el siguiente
+          if(MODELO_JUBILADO.test(e.message || '')){
+            jubilado = true;      // ese modelo ya no está: probamos el siguiente y pedimos el catálogo de nuevo
+            continue;
+          }
+          /* "Upstream error from Nvidia: Service temporarily overloaded". Los modelos
+             gratis se llenan seguido y cada uno tiene su propia cola, así que se prueba
+             con el que sigue en vez de rendirse — igual que hace la rama de Google. */
+          if(/overload|temporar|upstream|unavailable|capacity|try again|503|502|529/i.test(e.message || '')) continue;
+          throw e;                // esto sí es un error de verdad
         }
       }
 
@@ -989,6 +1022,7 @@ async function turno(){
       if(texto) pintarAsistente(texto);
       const avisos = usos.map(u => ({
         buscar_cliente:'buscando a '+(u.input.nombre||''),
+        charlas_recientes:'viendo quién escribió',
         leer_conversacion:'leyendo la conversación',
         marcar_cliente:'marcando en el CRM',
         recordar:'anotando la corrección',

@@ -550,7 +550,7 @@ const PROVEEDORES = {
   openrouter: { test:k => k.startsWith('sk-or-'),  nombre:'OpenRouter',
                 url:'https://openrouter.ai/api/v1/chat/completions',
                 catalogo:'https://openrouter.ai/api/v1/models', soloGratis:true,
-                modelo:'meta-llama/llama-3.3-70b-instruct:free' }
+                modelo:'' }   // no se clava ninguno: se pide el catálogo
 };
 const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEEDORES[p].test(k)) || null);
 
@@ -559,7 +559,7 @@ const proveedorDe = k => !k ? null : (Object.keys(PROVEEDORES).find(p => PROVEED
    Ajustes y pegar la de Groq a mano — y peor, quedarse en Groq para siempre porque
    nadie se acuerda de volver. Ahora se cae solo al siguiente y **vuelve solo a
    Google cuando el cupo se renueva**, que es a la medianoche del Pacífico. */
-const ORDEN_PROVEEDORES = ['google', 'anthropic', 'groq', 'openrouter'];
+const ORDEN_PROVEEDORES = ['google', 'anthropic', 'openrouter', 'groq'];
 
 function claves(){
   try{ return JSON.parse(localStorage.getItem('india_keys') || '{}'); }catch(e){ return {}; }
@@ -649,6 +649,9 @@ async function modelosOpenAI(prov, key, forzar){
           .filter(m => !/whisper|tts|guard|embed|moderation|rerank/i.test(m.id || ''))
           // el manual son ~17.000 tokens: lo que no tenga ventana grande no entra
           .filter(m => (m.context_window || m.context_length || 0) >= 32000)
+          // sin function calling el asistente no puede buscar clientes ni cargar ventas:
+          // es la mitad de lo que hace. Si el proveedor lo declara, se respeta.
+          .filter(m => !Array.isArray(m.supported_parameters) || m.supported_parameters.includes('tools'))
           .filter(m => !cfg.soloGratis || /:free$/.test(m.id || ''))
           .sort((a, b) => puntajeModelo(b) - puntajeModelo(a))
           .map(m => m.id);
@@ -881,13 +884,13 @@ async function pensar(reintento){
   // Si a este se le acabó el cupo del día, se marca y se sigue con el que venga.
   // Cuando el cupo se renueva, el orden vuelve solo a Google: no hay que tocar nada.
   const rotar = async (e) => {
-    if(!e.cupoDiario || reintento) throw e;
+    if(!(e.cupoDiario || e.noEntra) || reintento) throw e;
     marcarAgotado(prov);
     const queda = proveedoresConClave().find(o => o !== prov && !agotado(o));
     if(!queda) throw new Error(e.message + (proveedoresConClave().length > 1
-      ? ' Y a los otros también. Mañana se renuevan.'
-      : ' Podés cargar la clave de Groq en Ajustes, que también es gratis: cuando el cupo de Google vuelva, se usa Google solo.'));
-    avisarEspera(`Se acabó el cupo de ${PROVEEDORES[prov].nombre}, sigo con ${PROVEEDORES[queda].nombre}…`);
+      ? ' Y con los otros tampoco se pudo. Mañana se renuevan los cupos.'
+      : ' Cargá una clave de OpenRouter en Ajustes como suplente: los modelos gratis de ahí tienen ventanas grandes y el manual entra. Cuando el cupo de Google vuelva, se usa Google solo.'));
+    avisarEspera(`${PROVEEDORES[prov].nombre} no pudo, sigo con ${PROVEEDORES[queda].nombre}…`);
     return pensar(true);
   };
 
@@ -911,6 +914,14 @@ async function pensar(reintento){
             }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
             const d = await r.json();
             const crudo = d?.error?.message || '';
+            /* "Request too large ... Limit 8000, Requested 30661": el mensaje entero no
+               entra en el límite por minuto del proveedor. Esperar no arregla nada —
+               con el minuto vacío tampoco entra. Se pasa al siguiente y listo. */
+            if(/too large|reduce your message size|tokens per minute|context length|maximum context/i.test(crudo)){
+              const e = new Error(`A ${cfg.nombre} no le entra el manual entero: ${crudo}`);
+              e.noEntra = true;
+              throw e;
+            }
             // el cupo del DÍA no se arregla esperando: se marca y se pasa al siguiente
             if(r.status === 429 && /per\s*day|daily|TPD|RPD/i.test(crudo)){
               const e = new Error(`Se terminó el cupo gratis de ${cfg.nombre} por hoy.`);
@@ -926,7 +937,7 @@ async function pensar(reintento){
           return deOpenAI(data);
         }catch(e){
           ultimo = e;
-          if(e.cupoDiario) return rotar(e);
+          if(e.cupoDiario || e.noEntra) return rotar(e);
           if(!MODELO_JUBILADO.test(e.message || '')) throw e;   // esto es un error de verdad
           jubilado = true;                                      // ese modelo ya no está: probamos el siguiente
         }
@@ -936,7 +947,7 @@ async function pensar(reintento){
       localStorage.removeItem('india_modelos_'+prov);
       localStorage.removeItem('india_modelo_'+prov);
     }
-    if(ultimo && ultimo.cupoDiario) return rotar(ultimo);
+    if(ultimo && (ultimo.cupoDiario || ultimo.noEntra)) return rotar(ultimo);
     throw ultimo || new Error(`${cfg.nombre} no me contestó con ningún modelo.`);
   }
 
@@ -1595,8 +1606,8 @@ function pintarConf(){
   } else {
     xk.innerHTML = 'Pod\u00e9s cargar <b>varias</b>: se usa la de arriba y, cuando se le acaba el cupo del d\u00eda, se pasa sola a la siguiente y vuelve sola cuando el cupo se renueva.<br>' +
       '<b>Google Gemini</b> — <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>AQ.</code> (las nuevas) o <code>AIza</code> (las viejas). Gratis y aguanta bien el manual. Ojo: en el plan gratis <b>Google usa las charlas para entrenar</b> y un humano puede leerlas.<br>' +
-      '<b>Groq</b> — <a href="https://console.groq.com/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>gsk_</code>. Gratis y <b>no entrena con tus datos</b>, pero el límite por minuto es justo para un manual de 17.000 tokens.<br>' +
-      '<b>OpenRouter</b> — <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-or-</code>. Modelos gratis, pero también entrenan.<br>' +
+      '<b>OpenRouter</b> — <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-or-</code>. <b>Es la que conviene tener de suplente:</b> los modelos gratis tienen ventanas de 256.000 tokens para arriba, así que el manual entra de sobra, y el límite es por cantidad de mensajes al día y no por tokens por minuto. Ojo que también entrenan.<br>' +
+      '<b>Groq</b> — <a href="https://console.groq.com/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>gsk_</code>. No entrena con tus datos, pero <b>para esto no sirve</b>: su límite gratis es de 8.000 tokens por minuto y cada consulta manda ~30.000, así que la rechaza siempre, no es cuestión de esperar.<br>' +
       '<b>Anthropic</b> — <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">sacar la clave acá</a>. Empieza con <code>sk-ant-</code>. Es paga y no entrena con tus datos.';
     const cargadas = proveedoresConClave();
     const enUso = proveedorActivo();

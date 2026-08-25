@@ -261,6 +261,10 @@
         <div><input type="text" id="e-largo" inputmode="decimal" placeholder="Largo" oninput="soloDecimal(this)"></div>
       </div>
     </div>
+    <div class="field"><label>Peso del chaleco, en gramos</label>
+      <input type="text" id="e-peso" inputmode="decimal" placeholder="Ej: 520" oninput="soloDecimal(this)">
+      <div class="hint">Se pesa cuando está terminado, antes de mandarlo. Es lo que dice cuánta lana lleva cada talle de verdad — hoy está estimado y de ahí sale el margen.</div>
+    </div>
     <div class="field"><label>Precio</label><input type="text" id="e-precio" inputmode="numeric" oninput="fmtPesos(this)"></div>
     <div class="field"><label>Seña cobrada</label><input type="text" id="e-sena" inputmode="numeric" placeholder="0" oninput="fmtPesos(this)">
       <div class="hint">Lo que ya pagó a cuenta. Si pagó todo junto, dejalo vacío.</div>
@@ -958,6 +962,7 @@
     $('e-destino').value = p.destino||'';
     $('e-ancho').value   = p.ancho||'';
     $('e-largo').value   = p.largo||'';
+    $('e-peso').value    = p.peso||'';
     $('e-precio').value  = Number(p.total)>0 ? Math.round(p.total).toLocaleString('es-AR') : '';
     $('e-sena').value    = Number(p.sena)>0  ? Math.round(p.sena).toLocaleString('es-AR')  : '';
     document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
@@ -980,6 +985,7 @@
       destino:  $('e-destino').value,
       ancho:    decimal('e-ancho'),
       largo:    decimal('e-largo'),
+      peso:     decimal('e-peso'),   // gramos del chaleco terminado; no va al Sheet, es dato de produccion
       total:    pesosDe('e-precio'),
       sena:     pesosDe('e-sena'),
     };

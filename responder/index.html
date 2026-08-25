@@ -304,6 +304,26 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, collection, a
 
 /* ═════════ CONFIG ═════════ */
 const CRM   = 'https://crm.india-tejidos.duckdns.org/api';
+
+/* Un fetch que no se resuelve nunca deja el "pensando" girando para siempre: es lo
+   que pasa cuando el celular pierde la señal a mitad de una consulta, o cuando el
+   proveedor acepta la conexión y después se cuelga. No había NI UN timeout en toda
+   la herramienta, así que la única salida era recargar la página.
+   Todo lo que sale a la red pasa por acá y corta a los N segundos. */
+function pedir(url, opts = {}, segundos = 60){
+  const ctrl  = new AbortController();
+  const corte = setTimeout(() => ctrl.abort(), segundos * 1000);
+  return fetch(url, { ...opts, signal:ctrl.signal })
+    .catch(e => {
+      if(e.name === 'AbortError'){
+        const t = new Error(`No contestó en ${segundos} segundos. Puede ser la señal o que el proveedor se haya colgado.`);
+        t.tardo = true;   // se trata como saturación: se prueba con otro
+        throw t;
+      }
+      throw e;
+    })
+    .finally(() => clearTimeout(corte));
+}
 const PROXY = CRM + '/asistente';           // cuando esté en el server, la clave vive allá
 const MODELO = 'claude-sonnet-5';
 
@@ -557,7 +577,7 @@ async function correrTool(nombre, args){
 /* ═════════ CRM ═════════ */
 async function crm(path, opts={}){
   const tok = await auth.currentUser.getIdToken();
-  const r = await fetch(CRM+path, { ...opts, headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json', ...(opts.headers||{}) }});
+  const r = await pedir(CRM+path, { ...opts, headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json', ...(opts.headers||{}) }}, 30);
   if(!r.ok) throw new Error('El registro de WhatsApp no respondió ('+r.status+')');
   return r.json();
 }
@@ -633,7 +653,7 @@ async function modelosGoogle(key){
   let lista = [];
   try{ lista = JSON.parse(localStorage.getItem('india_modelos_google') || '[]'); }catch(e){}
   if(!lista.length){
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key)+'&pageSize=200');
+    const r = await pedir('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key)+'&pageSize=200', {}, 25);
     const d = await r.json();
     if(!r.ok) throw new Error(d?.error?.message || 'No pude leer los modelos de Google');
     const aptos = (d.models||[])
@@ -666,7 +686,7 @@ async function modelosOpenAI(prov, key, forzar){
 
   if(!lista.length && cfg.catalogo){
     try{
-      const r = await fetch(cfg.catalogo, { headers:{ 'authorization':'Bearer ' + key } });
+      const r = await pedir(cfg.catalogo, { headers:{ 'authorization':'Bearer ' + key } }, 25);
       const d = await r.json();
       if(r.ok && Array.isArray(d?.data)){
         lista = d.data
@@ -846,9 +866,9 @@ async function llamarGoogle(key, cuerpo){
     for(let intento = 0; intento < 2; intento++){
       let r, data;
       try{
-        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(key)}`, {
+        r = await pedir(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(key)}`, {
           method:'POST', headers:{ 'content-type':'application/json' }, body
-        });
+        }, 120);
         data = await r.json();
       }catch(e){ throw new Error('No se pudo conectar con Google. Fijate si tenés internet.'); }
 
@@ -898,7 +918,7 @@ async function pensar(reintento){
   if(hayProxy){
     const tok = await auth.currentUser.getIdToken();
     return reintentando('El server', async () => {
-      const r = await fetch(PROXY, { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(cuerpo) });
+      const r = await pedir(PROXY, { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(cuerpo) }, 120);
       return { ok:r.ok, status:r.status, msg:'El server contestó '+r.status, valor: r.ok ? await r.json() : null };
     });
   }
@@ -933,11 +953,14 @@ async function pensar(reintento){
       for(const modelo of modelos){
         try{
           const data = await reintentando(cfg.nombre, async () => {
-            const r = await fetch(cfg.url, {
+            const r = await pedir(cfg.url, {
               method:'POST',
               headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
               body: JSON.stringify(aOpenAI(cuerpo, modelo))
-            }).catch(e => { throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`); });
+            }, 120).catch(e => {
+              if(e.tardo) throw e;
+              throw new Error(`No se pudo conectar con ${cfg.nombre}. Puede que no permita llamadas desde el navegador — probá con Google o Anthropic.`);
+            });
             const d = await r.json();
             const crudo = d?.error?.message || '';
             /* "Request too large ... Limit 8000, Requested 30661": el mensaje entero no
@@ -971,7 +994,7 @@ async function pensar(reintento){
           /* "Upstream error from Nvidia: Service temporarily overloaded". Los modelos
              gratis se llenan seguido y cada uno tiene su propia cola, así que se prueba
              con el que sigue en vez de rendirse — igual que hace la rama de Google. */
-          if(/overload|temporar|upstream|unavailable|capacity|try again|503|502|529/i.test(e.message || '')) continue;
+          if(e.tardo || /overload|temporar|upstream|unavailable|capacity|try again|503|502|529/i.test(e.message || '')) continue;
           throw e;                // esto sí es un error de verdad
         }
       }
@@ -988,11 +1011,11 @@ async function pensar(reintento){
 
   const limpio = { ...cuerpo, messages: cuerpo.messages.map(({role,content}) => ({role,content})) };
   return reintentando('Anthropic', async () => {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await pedir('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{ 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
       body:JSON.stringify(limpio)
-    });
+    }, 120);
     const data = await r.json();
     return { ok:r.ok, status:r.status, msg: data?.error?.message || ('Error '+r.status), valor:data };
   });
@@ -1216,7 +1239,7 @@ async function transcribirGroq(a, key){
   fd.append('file', new Blob([bytes], { type:'audio/wav' }), 'audio.wav');
   fd.append('model', 'whisper-large-v3');
   fd.append('language', 'es');
-  const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+  const r = await pedir('https://api.groq.com/openai/v1/audio/transcriptions', {
     method:'POST', headers:{ authorization:'Bearer '+key }, body:fd });
   const d = await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d?.error?.message || 'no se pudo transcribir el audio');
@@ -1696,20 +1719,20 @@ const limpiarClave = s => (s||'').trim().replace(/^["'`]|["'`]$/g,'').replace(/^
 // prueba de verdad contra el proveedor, así no se guarda una clave que no anda
 async function probarClave(k, prov){
   if(prov === 'google'){
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(k)+'&pageSize=1');
+    const r = await pedir('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(k)+'&pageSize=1', {}, 20);
     if(r.ok) return { ok:true };
     const d = await r.json().catch(()=>({}));
     return { ok:false, msg: d?.error?.message || ('la rechazó con un '+r.status) };
   }
   if(prov === 'anthropic'){
-    const r = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+    const r = await pedir('https://api.anthropic.com/v1/models?limit=1', {
       headers:{ 'x-api-key':k, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' }});
     if(r.ok) return { ok:true };
     const d = await r.json().catch(()=>({}));
     return { ok:false, msg: d?.error?.message || ('la rechazó con un '+r.status) };
   }
   const base = PROVEEDORES[prov].url.replace(/\/chat\/completions$/,'/models');
-  const r = await fetch(base, { headers:{ 'authorization':'Bearer '+k } }).catch(()=>null);
+  const r = await pedir(base, { headers:{ 'authorization':'Bearer '+k } }, 20).catch(()=>null);
   if(!r) return { ok:false, msg:'no se pudo conectar (puede que no permita llamadas desde el navegador)' };
   if(r.ok) return { ok:true };
   const d = await r.json().catch(()=>({}));
@@ -1773,7 +1796,7 @@ onAuthStateChanged(auth, async user => {
   // ¿ya está el endpoint en el server?
   try{
     const tok = await user.getIdToken();
-    const r = await fetch(PROXY+'/health', { headers:{'Authorization':'Bearer '+tok} });
+    const r = await pedir(PROXY+'/health', { headers:{'Authorization':'Bearer '+tok} }, 10);
     hayProxy = r.ok;
   }catch(e){ hayProxy = false; }
 

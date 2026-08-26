@@ -261,7 +261,7 @@
     <div class="field"><label>¿Para quién?</label><div class="chips" id="v-genero" data-val="Mujer"><div class="chip sel" onclick="pick(this)">Mujer</div><div class="chip" onclick="pick(this)">Hombre</div><div class="chip" onclick="pick(this)">Niño</div></div></div>
     <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida" onclick="toggleMedidas()"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
-    <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div></div>
+    <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip" onclick="pick(this)">No sé</div></div><div class="hint">Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio. Si no está claro, "No sé" — se cuenta aparte y no ensucia el número.</div></div>
     <div class="field"><label>Precio</label><input type="text" id="v-precio" inputmode="numeric" placeholder="145.000" oninput="fmtPesos(this)"></div>
     <div class="field"><label>¿A dónde va?</label>
       <div class="duo">
@@ -297,6 +297,9 @@
     <div class="field"><label>Peso del chaleco, en gramos</label>
       <input type="text" id="e-peso" inputmode="decimal" placeholder="Ej: 520" oninput="soloDecimal(this)">
       <div class="hint">Se pesa cuando está terminado, antes de mandarlo. Es lo que dice cuánta lana lleva cada talle de verdad — hoy está estimado y de ahí sale el margen.</div>
+    </div>
+    <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="e-anuncio" data-val="No sé"><div class="chip" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip sel" onclick="pick(this)">No sé</div></div>
+      <div class="hint">Es de lo que sale <b>cuánto te cuesta traer una venta</b>. Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio.</div>
     </div>
     <div class="field"><label>Precio</label><input type="text" id="e-precio" inputmode="numeric" oninput="fmtPesos(this)"></div>
     <div class="field"><label>Seña cobrada</label><input type="text" id="e-sena" inputmode="numeric" placeholder="0" oninput="fmtPesos(this)">
@@ -459,6 +462,21 @@
   function go(k){$('menu').classList.add('off');$('s-'+k).classList.add('on');$('done').classList.remove('on');if(k==='stats')cargarNumeros();if(k==='clientes')cargarClientes();if(k==='geo')cargarGeo()}
   function home(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$('done').classList.remove('on');$('menu').classList.remove('off')}
   function pick(el){const w=el.parentElement;w.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');w.dataset.val=el.textContent}
+  // Marca el chip que dice `val`. Si ese valor no existe entre los chips, cae en `fallback`.
+  function setChip(id,val,fallback){
+    const w=$(id); if(!w) return;
+    const chips=[...w.querySelectorAll('.chip')];
+    const hit=chips.find(c=>c.textContent===val)||chips.find(c=>c.textContent===fallback)||chips[0];
+    chips.forEach(c=>c.classList.remove('sel'));
+    if(hit){ hit.classList.add('sel'); w.dataset.val=hit.textContent; }
+  }
+  // El Sheet guarda "Sí"/"No"/"No sé" pero a mano se escribió de todo. Se normaliza a esos tres.
+  function normAnuncio(v){
+    const t=String(v==null?'':v).trim().toLowerCase();
+    if(t==='sí'||t==='si') return 'Sí';
+    if(t==='no') return 'No';
+    return 'No sé';
+  }
   // Lo que cobra la tejedora por chaleco tejido. Es una sola tejedora y la tarifa es fija:
   // si cambia, se toca SOLO acá (las etiquetas del formulario se escriben desde estos números).
   const TARIFA_TEJEDORA={nino:9000,adulto:18000};
@@ -580,11 +598,15 @@
     const sumarTipo=arr=>{const m={};arr.forEach(r=>{const k=r.Tipo||'Otro';m[k]=(m[k]||0)+numero(r['Monto ($)'])});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
     const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
+    // Las que quedaron en "No sé" no se cuentan como anuncio: si se contaran, el costo por
+    // venta saldría más barato de lo que es. Se muestran aparte, como el piso posible.
+    const dudosas=ventas.filter(r=>/^no s/i.test(String(r.Anuncio==null?'':r.Anuncio).trim())).length;
 
     // ── Los fijos que se pagan una vez por venta, sacados de lo que se cargó ──
     const transporte=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='transporte').reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const transportePorVenta=chalecos>0?Math.round(transporte/chalecos):0;
     const cac=anuncios>0?Math.round(pub/anuncios):0;
+    const cacDudoso=(anuncios+dudosas)>0?Math.round(pub/(anuncios+dudosas)):0;
     // Lo que cada venta carga de publicidad. Si hubo ventas de anuncio, es lo que
     // salio traerlas; si no, se reparte lo gastado entre todo lo que se vendio.
     const publicidadPorChaleco=cac||(chalecos>0?Math.round(pub/chalecos):0);
@@ -619,7 +641,7 @@
       publicidad:{gasto:pub,ventas:vendido},
       modelos:contar(ventas,'Modelo').map(([modelo,cantidad])=>({modelo,cantidad})),
       canales:contar(ventas,'Canal').map(([canal,cantidad])=>({canal,cantidad})),
-      ventasDeAnuncios:anuncios,
+      ventasDeAnuncios:anuncios, ventasDudosas:dudosas, cacDudoso,
     };
   }
 
@@ -647,8 +669,11 @@
     $('n-pub-dia').textContent=pesos(Math.round(techoMensual(d)/30/100)*100);
     if(gastoPub>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(gastoPub)+' → '+pesos(pub.ventas)+' en ventas';}
     else $('n-pub-box').style.display='none';
-    const an=d.ventasDeAnuncios;
-    $('n-anuncios').textContent=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+    const an=d.ventasDeAnuncios, du=Number(d.ventasDudosas)||0;
+    let txtAn=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';
+    // Las dudosas marcan el piso: si también vinieron de un anuncio, traer una venta sale menos.
+    if(du>0&&d.cacDudoso&&gastoPub>0) txtAn+=' Hay '+du+' sin definir: si también vinieron de un anuncio, cada venta sale '+pesos(d.cacDudoso)+'.';
+    $('n-anuncios').textContent=txtAn;
     const ritmo=ritmoMensual(d);
     $('n-pub-pie').innerHTML=
       '<b>Cada venta te salió</b>: lo gastado en publicidad dividido por las '+(an||0)+' ventas que vinieron de un anuncio.<br>'+
@@ -864,6 +889,10 @@
       largo: decimal('v-largo'),
       destino: $('v-destino').value,
       ciudad: $('v-ciudad').value.trim(),
+      // Cómo llegó la venta: el Sheet ya lo recibe, pero la ficha también lo guarda
+      // para poder corregirlo después sin depender de que la fila exista.
+      canal: $('v-canal').dataset.val,
+      anuncio: $('v-anuncio').dataset.val,
       total,
       sena,
       saldoCobrado: pagoTodo,
@@ -1277,6 +1306,10 @@
     $('e-peso').value    = p.peso||'';
     $('e-precio').value  = Number(p.total)>0 ? Math.round(p.total).toLocaleString('es-AR') : '';
     $('e-sena').value    = Number(p.sena)>0  ? Math.round(p.sena).toLocaleString('es-AR')  : '';
+    // El "vino de un anuncio" vive en el Sheet — de ahí sale el costo por venta — así que
+    // se lee de la fila. Si la venta no tiene fila (importadas, viejas), se usa la ficha.
+    const fila=p.idVenta ? (ULTIMO_ROWS||[]).find(r=>r.Info==='Ventas'&&String(r.ID||'')===String(p.idVenta)) : null;
+    setChip('e-anuncio', normAnuncio(fila ? fila.Anuncio : p.anuncio), 'No sé');
     document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
     $('s-editar').classList.add('on');
   }
@@ -1300,6 +1333,7 @@
       peso:     decimal('e-peso'),   // gramos del chaleco terminado; no va al Sheet, es dato de produccion
       total:    pesosDe('e-precio'),
       sena:     pesosDe('e-sena'),
+      anuncio:  $('e-anuncio').dataset.val,
     };
     if(campos.sena>campos.total){ alert('La seña ($'+campos.sena.toLocaleString('es-AR')+') no puede ser mayor al precio ($'+campos.total.toLocaleString('es-AR')+').'); return; }
     const btn=document.querySelector('#s-editar .save');
@@ -1312,7 +1346,7 @@
           await fetch(WEBHOOK_EDITAR,{method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({id:p.idVenta,cliente:campos.cliente,telefono:campos.telefono,
               ciudad:campos.ciudad,destino:campos.destino,ancho:campos.ancho,largo:campos.largo,
-              precio:campos.total})});
+              precio:campos.total,anuncio:campos.anuncio})});
         }catch(e){ console.error('no se pudo corregir el Sheet:',e); alert('La ficha quedó corregida, pero la planilla no. Revisá la conexión.'); }
       }
       cerrarEdicion();

@@ -599,7 +599,12 @@
     const contar=(arr,key)=>{const m={};arr.forEach(r=>{const k=r[key]||'Otro';m[k]=(m[k]||0)+1});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
     const sumarTipo=arr=>{const m={};arr.forEach(r=>{const k=r.Tipo||'Otro';m[k]=(m[k]||0)+numero(r['Monto ($)'])});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
     const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
-    const anuncios=ventas.filter(r=>['sí','si'].includes(String(r.Anuncio).toLowerCase())).length;
+    const esDeAnuncio=r=>['sí','si'].includes(String(r.Anuncio).toLowerCase());
+    const anuncios=ventas.filter(esDeAnuncio).length;
+    // Lo facturado SOLO por las ventas marcadas como venidas de un anuncio. El retorno
+    // se mide contra esto, no contra todo lo vendido: los referidos y los clientes que
+    // ya estaban no los trajo la pauta, y contarlos la hace parecer el doble de buena.
+    const vendidoAnuncios=ventas.filter(esDeAnuncio).reduce((a,r)=>a+numero(r['Precio ($)']),0);
     // Las que quedaron en "No sé" no se cuentan como anuncio: si se contaran, el costo por
     // venta saldría más barato de lo que es. Se muestran aparte, como el piso posible.
     const dudosas=ventas.filter(r=>/^no s/i.test(String(r.Anuncio==null?'':r.Anuncio).trim())).length;
@@ -640,7 +645,7 @@
       chalecos,
       lanaPorKg:lanaKg>0?Math.round(lanaMonto/lanaKg):null,
       gastosPorTipo:sumarTipo(costosRows).map(([tipo,monto])=>({tipo,monto})),
-      publicidad:{gasto:pub,ventas:vendido},
+      publicidad:{gasto:pub,ventas:vendidoAnuncios,ventasTotal:vendido},
       modelos:contar(ventas,'Modelo').map(([modelo,cantidad])=>({modelo,cantidad})),
       canales:contar(ventas,'Canal').map(([canal,cantidad])=>({canal,cantidad})),
       ventasDeAnuncios:anuncios, ventasDudosas:dudosas, cacDudoso,
@@ -669,7 +674,15 @@
     $('n-pub-cac').textContent=d.cac?pesos(d.cac):'—';
     $('n-pub-mes').textContent=pesos(techoMensual(d));
     $('n-pub-dia').textContent=pesos(Math.round(techoMensual(d)/30/100)*100);
-    if(gastoPub>0){$('n-pub-box').style.display='block';$('n-pub-txt').textContent=pesos(gastoPub)+' → '+pesos(pub.ventas)+' en ventas';}
+    if(gastoPub>0){
+      $('n-pub-box').style.display='block';
+      const vAn=Number(pub.ventas)||0;
+      $('n-pub-txt').textContent = vAn>0
+        ? pesos(gastoPub)+' → '+pesos(vAn)+' ('+Math.round(vAn/gastoPub)+' a 1)'
+        : pesos(gastoPub)+' → todavía sin ventas de anuncio';
+      const cajaTxt=$('n-pub-box').querySelector('div');
+      if(cajaTxt) cajaTxt.textContent='Retorno de la publicidad · solo ventas que vinieron de anuncios';
+    }
     else $('n-pub-box').style.display='none';
     const an=d.ventasDeAnuncios, du=Number(d.ventasDudosas)||0;
     let txtAn=an!=null?(an+(Number(an)===1?' venta vino':' ventas vinieron')+' de anuncios.'):'';

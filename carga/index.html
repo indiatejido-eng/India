@@ -403,10 +403,11 @@
       <button class="on" onclick="geoOrden('escriben',this)">Quién escribe</button>
       <button onclick="geoOrden('ventas',this)">Quién compra</button>
       <button onclick="geoOrden('costo',this)">$ por charla</button>
+      <button onclick="geoOrden('gasto',this)">La plata</button>
     </div>
     <div class="geo-wrap">
       <table class="geo-tbl">
-        <thead><tr><th>Provincia</th><th>Escriben</th><th>Vendió</th><th>Cierre</th><th>$/charla</th></tr></thead>
+        <thead><tr><th>Provincia</th><th>Escriben</th><th>Vendió</th><th>Cierre</th><th id="geo-th4">$/charla</th></tr></thead>
         <tbody id="geo-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -1043,12 +1044,15 @@
       const est=GEO_ESTADO[prov], db=GEO_DB[prov]||{};
       const esc = charlas[prov]||0, ven = ventas[prov]||0;
       const costo = (db.costoCharla!=null && db.costoCharla>0) ? Number(db.costoCharla) : (GEO_COSTO_BASE[prov]||null);
-      return { prov, est, esc, ven, costo, fact:facturado[prov]||0,
+      return { prov, est, esc, ven, costo, gasto:Number(db.gasto)||0, fact:facturado[prov]||0,
                cierre: esc>0 ? (ven/esc*100) : null, vivo: db.costoCharla!=null };
     });
 
+    const totGasto = filas.reduce((a,f)=>a+f.gasto,0);
+
     filas.sort((a,b)=>{
       if(GEO_ORDEN==='ventas') return b.ven-a.ven || b.fact-a.fact || a.prov.localeCompare(b.prov);
+      if(GEO_ORDEN==='gasto')  return b.gasto-a.gasto || a.prov.localeCompare(b.prov);
       if(GEO_ORDEN==='costo'){
         if(a.costo==null && b.costo==null) return a.prov.localeCompare(b.prov);
         if(a.costo==null) return 1; if(b.costo==null) return -1;
@@ -1057,15 +1061,20 @@
       return b.esc-a.esc || b.ven-a.ven || a.prov.localeCompare(b.prov);
     });
 
+    const verGasto = GEO_ORDEN==='gasto';
+    if($('geo-th4')) $('geo-th4').textContent = verGasto ? 'Gastado' : '$/charla';
+
     const cargando = GEO_CLIENTES===null || PEDIDOS===null;
     const tb=$('geo-body');
     tb.innerHTML = filas.map(f=>{
       const dot = `<span class="geo-dot ${f.est.in?'in':'out'}"></span>`;
       const ven = f.ven ? `<span class="geo-vende">${f.ven}</span>` : '<span style="color:var(--muted)">—</span>';
       const cie = f.cierre==null ? '—' : (f.cierre===0 ? '0%' : (f.cierre>=10 ? f.cierre.toFixed(0) : f.cierre.toFixed(1))+'%');
-      const cos = f.costo==null ? '—' : '$'+f.costo.toLocaleString('es-AR');
+      const ult = verGasto
+        ? (f.gasto>0 ? pesos(f.gasto)+(totGasto>0?` <span style="color:var(--muted)">·&nbsp;${Math.round(f.gasto/totGasto*100)}%</span>`:'') : '—')
+        : (f.costo==null ? '—' : '$'+f.costo.toLocaleString('es-AR'));
       return `<tr class="${f.est.in?'':'fuera'}" title="${f.est.nota?esc0(f.est.nota):(f.est.in?'Adentro':'Afuera')}">
-        <td>${dot}${f.prov}</td><td>${f.esc||'—'}</td><td>${ven}</td><td>${cie}</td><td>${cos}</td></tr>`;
+        <td>${dot}${f.prov}</td><td>${f.esc||'—'}</td><td>${ven}</td><td>${cie}</td><td>${ult}</td></tr>`;
     }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin datos.</td></tr>';
 
     const totCharlas = Object.values(charlas).reduce((a,b)=>a+b,0);
@@ -1085,7 +1094,12 @@
     partes.push('El punto lleno es que le llega el anuncio; el vacío, que está excluida.');
     if(sinProv) partes.push(`<b>${sinProv}</b> contacto${sinProv>1?'s':''} sin provincia: el código de área no alcanza para saberlo.`);
     partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
-    if(!filas.some(f=>f.vivo)) partes.push('Los <b>$/charla</b> son los de la campaña de julio-agosto, la única que corrió sin excluir nada. Se actualizan solos cuando conectemos n8n.');
+    if(filas.some(f=>f.vivo)){
+      partes.push('El gasto y el $/charla son de <b>Meta, últimos 30 días</b>, y se actualizan solos todas las mañanas.');
+      partes.push('Puede haber gasto en una provincia excluida: la ventana de 30 días todavía alcanza campañas viejas que corrían sin exclusiones.');
+    } else {
+      partes.push('Los <b>$/charla</b> son los de la campaña de julio-agosto, la única que corrió sin excluir nada. Se actualizan solos cuando conectemos n8n.');
+    }
     $('geo-pie').innerHTML = partes.join(' ');
 
     renderCentimetros();

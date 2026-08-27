@@ -960,6 +960,17 @@
     return null;
   }
 
+  // El Sheet se carga a mano y las provincias vienen como salen: "Entre Rios",
+  // "Entre Rios " con espacio, "Neuquén" con tilde. Se llevan todas a la forma
+  // canónica o se descartan — un destino mal escrito no agrupa con nada.
+  function provinciaCanonica(s){
+    const n = String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+    if(!n) return null;
+    if(['caba','capital federal','ciudad autonoma de buenos aires','ciudad de buenos aires'].includes(n)) return 'CABA';
+    return Object.keys(GEO_ESTADO).find(p =>
+      p.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase() === n) || null;
+  }
+
   // Estado de cada provincia en la cuenta de Meta, con el motivo. Es la decisión
   // estratégica, no un dato medido: por eso vive acá y no en Firestore.
   const GEO_ESTADO = {
@@ -1032,10 +1043,11 @@
       if(p) charlas[p]=(charlas[p]||0)+1; else sinProv++;
     });
 
-    // Ventas por provincia.
-    const ventas={}, facturado={};
+    // Ventas por provincia. Las que no tienen destino cargado no entran en la tabla:
+    // se cuentan aparte para que el total de arriba no mienta.
+    const ventas={}, facturado={}; let sinDestino=0;
     (PEDIDOS||[]).forEach(p=>{
-      const d=p.destino; if(!d) return;
+      const d=provinciaCanonica(p.destino); if(!d){ sinDestino++; return; }
       ventas[d]=(ventas[d]||0)+1;
       facturado[d]=(facturado[d]||0)+(Number(p.total)||0);
     });
@@ -1079,10 +1091,11 @@
 
     const totCharlas = Object.values(charlas).reduce((a,b)=>a+b,0);
     const provsVenta = Object.keys(ventas).length;
+    const conDestino = (PEDIDOS||[]).length - sinDestino;
     $('geo-charlas').textContent = cargando ? '—' : totCharlas;
     $('geo-provs').textContent   = PEDIDOS===null ? '—' : provsVenta;
     $('geo-sub').textContent = cargando ? 'Cargando…'
-      : `${totCharlas} contactos de WhatsApp ubicados · ${(PEDIDOS||[]).length} ventas`;
+      : `${totCharlas} contactos de WhatsApp ubicados · ${conDestino} de ${(PEDIDOS||[]).length} ventas con provincia cargada`;
 
     // El punto lleno es "le llega el anuncio". Si hay algo decidido y no aplicado, se avisa.
     const rotas = provincias.filter(p=>GEO_ESTADO[p].alerta);
@@ -1092,6 +1105,7 @@
 
     const partes = [];
     partes.push('El punto lleno es que le llega el anuncio; el vacío, que está excluida.');
+    if(sinDestino) partes.push(`⚠️ <b>${sinDestino} venta${sinDestino>1?'s':''}</b> sin provincia cargada, así que no aparece${sinDestino>1?'n':''} en la tabla. Se completan con <b>“Importar ventas del Sheet”</b> en Clientes.`);
     if(sinProv) partes.push(`<b>${sinProv}</b> contacto${sinProv>1?'s':''} sin provincia: el código de área no alcanza para saberlo.`);
     partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
     if(filas.some(f=>f.vivo)){
@@ -1196,27 +1210,63 @@
       const data=await r.json();
       const rows=Array.isArray(data)?data:(data.body||data.data||[]);
       const ventas=rows.filter(x=>x.Info==='Ventas');
-      const existentes=new Set((PEDIDOS||[]).map(p=>normCli(p.cliente)+'|'+(Number(p.total)||0)));
-      let nuevos=0;
+      const porClave=new Map((PEDIDOS||[]).map(p=>[normCli(p.cliente)+'|'+(Number(p.total)||0),p]));
+      let nuevos=0, completados=0;
       for(const v of ventas){
         const cliente=String(v.Cliente||'').trim(); if(!cliente) continue;
         const total=Number(String(v['Precio ($)']==null?'':v['Precio ($)']).replace(/[^\d.-]/g,''))||0;
         const key=normCli(cliente)+'|'+total;
-        if(existentes.has(key)) continue;
-        existentes.add(key);
+        // Los datos del Sheet que Firebase también guarda. El talle y las medidas
+        // definen el chaleco; el destino y el canal son con lo que se decide la pauta.
+        const num=x=>{const n=Number(String(x==null?'':x).replace(',','.').replace(/[^\d.-]/g,''));return n>0?n:null};
+        const txt=x=>{const s=String(x==null?'':x).trim();return s||null};
+        const delSheet={
+          talle:txt(v.Talle), confeccion:txt(v['A medida o hecho']),
+          ancho:num(v.Ancho), largo:num(v.Largo),
+          destino:provinciaCanonica(v.Destino), ciudad:txt(v.Ciudad),
+          paraQuien:txt(v['Para quién']||v['Para quien']),
+          canal:txt(v.Canal), anuncio:txt(v.Anuncio)
+        };
+        // Match por cliente+total. Si no cruza (pasa cuando pagaron de más y dejaron
+        // el vuelto: el Sheet anota lo que entró y la ficha el precio), se cae al
+        // nombre — pero SOLO si hay una sola ficha con ese nombre, para no mezclar
+        // dos compras del mismo cliente.
+        let yaEsta=porClave.get(key);
+        if(!yaEsta){
+          const mismos=(PEDIDOS||[]).filter(p=>normCli(p.cliente)===normCli(cliente));
+          if(mismos.length===1) yaEsta=mismos[0];
+        }
+        if(yaEsta){
+          // Ya existe: solo se COMPLETA lo que falta. Nunca se pisa lo cargado a mano,
+          // porque acá también viven señas, estados y correcciones que el Sheet no tiene.
+          const patch={};
+          for(const k in delSheet){
+            const actual=yaEsta[k];
+            const vacio = actual===undefined || actual===null || actual==='' || (typeof actual==='number' && !actual);
+            if(vacio && delSheet[k]!=null) patch[k]=delSheet[k];
+          }
+          if(Object.keys(patch).length){ await window.FB.actualizarPedido(yaEsta.id, patch); completados++; }
+          continue;
+        }
         const fechaStr=String(v.Fecha||'').trim();
         const id='imp_'+slugCli(cliente)+'_'+fechaStr.replace(/[^\dA-Za-z]/g,'-')+'_'+total;
         const partes=[v.Modelo, v.Talle&&('talle '+v.Talle), v.Color].filter(Boolean);
+        const limpio={}; for(const k in delSheet) if(delSheet[k]!=null) limpio[k]=delSheet[k];
         await window.FB.crearPedidoConId(id, {
           cliente,
           telefono:String(v['Teléfono']||v.Telefono||'').trim(),
           queCompro:partes.join(', '),
+          ...limpio,
           total, sena:0, saldoCobrado:true, enviado:true, entregado:true, tokenResena:'',
           fecha: parseFechaSheet(fechaStr) || new Date()
         });
+        porClave.set(key,{id,cliente,total,...limpio});
         nuevos++;
       }
-      alert(nuevos ? ('Listo ✓ '+nuevos+' cliente'+(nuevos===1?'':'s')+' importado'+(nuevos===1?'':'s')+' del Sheet.') : 'Ya estaban todos (no había clientes nuevos para importar).');
+      const partes=[];
+      if(nuevos) partes.push(nuevos+' cliente'+(nuevos===1?'':'s')+' importado'+(nuevos===1?'':'s'));
+      if(completados) partes.push(completados+' ficha'+(completados===1?'':'s')+' completada'+(completados===1?'':'s')+' con los datos que faltaban');
+      alert(partes.length ? ('Listo ✓ '+partes.join(' y ')+'.') : 'Ya estaba todo al día (no había nada nuevo ni que completar).');
     }catch(e){ console.error('importar:',e); alert('No se pudo importar. Probá de nuevo.'); }
     finally{ if(btn){ btn.disabled=false; btn.textContent='↓ Importar ventas del Sheet'; } }
   }

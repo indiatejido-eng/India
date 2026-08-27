@@ -14,3 +14,7 @@ tools/credenciales.json
 # La bitácora de pruebas: sale de la bóveda y lleva los números adentro
 # (costo por venta, gasto en pauta). Vive en Firestore; esto es solo la fuente.
 tools/hallazgos.json
+
+# Grafo de conocimiento que arma graphify sobre el repo. Se regenera solo,
+# no aporta nada al sitio y engorda el deploy de Vercel.
+graphify-out/

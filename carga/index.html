@@ -942,16 +942,27 @@
     '2920':'Río Negro','2940':'Río Negro','2944':'Río Negro','2946':'Río Negro','2948':'Río Negro',
     '2942':'Neuquén','2972':'Neuquén',
     '2945':'Chubut',
-    '2302':'La Pampa','2952':'La Pampa','2953':'La Pampa','2954':'La Pampa'
+    '2302':'La Pampa','2952':'La Pampa','2953':'La Pampa','2954':'La Pampa',
+    // Los que aparecieron en contactos reales y no estaban.
+    '2932':'Buenos Aires','3468':'Santa Fe','3476':'Santa Fe',
+    '3718':'Formosa','3734':'Chaco'
   };
 
   // De un teléfono a una provincia. Devuelve null si no se puede afirmar.
   function provinciaDeTel(tel){
-    let n = String(tel||'').replace(/\D/g,'');
+    const bruto = String(tel||'');
+    // WhatsApp identifica a mucha gente con un LID anónimo (249331844182213@lid) que
+    // NO contiene el teléfono. Sus primeros dígitos parecen un código de área y no lo
+    // son: sin este corte, ese ejemplo se contaba como Buenos Aires por el "249".
+    if(/@lid/i.test(bruto)) return null;
+    let n = bruto.replace(/\D/g,'');
     if(!n) return null;
     if(n.startsWith('54')) n = n.slice(2);      // país
     if(n.startsWith('9'))  n = n.slice(1);      // el 9 de celular
     if(n.startsWith('0'))  n = n.slice(1);
+    // Todo número argentino tiene 10 dígitos: código de área + abonado. Otra cosa
+    // no es un teléfono de acá y no se adivina.
+    if(n.length !== 10) return null;
     if(AREA4[n.slice(0,4)]) return AREA4[n.slice(0,4)];
     if(AREA3[n.slice(0,3)]) return AREA3[n.slice(0,3)];
     if(AREA3[n.slice(0,2)]) return AREA3[n.slice(0,2)];
@@ -1038,10 +1049,13 @@
     const provincias = Object.keys(GEO_ESTADO);
 
     // Charlas por provincia, deducidas del código de área.
-    const charlas={}; let sinProv=0;
+    const charlas={}; let sinProv=0, sinTel=0;
     (GEO_CLIENTES||[]).forEach(c=>{
       const p = provinciaDeTel(c.telefono || c.jid);
-      if(p) charlas[p]=(charlas[p]||0)+1; else sinProv++;
+      if(p){ charlas[p]=(charlas[p]||0)+1; return; }
+      // Se separan las dos causas: sin teléfono no hay nada que hacer; código de
+      // área desconocido sí se puede arreglar agregándolo a la tabla.
+      if(!c.telefono) sinTel++; else sinProv++;
     });
 
     // Ventas por provincia. Las que no tienen destino cargado no entran en la tabla:
@@ -1113,7 +1127,8 @@
     const partes = [];
     partes.push('El punto lleno es que le llega el anuncio; el vacío, que está excluida.');
     if(sinDestino) partes.push(`⚠️ <b>${sinDestino} venta${sinDestino>1?'s':''}</b> sin provincia cargada, así que no aparece${sinDestino>1?'n':''} en la tabla. Se completan con <b>“Importar ventas del Sheet”</b> en Clientes.`);
-    if(sinProv) partes.push(`<b>${sinProv}</b> contacto${sinProv>1?'s':''} sin provincia: el código de área no alcanza para saberlo.`);
+    if(sinTel) partes.push(`<b>${sinTel}</b> de ${(GEO_CLIENTES||[]).length} contactos no tienen el teléfono guardado — WhatsApp los identifica con un código anónimo que no dice de dónde son. <b>No hay forma de ubicarlos</b>, así que la tabla de “escriben” muestra solo una parte.`);
+    if(sinProv) partes.push(`Otros <b>${sinProv}</b> tienen teléfono pero código de área desconocido o de afuera del país.`);
     partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
     if(filas.some(f=>f.vivo)){
       partes.push('El <b>gasto</b> suma las dos cuentas publicitarias, toda la historia. El <b>$/charla</b> es solo de la cuenta de hoy: la vieja corría campañas de clicks y nunca midió conversaciones, así que mezclarlas daría un número falso.');

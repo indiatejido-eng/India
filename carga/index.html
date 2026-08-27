@@ -396,6 +396,7 @@
     <div class="stat-grid">
       <div class="stat"><div class="sl">Nos escribieron</div><div class="sv" id="geo-charlas">—</div></div>
       <div class="stat"><div class="sl">Provincias que compraron</div><div class="sv" id="geo-provs">—</div></div>
+      <div class="stat wide"><div class="sl">Gastado en publicidad · las dos cuentas</div><div class="sv" id="geo-gasto-tot">—</div></div>
     </div>
 
     <div class="stat-sec">Provincia por provincia</div>
@@ -1056,7 +1057,12 @@
       const est=GEO_ESTADO[prov], db=GEO_DB[prov]||{};
       const esc = charlas[prov]||0, ven = ventas[prov]||0;
       const costo = (db.costoCharla!=null && db.costoCharla>0) ? Number(db.costoCharla) : (GEO_COSTO_BASE[prov]||null);
-      return { prov, est, esc, ven, costo, gasto:Number(db.gasto)||0, fact:facturado[prov]||0,
+      // `gasto` es la cuenta de hoy; `gastoViejo`, la vieja (act_1328…, cerrada).
+      // Se suman para el total histórico, pero el $/charla NO: la cuenta vieja
+      // corría campañas de clicks y nunca midió conversaciones.
+      const gastoN=Number(db.gasto)||0, gastoV=Number(db.gastoViejo)||0;
+      return { prov, est, esc, ven, costo, gasto:gastoN+gastoV, gastoV,
+               clicksV:Number(db.clicksViejo)||0, fact:facturado[prov]||0,
                cierre: esc>0 ? (ven/esc*100) : null, vivo: db.costoCharla!=null };
     });
 
@@ -1092,6 +1098,7 @@
     const totCharlas = Object.values(charlas).reduce((a,b)=>a+b,0);
     const provsVenta = Object.keys(ventas).length;
     const conDestino = (PEDIDOS||[]).length - sinDestino;
+    if($('geo-gasto-tot')) $('geo-gasto-tot').textContent = totGasto>0 ? pesos(totGasto) : '—';
     $('geo-charlas').textContent = cargando ? '—' : totCharlas;
     $('geo-provs').textContent   = PEDIDOS===null ? '—' : provsVenta;
     $('geo-sub').textContent = cargando ? 'Cargando…'
@@ -1109,7 +1116,7 @@
     if(sinProv) partes.push(`<b>${sinProv}</b> contacto${sinProv>1?'s':''} sin provincia: el código de área no alcanza para saberlo.`);
     partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
     if(filas.some(f=>f.vivo)){
-      partes.push('El gasto y el $/charla son de <b>Meta, últimos 30 días</b>, y se actualizan solos todas las mañanas.');
+      partes.push('El <b>gasto</b> suma las dos cuentas publicitarias, toda la historia. El <b>$/charla</b> es solo de la cuenta de hoy: la vieja corría campañas de clicks y nunca midió conversaciones, así que mezclarlas daría un número falso.');
       partes.push('Puede haber gasto en una provincia excluida: la ventana de 30 días todavía alcanza campañas viejas que corrían sin exclusiones.');
     } else {
       partes.push('Los <b>$/charla</b> son los de la campaña de julio-agosto, la única que corrió sin excluir nada. Se actualizan solos cuando conectemos n8n.');

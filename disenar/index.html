@@ -403,7 +403,9 @@
         listo(cache[archivo]);
       };
       img.onerror = function(){ falla(new Error(archivo)); };
-      img.src = 'piezas/' + archivo;
+      // Ruta absoluta: entrando por /disenar (sin barra final) una relativa
+      // resuelve contra la raiz del sitio y no encuentra nada.
+      img.src = '/disenar/piezas/' + archivo;
     });
     return traer.pendientes[archivo];
   }
@@ -539,7 +541,7 @@
     );
   }
 
-  fetch('piezas/piezas.json')
+  fetch('/disenar/piezas/piezas.json')
     .then(function(r){ return r.json(); })
     .then(function(j){
       PIEZAS = j;

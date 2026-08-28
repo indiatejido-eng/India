@@ -215,7 +215,8 @@
     .dz-head p{ font-size: 1.08rem; }
     .dz{ display: grid; grid-template-columns: 1fr 1fr; gap: 0 90px; align-items: start; padding-bottom: 90px; }
     .dz-vista{ top: 96px; padding: 24px 0; background: none; align-items: center; min-height: 78vh; }
-    .dz-lienzo{ max-width: 400px; }
+    /* Atada al alto de la ventana: la pieza es 640x860, asi entra entera sin scrollear */
+    .dz-lienzo{ max-width: min(400px, 55vh); }
     .dz-set:first-of-type{ padding-top: 46px; }
   }
   @media (min-width: 1600px){

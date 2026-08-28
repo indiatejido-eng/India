@@ -40,9 +40,25 @@ MAPA = {
 # Cuando dos cuellos apuntan al mismo nombre hay que desempatar por foto:
 # "Rayado Tierra" está cargado dos veces, con cuello distinto cada vez.
 DESEMPATE = {('rayado', 'redondo'): 1, ('rayado', 'v'): 0}
+# De qué pieza sale la miniatura del dibujo. Por defecto, la primera; en el
+# rayado la del cuello en v tiene las franjas mucho más marcadas.
+MINI_CUELLO = {'rayado': 'v'}
 
 ANCHO, ALTO = 640, 860
 MINI = 190
+
+# De dónde se saca la miniatura de cada dibujo, en fracciones del cuerpo de la
+# pieza: (centro x, centro y, lado). El centro del pecho no sirve para todos —
+# en el guardapampa la greca va en columnas al costado, y el rayado necesita
+# alto para que entren dos franjas.
+ZONA = {
+    'liso':        (0.50, 0.52, 0.42),
+    'veteado':     (0.50, 0.50, 0.55),
+    'trenza':      (0.50, 0.50, 0.45),
+    'ochos':       (0.50, 0.50, 0.45),
+    'guardapampa': (0.27, 0.52, 0.42),
+    'rayado':      (0.50, 0.50, 0.52),
+}
 
 
 def catalogo():
@@ -131,27 +147,24 @@ def a_gris(im):
     return Image.fromarray(np.dstack([g, g, g, alpha.astype(np.uint8)]), 'RGBA')
 
 
-def parche(gris, alto_rel=(0.40, 0.66), ancho_rel=0.66):
-    """Un cuadrado del tejido para la miniatura del dibujo.
-
-    Se toma del pecho y bien adentro de la pieza: si roza el borde entra el
-    contorno y la miniatura deja de mostrar el punto.
-    """
+def parche(gris, zona):
+    """Un cuadrado del tejido para la miniatura, de donde se vea el dibujo."""
+    cx_rel, cy_rel, lado_rel = zona
     a = np.array(gris)
     solido = a[..., 3] > 200
     ys = np.where(solido.any(axis=1))[0]
-    if not len(ys):
+    xs = np.where(solido.any(axis=0))[0]
+    if not len(ys) or not len(xs):
         return gris.crop((0, 0, MINI, MINI))
+
     alto = ys[-1] - ys[0]
-    y0 = int(ys[0] + alto * alto_rel[0])
-    y1 = int(ys[0] + alto * alto_rel[1])
-    # Columnas que son tejido en TODA esa franja: ahi no entra el contorno.
-    llenas = np.where(solido[y0:y1].all(axis=0))[0]
-    if len(llenas) < 60:
-        llenas = np.where(solido[y0:y1].any(axis=0))[0]
-    cx = int((llenas[0] + llenas[-1]) / 2)
-    lado = int(min((llenas[-1] - llenas[0]) * ancho_rel, y1 - y0, 340))
-    cy = (y0 + y1) // 2
+    ancho = xs[-1] - xs[0]
+    lado = int(min(ancho * lado_rel, alto * 0.34))
+    cx = int(xs[0] + ancho * cx_rel)
+    cy = int(ys[0] + alto * cy_rel)
+    # Que no se salga de la pieza ni agarre el contorno
+    cx = max(xs[0] + lado // 2 + 6, min(xs[-1] - lado // 2 - 6, cx))
+    cy = max(ys[0] + lado // 2 + 6, min(ys[-1] - lado // 2 - 6, cy))
     caja = (cx - lado // 2, cy - lado // 2, cx - lado // 2 + lado, cy - lado // 2 + lado)
     return gris.crop(caja).resize((MINI, MINI), Image.LANCZOS)
 
@@ -179,9 +192,9 @@ def main():
             print('%-14s %-8s <- %-22s %d KB' % (
                 dibujo, cuello, nombre, os.path.getsize(os.path.join(SALIDA, arch)) // 1024))
 
-            if cuello == sorted(cuellos)[0]:
+            if cuello == MINI_CUELLO.get(dibujo, sorted(cuellos)[0]):
                 mini = 'mini-%s.webp' % dibujo
-                parche(gris).save(os.path.join(SALIDA, mini), 'WEBP', quality=88, method=6)
+                parche(gris, ZONA.get(dibujo, (0.5, 0.5, 0.45))).save(os.path.join(SALIDA, mini), 'WEBP', quality=88, method=6)
                 manifiesto[dibujo]['mini'] = mini
 
     with io.open(os.path.join(SALIDA, 'piezas.json'), 'w', encoding='utf-8') as f:

@@ -1,0 +1,30 @@
+{
+ "liso": {
+  "redondo": "liso-redondo.webp",
+  "mini": "mini-liso.webp"
+ },
+ "veteado": {
+  "redondo": "veteado-redondo.webp",
+  "mini": "mini-veteado.webp",
+  "v": "veteado-v.webp"
+ },
+ "trenza": {
+  "redondo": "trenza-redondo.webp",
+  "mini": "mini-trenza.webp",
+  "v": "trenza-v.webp"
+ },
+ "ochos": {
+  "redondo": "ochos-redondo.webp",
+  "mini": "mini-ochos.webp",
+  "v": "ochos-v.webp"
+ },
+ "guardapampa": {
+  "v": "guardapampa-v.webp",
+  "mini": "mini-guardapampa.webp"
+ },
+ "rayado": {
+  "redondo": "rayado-redondo.webp",
+  "mini": "mini-rayado.webp",
+  "v": "rayado-v.webp"
+ }
+}

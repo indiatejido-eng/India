@@ -85,6 +85,7 @@
   }
   .it{ font-style: italic; font-weight: 350; color: var(--accent-deep); }
   .label{
+    font-size: 0.72rem; font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.22em;
     font-size: 0.72rem;
@@ -136,7 +137,7 @@
   }
   .dz-svg{ width: 100%; max-width: 340px; height: auto; display: block; }
   .dz-svg *{ transition: fill .45s ease, stroke .45s ease; }
-  #capa-dibujo{ transition: opacity .32s ease; }
+  #capa-dibujo{ transition: opacity .26s ease; }
 
   /* BLOQUES DE ELECCIÓN */
   .dz-set{ padding: 44px 0 8px; border-top: 1px solid rgba(201,184,150,0.5); }
@@ -147,22 +148,32 @@
   #ops-lana{ grid-template-columns: repeat(5, minmax(0, 1fr)); }
   #ops-cuello{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (min-width: 560px){ #ops-dibujo{ grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-  .dz-op{ display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; text-align: center; }
+  .dz-op{ display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; text-align: center; cursor: pointer; }
+  /* El input es el que manda: da grupo, flechas y foco de teclado gratis. */
+  .dz-op input{ position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .dz-op .cara{
     width: 100%; aspect-ratio: 1; border-radius: 3px; overflow: hidden;
     outline: 1px solid transparent; outline-offset: 5px;
-    transition: outline-color .3s ease;
+    transition: outline-color .3s ease, transform .25s ease, box-shadow .25s ease;
   }
   .dz-op.lana .cara, .dz-op.cuello .cara{ max-width: 66px; }
   .dz-op.lana .cara{ border-radius: 50%; }
   .dz-op.cuello .cara{ outline-offset: 7px; }
   .dz-op .cara svg{ display: block; width: 100%; height: 100%; }
-  .dz-op.cuello .cara{ color: var(--muted); transition: color .3s ease; }
-  .dz-op.cuello[aria-pressed="true"] .cara{ color: var(--accent-deep); }
+  .dz-op.cuello .cara{ color: var(--muted); }
+  .dz-op.cuello input:checked ~ .cara{ color: var(--accent-deep); }
   .dz-op .nom{ font-size: 0.76rem; line-height: 1.25; color: var(--muted); transition: color .3s ease; }
-  .dz-op[aria-pressed="true"] .cara{ outline-color: var(--accent); }
-  .dz-op[aria-pressed="true"] .nom{ color: var(--ink); }
-  @media (hover:hover){ .dz-op:hover .nom{ color: var(--ink-soft); } }
+  .dz-op input:checked ~ .cara{ outline-color: var(--accent); }
+  .dz-op input:checked ~ .nom{ color: var(--ink); }
+  /* El foco de teclado tiene que verse, y distinto de lo elegido */
+  .dz-op input:focus-visible ~ .cara{
+    outline-color: var(--accent-deep); outline-width: 2px;
+    box-shadow: 0 0 0 5px rgba(139, 101, 53, 0.16);
+  }
+  @media (hover:hover){
+    .dz-op:hover .nom{ color: var(--ink-soft); }
+    .dz-op:hover .cara{ transform: translateY(-1px); }
+  }
 
   /* CIERRE */
   .dz-cierre{ padding: 48px 0 0; border-top: 1px solid rgba(201,184,150,0.5); margin-top: 44px; }
@@ -181,10 +192,14 @@
   .dz-cta svg{ width: 19px; height: 19px; fill: currentColor; }
   .dz-guardar{
     font-size: 0.9rem; color: var(--ink-soft);
-    border-bottom: 1px solid var(--line); padding-bottom: 3px;
-    transition: color .25s, border-color .25s;
+    min-height: 44px; display: inline-flex; align-items: center;
+    transition: color .25s;
   }
-  .dz-guardar:hover{ color: var(--accent); border-bottom-color: var(--accent); }
+  .dz-guardar span{ border-bottom: 1px solid var(--line); padding-bottom: 3px; transition: border-color .25s; }
+  .dz-guardar:hover span{ border-bottom-color: var(--accent); }
+  .dz-guardar:focus-visible{ outline: 2px solid var(--accent-deep); outline-offset: 4px; border-radius: 2px; }
+  .dz-cta:focus-visible{ outline: 2px solid var(--accent-deep); outline-offset: 4px; }
+  .dz-guardar:hover{ color: var(--accent); }
   .dz-nota{ margin-top: 40px; font-size: 0.88rem; color: var(--muted); max-width: 42ch; }
 
   footer{ border-top: 1px solid rgba(201,184,150,0.5); margin-top: 20px; }
@@ -435,18 +450,18 @@
   <div class="dz-opts">
 
     <section class="dz-set">
-      <span class="label">El dibujo</span>
-      <div class="dz-ops" id="ops-dibujo"></div>
+      <h2 class="label" id="tit-dibujo">El dibujo</h2>
+      <div class="dz-ops" id="ops-dibujo" role="radiogroup" aria-labelledby="tit-dibujo"></div>
     </section>
 
     <section class="dz-set">
-      <span class="label">La lana</span>
-      <div class="dz-ops" id="ops-lana"></div>
+      <h2 class="label" id="tit-lana">La lana</h2>
+      <div class="dz-ops" id="ops-lana" role="radiogroup" aria-labelledby="tit-lana"></div>
     </section>
 
     <section class="dz-set">
-      <span class="label">El cuello</span>
-      <div class="dz-ops" id="ops-cuello"></div>
+      <h2 class="label" id="tit-cuello">El cuello</h2>
+      <div class="dz-ops" id="ops-cuello" role="radiogroup" aria-labelledby="tit-cuello"></div>
     </section>
 
     <div class="dz-cierre">
@@ -456,7 +471,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
           <span>Encargalo por WhatsApp</span>
         </a>
-        <button class="dz-guardar" id="guardar" type="button">Guardar el boceto</button>
+        <button class="dz-guardar" id="guardar" type="button"><span>Guardar el boceto</span></button>
       </div>
       <p class="dz-nota">Es un boceto, no una foto. Cada chaleco se teje a mano y ninguno sale igual a otro.</p>
     </div>
@@ -493,11 +508,11 @@
 
   var DIBUJOS = [
     { id:'liso',        nombre:'liso',        use:'#dib-liso',     foco:'146 236 88 88' },
-    { id:'veteado',     nombre:'veteado',     use:'#dib-veteado',  foco:'120 220 88 88' },
+    { id:'veteado',     nombre:'veteado',     use:'#dib-veteado',  foco:'110 196 120 120' },
     { id:'trenza',      nombre:'trenza',      use:'#dib-trenza',  foco:'120 236 88 88' },
     { id:'ochos',       nombre:'ochos',       use:'#dib-ochos',   foco:'136 242 88 88' },
     { id:'guardapampa', nombre:'guardapampa', use:'#dib-guarda',  foco:'136 158 88 88' },
-    { id:'rayado',      nombre:'rayado',      use:'#dib-rayado',  foco:'136 176 88 88' }
+    { id:'rayado',      nombre:'rayado',      use:'#dib-rayado',  foco:'120 244 120 120' }
   ];
 
   var CUELLOS = [
@@ -595,25 +610,23 @@
   }
 
   // --- Armado de las opciones -------------------------------------------
-  function opcion(clase, nombre, mini, alElegir){
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'dz-op ' + clase;
-    b.setAttribute('aria-pressed', 'false');
+  function opcion(grupo, valor, nombre, mini, elegido, alElegir){
+    var l = document.createElement('label');
+    l.className = 'dz-op ' + grupo;
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = grupo;
+    input.value = valor;
+    input.checked = !!elegido;
     var cara = document.createElement('span');
     cara.className = 'cara';
     cara.appendChild(mini);
     var nom = document.createElement('span');
     nom.className = 'nom';
     nom.textContent = nombre;
-    b.appendChild(cara); b.appendChild(nom);
-    b.addEventListener('click', alElegir);
-    return b;
-  }
-  function marcar(contenedor, elegido){
-    Array.prototype.forEach.call(contenedor.children, function(b){
-      b.setAttribute('aria-pressed', b === elegido ? 'true' : 'false');
-    });
+    l.appendChild(input); l.appendChild(cara); l.appendChild(nom);
+    input.addEventListener('change', alElegir);
+    return l;
   }
 
   var pieza = document.getElementById('pieza');
@@ -628,22 +641,19 @@
   var contCuello = document.getElementById('ops-cuello');
 
   DIBUJOS.forEach(function(d){
-    var b = opcion('dibujo', d.nombre, miniDibujo(d), function(){
-      estado.dibujo = d; marcar(contDibujo, b); refrescar();
-    });
-    contDibujo.appendChild(b);
+    contDibujo.appendChild(opcion('dibujo', d.id, d.nombre, miniDibujo(d), d === estado.dibujo, function(){
+      estado.dibujo = d; refrescar();
+    }));
   });
   LANAS.forEach(function(l){
-    var b = opcion('lana', l.nombre, miniLana(l), function(){
-      estado.lana = l; marcar(contLana, b); refrescar();
-    });
-    contLana.appendChild(b);
+    contLana.appendChild(opcion('lana', l.id, l.nombre, miniLana(l), l === estado.lana, function(){
+      estado.lana = l; refrescar();
+    }));
   });
   CUELLOS.forEach(function(c){
-    var b = opcion('cuello', c.nombre, miniCuello(c), function(){
-      estado.cuello = c; marcar(contCuello, b); refrescar();
-    });
-    contCuello.appendChild(b);
+    contCuello.appendChild(opcion('cuello', c.id, c.nombre, miniCuello(c), c === estado.cuello, function(){
+      estado.cuello = c; refrescar();
+    }));
   });
 
   var dibujoPrevio = null;
@@ -669,10 +679,6 @@
     );
   }
 
-  // Estado inicial
-  marcar(contDibujo, contDibujo.children[DIBUJOS.indexOf(estado.dibujo)]);
-  marcar(contLana, contLana.children[LANAS.indexOf(estado.lana)]);
-  marcar(contCuello, contCuello.children[CUELLOS.indexOf(estado.cuello)]);
   refrescar();
 
   // --- Guardar el boceto -------------------------------------------------

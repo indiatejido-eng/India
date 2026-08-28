@@ -474,17 +474,43 @@
      cualquier fondo. */
   .ot-row{
     --ot-fade: 56px;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--ot-fade)), transparent);
-            mask-image: linear-gradient(to right, #000 calc(100% - var(--ot-fade)), transparent);
+    --ot-fade-izq: var(--ot-fade);
+    --ot-fade-der: var(--ot-fade);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--ot-fade-izq), #000 calc(100% - var(--ot-fade-der)), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 var(--ot-fade-izq), #000 calc(100% - var(--ot-fade-der)), transparent 100%);
   }
-  /* Si entra todo, o si ya se llegó al final, no hay nada al costado que insinuar
-     y la máscara se apaga: si no, se come el borde de la última pieza. */
-  .ot-wrap.sin-desliz .ot-row, .ot-row.al-final{ -webkit-mask-image:none; mask-image:none; }
+  /* Cada lado se desvanece solo mientras haya algo para ese lado. En las puntas
+     se apaga: si no, la máscara le come el borde a la primera o a la última pieza
+     cuando ya no queda nada más que mostrar. */
+  .ot-row.al-inicio{ --ot-fade-izq: 0px; }
+  .ot-row.al-final{ --ot-fade-der: 0px; }
+  .ot-wrap.sin-desliz .ot-row{ -webkit-mask-image:none; mask-image:none; }
   /* Y si entra todo, la fila se centra: si no, queda pegada a la izquierda y
      con un hueco a la derecha, que se lee como sección descentrada. */
   .ot-wrap.sin-desliz .ot-row{ justify-content: center; }
-  .ot-hint{ display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:0 0 14px; padding:0 8px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
+  /* Arriba del carrusel: el aviso de deslizar (celu) y las flechas (compu).
+     Con mouse, arrastrar no se le ocurre a nadie que no sepa el truco de los dos
+     dedos, así que la fila parecía terminar en la 4ta pieza. */
+  .ot-nav{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin:0 0 14px; padding:0 8px; min-height:42px; }
+  .ot-hint{ display:flex; align-items:center; gap:9px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
   .ot-hint .ar{ display:inline-block; font-size:1.05rem; animation:otNudge 1.5s ease-in-out infinite; }
+  .ot-flechas{ display:none; gap:10px; }
+  .ot-flecha{
+    width:42px; height:42px; border-radius:100px;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:1px solid var(--line); color:var(--accent-deep);
+    font-family:'Fraunces', serif; font-size:1.5rem; line-height:0; padding:0 0 3px;
+    cursor:pointer; transition:border-color .2s, background .2s, color .2s, opacity .2s;
+  }
+  .ot-flecha:hover{ border-color:var(--accent); background:rgba(139,101,53,.07); color:var(--accent); }
+  .ot-flecha:disabled{ opacity:.22; cursor:default; border-color:var(--line); background:transparent; color:var(--accent-deep); }
+  /* Donde hay mouse mandan las flechas; en el celu, el swipe y el aviso. */
+  @media(min-width:768px){
+    .ot-hint{ display:none; }
+    .ot-flechas{ display:flex; }
+  }
+  /* Si entra todo, no hay para dónde ir y las flechas sobran. */
+  .ot-nav.sin-desliz .ot-flechas{ display:none; }
   @keyframes otNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(7px); opacity:1; } }
   .ot-row{ display:flex; gap:26px; overflow-x:auto; scroll-snap-type:x proximity; scroll-behavior:smooth; padding:6px 6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; cursor:grab; }
   .ot-row.dragging{ cursor:grabbing; scroll-behavior:auto; }
@@ -492,7 +518,7 @@
   .ot-row + .ot-row{ margin-top:22px; }
   .ot-row .piece{ flex:0 0 230px; scroll-snap-align:start; }
   @media(max-width:767px){
-    .ot-hint{ justify-content:center; padding:0 20px; }
+    .ot-nav{ justify-content:center; padding:0 20px; }
     .ot-row{ --ot-fade: 34px; }
     .ot-row{ gap:10px; padding:6px 2px; }
     .ot-row .piece{ flex:0 0 39vw; }   /* 2 piezas completas + asoma bien la 3ra (peek Burberry/Arandú) */
@@ -1195,7 +1221,13 @@
     <p>Algunos chalecos que ya hicimos. Para que veas el estilo.</p>
   </div>
 
-  <div class="ot-hint">Deslizá <span class="ar">→</span></div>
+  <div class="ot-nav">
+    <span class="ot-hint">Deslizá <span class="ar">→</span></span>
+    <div class="ot-flechas">
+      <button class="ot-flecha" id="ot-prev" type="button" aria-label="Ver los chalecos anteriores" aria-controls="ot-row-1 ot-row-2">‹</button>
+      <button class="ot-flecha" id="ot-next" type="button" aria-label="Ver los chalecos siguientes" aria-controls="ot-row-1 ot-row-2">›</button>
+    </div>
+  </div>
   <div class="ot-wrap grid-anteriores">
     <div class="ot-row" id="ot-row-1"><!-- fila 1 --></div>
     <div class="ot-row" id="ot-row-2"><!-- fila 2 --></div>
@@ -1691,13 +1723,44 @@
       el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
     });
     const wrap = document.querySelector('.ot-wrap');
-    // La máscara del borde se apaga cuando esa fila ya llegó al final: si no, le
-    // come un pedazo a la última pieza cuando no queda nada más que mostrar.
-    const marcarFin = el => el.classList.toggle('al-final', (el.scrollWidth - el.clientWidth - el.scrollLeft) <= 4);
-    rows.forEach(el => { el.addEventListener('scroll', () => marcarFin(el), { passive: true }); });
+    const nav = document.querySelector('.ot-nav');
+    const prev = document.getElementById('ot-prev');
+    const next = document.getElementById('ot-next');
+
+    // Un paso es lo que ocupa una pieza con su espacio; la flecha mueve casi una
+    // pantalla —todo menos una pieza— para que quede una a la vista de referencia
+    // y no se pierda el hilo de dónde estaba.
+    const paso = row => {
+      const ps = row.querySelectorAll('.piece');
+      if (ps.length < 2) return row.clientWidth;
+      const unaPieza = ps[1].offsetLeft - ps[0].offsetLeft;
+      return unaPieza * Math.max(1, Math.floor(row.clientWidth / unaPieza) - 1);
+    };
+    // Las dos filas se mueven juntas: son una sola sección, aunque cada una
+    // scrollee por su cuenta cuando se arrastra con el dedo o con el mouse.
+    const mover = dir => rows.forEach(r => r.scrollBy({ left: dir * paso(r), behavior: 'smooth' }));
+    if (prev) prev.addEventListener('click', () => mover(-1));
+    if (next) next.addEventListener('click', () => mover(1));
+    const actualizarFlechas = () => {
+      if (!prev || !next) return;
+      // El umbral no es 0: la fila tiene 6px de padding y el scroll-snap deja el
+      // scrollLeft en 6 cuando está en la primera pieza. Con 0 la flecha de volver
+      // quedaba habilitada de entrada, apuntando a ningún lado.
+      prev.disabled = rows.every(r => r.scrollLeft <= 12);
+      next.disabled = rows.every(r => (r.scrollWidth - r.clientWidth - r.scrollLeft) <= 4);
+    };
+
+    // Mismo criterio que las flechas, pero para el desvanecido de cada punta.
+    const marcarBordes = el => {
+      el.classList.toggle('al-inicio', el.scrollLeft <= 12);
+      el.classList.toggle('al-final', (el.scrollWidth - el.clientWidth - el.scrollLeft) <= 4);
+    };
+    rows.forEach(el => { el.addEventListener('scroll', () => { marcarBordes(el); actualizarFlechas(); }, { passive: true }); });
     window.otUpdate = () => {
       const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
-      rows.forEach(marcarFin);
+      rows.forEach(marcarBordes);
+      actualizarFlechas();
+      if (nav) nav.classList.toggle('sin-desliz', !overflow);
       if (hint) hint.style.visibility = overflow ? 'visible' : 'hidden';
       // El velo del borde derecho también se va cuando no hay nada al costado:
       // si queda, se lee como si las piezas estuvieran metidas en una caja.

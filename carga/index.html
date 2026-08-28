@@ -495,9 +495,12 @@
   };
   const PRECIOS_LISTA={'6-10':80000,'12-14':95000,'S':150000,'M':160000,'L':160000,'XL':175000,'XXL':180000};
   const esNino=t=>String(t).indexOf('-')>0;
-  // Los gramos de COSTOS son estimados. Si ya se pesaron chalecos de ese talle,
-  // manda el dato real (mediana) que viene calculado en d.pesosReales.
-  const gramosDe=(t,d)=>((d&&d.pesosReales&&d.pesosReales[t]||{}).g)||COSTOS.gramos[t]||COSTOS.gramos['M'];
+  // Cuánto pesa un talle EN PROPORCIÓN a un M. La escala de COSTOS.gramos se usa
+  // solo por su forma, no por sus números: el 6-10 lleva 0,40 de lo que lleva un M.
+  const factorTalle=t=>(COSTOS.gramos[t]||COSTOS.gramos['M'])/COSTOS.gramos['M'];
+  // Los gramos de COSTOS son estimados. Cuando hay suficientes chalecos pesados,
+  // manda d.pesoBase (el equivalente M medido) escalado al talle que se pida.
+  const gramosDe=(t,d)=>(d&&d.pesoBase?Math.round(d.pesoBase*factorTalle(t)):(COSTOS.gramos[t]||COSTOS.gramos['M']));
   // Concordia y alrededores: se entrega en mano, no se paga envío.
   const esLocal=v=>/concordia|entre\s*r[ií]os/i.test(String(v.Destino||'')+' '+String(v.Ciudad||''));
 
@@ -627,23 +630,36 @@
     const ticket=chalecos>0?Math.round(vendido/chalecos):0;
     const locales=ventas.filter(esLocal).length;
 
-    // ── Peso real del chaleco terminado, por talle ──────────────────────────
-    // Bárbara lo pesa antes de mandarlo y queda en la fila de la venta. Va mediana
-    // y no promedio: una lana pesadísima no la mueve y no hay que decidir a ojo qué
-    // dato excluir. Se toma de todo el histórico — el gramaje de un talle no cambia
-    // de un mes al otro y en un mes solo hay dos o tres piezas.
+    // ── Peso real del chaleco terminado ─────────────────────────────────────
+    // Bárbara lo pesa antes de mandarlo y queda en la fila de la venta.
+    //
+    // NO se agrupa por talle. La lana cambia en cada compra y cada una rinde muy
+    // distinto —de un kilo puede salir un chaleco o dos—, así que dos piezas del
+    // mismo talle pesan diferente según qué lana tocó. Con una o dos piezas, la
+    // mediana de un talle es el accidente de esa lana, y eso es PEOR que el estimado.
+    //
+    // Se normaliza cada pieza a su equivalente en talle M (dividiendo por el factor
+    // del talle), se saca la mediana de TODAS juntas y después se re-escala. Así cada
+    // chaleco pesado informa a los siete talles y ninguno queda colgado de una pieza.
+    // Va mediana y no promedio: una lana pesadísima no la mueve.
     const mediana=a=>{const s2=a.slice().sort((x,y)=>x-y),m=s2.length>>1;return s2.length%2?s2[m]:Math.round((s2[m-1]+s2[m])/2)};
-    const pesosReales={};
+    const equivM=[];
     rows.filter(r=>r.Info==='Ventas').forEach(r=>{
       const g=numero(r['Peso (g)']); if(g<=0)return;
-      const t=r.Talle||'M'; (pesosReales[t]=pesosReales[t]||[]).push(g);
+      equivM.push(Math.round(g/factorTalle(r.Talle||'M')));
     });
-    Object.keys(pesosReales).forEach(t=>{pesosReales[t]={g:mediana(pesosReales[t]),n:pesosReales[t].length}});
+    // Hasta acá manda el estimado: mover la tabla con dos datos es cambiar un número
+    // inventado por otro. Con lanas que varían tanto, el rango importa más que el centro.
+    const MIN_PESADAS=3;
+    const pesoBase=equivM.length>=MIN_PESADAS?mediana(equivM):0;
+    const pesadas={n:equivM.length, base:pesoBase,
+      min:equivM.length?Math.min.apply(null,equivM):0,
+      max:equivM.length?Math.max.apply(null,equivM):0, minimo:MIN_PESADAS};
 
     // ── Cuánta lana se compró de más: es stock, no costo de lo vendido ──
     const lanaPorKgReal=lanaKg>0?Math.round(lanaMonto/lanaKg):COSTOS.lanaKg;
     // Si la pieza se pesó, se descuenta lo que pesó de verdad; si no, el estimado del talle.
-    const kgUsados=ventas.reduce((a,r)=>a+(numero(r['Peso (g)'])||gramosDe(r.Talle,{pesosReales}))/1000,0);
+    const kgUsados=ventas.reduce((a,r)=>a+(numero(r['Peso (g)'])||gramosDe(r.Talle,{pesoBase}))/1000,0);
     const lanaStockKg=Math.max(0,lanaKg-kgUsados);
     const lanaStock=Math.round(lanaStockKg*lanaPorKgReal);
 
@@ -655,7 +671,7 @@
       transportePorVenta, publicidadPorChaleco, cac, ticket,
       mesesEnPeriodo, chalecosHistorico, mesesHistorico,
       locales, lanaStock, lanaStockKg:Math.round(lanaStockKg*100)/100, tallesVendidos,
-      pesosReales,
+      pesoBase, pesadas,
       periodo: mes?etiquetaMes(mes):'Todo el año', mes, mesesDisponibles:meses,
       vendido,gastos:costos,ganancia,caja:ganancia-retiros,
       margen:vendido>0?Math.round(ganancia/vendido*100):0,
@@ -761,15 +777,15 @@
       'más la lana a '+pesos(d.lanaPorKg||COSTOS.lanaKg)+' el kilo'+mano+
       '<br>El punto • marca los talles que vendiste en este período. La etiqueta son las dos de cuero ('+pesos(COSTOS.etiqueta)+'). '+notaGramos(d);
   }
-  // Los gramos son estimados hasta que se pesa. Cada chaleco pesado corrige el talle
-  // y con él todo el costo de la lana, así que conviene que se vea cuáles ya están.
+  // Los gramos son estimados hasta que hay chalecos pesados. Conviene que se vea
+  // cuántos van, y sobre todo CUÁNTO VARÍAN: con lanas que cambian en cada compra,
+  // el rango dice más que el promedio.
   function notaGramos(d){
-    const pr=d.pesosReales||{};
-    const medidos=Object.keys(pr).filter(t=>PRECIOS_LISTA[t]);
-    if(!medidos.length) return 'Los gramos por talle todavía son estimados: pesá un chaleco antes de mandarlo y el costo de ese talle pasa a ser el real.';
-    const lista=medidos.map(t=>t+' '+pr[t].g+' g').join(', ');
-    const faltan=Object.keys(PRECIOS_LISTA).filter(t=>!pr[t]).length;
-    return 'Gramos pesados de verdad: '+lista+'.'+(faltan?' Los otros '+faltan+' talles siguen estimados.':'');
+    const p=d.pesadas||{n:0};
+    if(!p.n) return 'Los gramos son estimados: pesá el chaleco antes de mandarlo y la tabla se corrige sola.';
+    const rango=p.min===p.max?'':' Entre '+p.min+' y '+p.max+' g, que es lo que cambia según la lana.';
+    if(!d.pesoBase) return 'Van '+p.n+' chaleco'+(p.n>1?'s':'')+' pesado'+(p.n>1?'s':'')+': con '+p.minimo+' la tabla deja de usar los gramos estimados.'+rango;
+    return 'Gramos calculados con '+p.n+' chalecos pesados ('+d.pesoBase+' g un talle M, y el resto en proporción).'+rango;
   }
   // Lo máximo que se puede pagar por traer una venta antes de perder plata:
   // lo que deja el chaleco típico, sin descontar la publicidad que ya se pagó.

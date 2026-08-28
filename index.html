@@ -553,14 +553,18 @@
   .am-eyebrow{ display:block; font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:26px; }
   .am-title{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.35rem,4vw,3.55rem); line-height:1.08; letter-spacing:-.02em; color:var(--ink); margin-bottom:26px; }
   .am-title em{ font-style:italic; font-weight:300; color:var(--forest); }
-  .am-lead{ font-family:'DM Sans',sans-serif; font-size:1.02rem; line-height:1.68; color:var(--ink-soft); max-width:45ch; }
+  /* La linea que dice el diferencial. No es una bajada: es lo mas importante de la seccion,
+     asi que se lee como titulo (Fraunces) y las cuatro palabras que cambian van en itálica verde. */
+  .am-lead{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.5rem,2.1vw,1.95rem); line-height:1.38; letter-spacing:-.01em; color:var(--ink); max-width:24ch; text-wrap:balance; margin-bottom:20px; }
+  .am-lead em{ font-style:italic; font-weight:300; color:var(--forest); }
+  /* Las dos cosas que la clienta pregunta siempre, dichas sin que sean un paso mas. */
+  .am-nota{ font-family:'DM Sans',sans-serif; font-size:.95rem; line-height:1.6; color:var(--ink-soft); max-width:42ch; }
 
-  .am-steps{ margin:44px 0 42px; }
-  .am-step{ border-top:1px solid var(--line); padding:26px 0; }
+  .am-steps{ margin:40px 0 30px; }
+  .am-step{ border-top:1px solid var(--line); padding:20px 0; }
   .am-step:last-child{ border-bottom:1px solid var(--line); }
-  .am-step h3{ font-family:'Fraunces',serif; font-weight:400; font-size:1.5rem; line-height:1.25; letter-spacing:-.01em; color:var(--ink); margin-bottom:9px; }
+  .am-step h3{ font-family:'Fraunces',serif; font-weight:400; font-size:1.34rem; line-height:1.35; letter-spacing:-.01em; color:var(--ink); }
   .am-step h3 .num{ color:var(--forest); font-style:italic; font-weight:300; margin-right:.55rem; }
-  .am-step p{ font-size:.97rem; line-height:1.6; color:var(--ink-soft); max-width:44ch; }
 
   .am-cta{ display:inline-flex; align-items:center; gap:12px; background:var(--wa); color:#fff; padding:18px 32px; border-radius:100px; font-weight:500; font-size:1rem; box-shadow:0 18px 40px -15px rgba(94,117,72,.55); transition:all .3s; }
   .am-cta:hover{ background:var(--wa-deep); transform:translateY(-2px); box-shadow:0 24px 50px -15px rgba(94,117,72,.65); }
@@ -577,12 +581,12 @@
     .am-hero-text .am-title em{ color:#e7d6b4; }
     .am-body .am-head{ display:none; }
     .am-body{ width:100%; padding:36px 24px 48px; }
-    .am-lead{ display:none; }
-    .am-steps{ margin:0 0 30px; }
-    .am-step{ padding:18px 0; }
+    .am-lead{ font-size:1.72rem; max-width:none; margin-bottom:16px; }
+    .am-nota{ font-size:.92rem; }
+    .am-steps{ margin:30px 0 28px; }
+    .am-step{ padding:16px 0; }
     .am-step:first-child{ border-top:none; }
-    .am-step h3{ font-size:1.34rem; margin-bottom:5px; }
-    .am-step p{ font-size:.95rem; }
+    .am-step h3{ font-size:1.22rem; }
     .am-cta{ width:100%; justify-content:center; padding:16px 24px; }
   }
 
@@ -1241,7 +1245,7 @@
     <img src="/amedida.webp" alt="Detalle del tejido de lana con la cinta métrica y la etiqueta de cuero India — hecho a tu medida" loading="lazy">
     <div class="am-hero-text">
       <span class="am-eyebrow">A medida</span>
-      <h2 class="am-title">Lo tejemos <em>para vos.</em></h2>
+      <h2 class="am-title">Decinos qué <em>imaginás.</em></h2>
     </div>
   </div>
 
@@ -1250,26 +1254,24 @@
     <div class="am-inner">
       <div class="am-head">
         <span class="am-eyebrow">A medida</span>
-        <h2 class="am-title">Decinos qué <em>imaginás.</em><br>Lo tejemos para vos.</h2>
+        <h2 class="am-title">Decinos qué <em>imaginás.</em></h2>
       </div>
-      <p class="am-lead">Tus medidas. Tu lana. Tu color. Tu dibujo.</p>
+      <p class="am-lead">Tus <em>medidas.</em> Tu <em>lana.</em> Tu <em>color.</em> Tu <em>dibujo.</em></p>
+      <p class="am-nota">Las medidas las sacamos juntos por WhatsApp. Está tejido en unos diez días.</p>
 
       <div class="am-steps">
         <div class="am-step">
-          <h3><span class="num">I.</span>Contanos qué querés</h3>
-          <p>Nos pasás tus medidas y elegís la lana, el color y el dibujo.</p>
+          <h3><span class="num">I.</span>Nos decís tu talle y qué querés.</h3>
         </div>
         <div class="am-step">
-          <h3><span class="num">II.</span>Arrancamos a tejer</h3>
-          <p>Con una seña empezamos a tejer tu chaleco, hecho a mano solo para vos.</p>
+          <h3><span class="num">II.</span>Con una seña, empezamos a tejer.</h3>
         </div>
         <div class="am-step">
-          <h3><span class="num">III.</span>Recibís tu chaleco</h3>
-          <p>Te avisamos cuando esté listo y te lo enviamos gratis a tu casa.</p>
+          <h3><span class="num">III.</span>Te llega a tu casa, envío incluido.</h3>
         </div>
       </div>
 
-      <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20encargar%20un%20chaleco%20a%20medida..." target="_blank" rel="noopener" class="am-cta">
+      <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20un%20chaleco%20a%20medida.%20Uso%20talle%20" target="_blank" rel="noopener" class="am-cta">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
         </svg>
@@ -1937,11 +1939,52 @@
     setDoc(doc(db, 'visits', visitorId), updates, { merge: true }).catch(() => {});
   })();
 
+  // De qué parte de la página salió el click. El contador general (clicks_whatsapp) sigue igual;
+  // esto es ADEMÁS, y es lo que permite saber si una sección convierte o solo ocupa lugar.
+  const origenWa = (a) => {
+    if (a.closest('.wa-float')) return 'flotante';
+    if (a.closest('.hero')) return 'hero';
+    if (a.closest('.am')) return 'amedida';
+    if (a.closest('.final')) return 'cierre';
+    if (a.closest('.lightbox')) return a.classList.contains('lb-medida') ? 'visor_amedida' : 'visor';
+    if (a.closest('.piece')) return 'pieza';
+    return 'otro';
+  };
+
+  // Hasta dónde baja la gente. Se cuenta UNA vez por visita y por sección: sin esto, decidir el
+  // orden de la página es adivinar — hoy se sabe en qué píxel está cada cosa, pero no quién llega.
+  if ('IntersectionObserver' in window && !ES_INTERNO) {
+    const yaVisto = (k) => {
+      try {
+        if (sessionStorage.getItem(k)) return true;
+        sessionStorage.setItem(k, '1');
+        return false;
+      } catch (_) { return true; }
+    };
+    const ioScroll = new IntersectionObserver(entradas => {
+      entradas.forEach(en => {
+        if (!en.isIntersecting) return;
+        ioScroll.unobserve(en.target);
+        const nombre = en.target.dataset.scrollName;
+        if (!yaVisto('india_scroll_' + nombre)) bumpStat('scroll_' + nombre, 'scroll_' + nombre);
+      });
+    }, { threshold: 0.25 });
+    [['#chalecos','chalecos'], ['#anteriores','anteriores'], ['#a-medida','amedida'],
+     ['#opiniones','opiniones'], ['.final','cierre']].forEach(([sel, nombre]) => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      el.dataset.scrollName = nombre;
+      ioScroll.observe(el);
+    });
+  }
+
   // Clicks WhatsApp: event delegation captura todos los a[href*=wa.me] (header, hero, CTA, FAB, pieces dinámicos).
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href*="wa.me"]');
     if (!a) return;
     bumpStat('clicks_whatsapp', 'clicks');
+    const org = origenWa(a);
+    bumpStat('wa_' + org, 'wa_' + org);
     // Mismo click, dos destinos: las stats propias (arriba) y Meta. Es la única señal de
     // intención de compra que se puede medir en el sitio — la venta se cierra en WhatsApp.
     // fbq no existe si el visitante es interno o si un bloqueador tumbó el píxel.

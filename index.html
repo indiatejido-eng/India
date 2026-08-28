@@ -383,9 +383,15 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
+  /* `height: 92%` no resuelve contra una caja cuyo alto sale de aspect-ratio: cada
+     foto se dibujaba a su TAMAÑO NATURAL, así que dos piezas vecinas quedaban de
+     distinto alto y el nombre de cada una arrancaba a otra altura. Esto ya estaba
+     arreglado en compu; faltaba en el celu, que es donde entra casi todo el mundo.
+     Posicionada absoluta, el porcentaje sí resuelve. */
   .piece-img img{
-    position: relative; z-index: 1;
-    height: 92%; width: auto; max-width: 100%;
+    position: absolute; inset: 0; margin: auto; z-index: 1;
+    width: auto; height: auto;
+    max-width: 100%; max-height: 92%;
     object-fit: contain;
     filter: drop-shadow(0 16px 22px rgba(60, 40, 20, 0.14));
     transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
@@ -460,10 +466,20 @@
 
   /* "Otros tejidos" — 2 filas INDEPENDIENTES que se deslizan al costado */
   .ot-wrap{ position:relative; }
-  .ot-wrap::after{ content:''; position:absolute; top:0; bottom:0; right:0; width:56px; pointer-events:none; z-index:2; background:linear-gradient(to right, rgba(243,236,224,0), var(--bg)); }
-  /* Si entra todo y no hay nada al costado, el velo se va: si queda, se lee
-     como si las piezas estuvieran metidas adentro de una caja. */
-  .ot-wrap.sin-desliz::after{ display:none; }
+  /* El borde derecho se desvanece con MÁSCARA, no con un velo de color encima.
+     El fondo de la página es un radial-gradient fijo (más oscuro abajo), así que
+     el velo plano de crema se veía como un parche más claro con borde recto
+     pegado al costado — eso era lo que se leía como foto tajeada, no el corte.
+     La máscara desvanece el contenido y no pinta nada, así que anda sobre
+     cualquier fondo. */
+  .ot-row{
+    --ot-fade: 56px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--ot-fade)), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - var(--ot-fade)), transparent);
+  }
+  /* Si entra todo, o si ya se llegó al final, no hay nada al costado que insinuar
+     y la máscara se apaga: si no, se come el borde de la última pieza. */
+  .ot-wrap.sin-desliz .ot-row, .ot-row.al-final{ -webkit-mask-image:none; mask-image:none; }
   /* Y si entra todo, la fila se centra: si no, queda pegada a la izquierda y
      con un hueco a la derecha, que se lee como sección descentrada. */
   .ot-wrap.sin-desliz .ot-row{ justify-content: center; }
@@ -477,11 +493,18 @@
   .ot-row .piece{ flex:0 0 230px; scroll-snap-align:start; }
   @media(max-width:767px){
     .ot-hint{ justify-content:center; padding:0 20px; }
-    .ot-wrap::after{ width:44px; }
+    .ot-row{ --ot-fade: 34px; }
     .ot-row{ gap:10px; padding:6px 2px; }
     .ot-row .piece{ flex:0 0 39vw; }   /* 2 piezas completas + asoma bien la 3ra (peek Burberry/Arandú) */
   }
   @media(max-width: 767px){
+    /* Al nivelar las cajas, las fotos del celu pasaban a medir lo que medía la
+       más chica del montón (la caja mandaba, no la foto). Estos dos ratios les
+       devuelven el alto que tenían —foto de ~270px en el catálogo y ~225 en el
+       archivo—, ahora con todas iguales. Van solo acá: en compu el cuadro es
+       más ancho que alto y ya estaba bien. */
+    .piece-img{ aspect-ratio: 9 / 14; }
+    .grid-anteriores .piece-img{ aspect-ratio: 5 / 8; }
     .grid{ gap: 24px 6px; }
     .grid.grid-anteriores{ gap: 22px 8px; }
     .gallery{ padding: 40px 4px 50px; }
@@ -1036,19 +1059,6 @@
     }
     /* Cuadro menos alto que en el celu (4/5 en vez de 5/7). */
     .piece-img{ aspect-ratio: 4 / 5; }
-    /* LA CAUSA DE TODO: `height:92%` no resuelve contra una caja cuyo alto sale
-       de aspect-ratio, así que cada foto se dibujaba a su TAMAÑO NATURAL y se
-       salía del cuadro. Los chalecos medían entre 440px y 525px de alto según
-       la proporción de cada foto (0.57 a 0.68). De ahí las tres quejas juntas:
-       gigantes, desnivelados y "como en una caja".
-       Posicionada absoluta, el porcentaje sí resuelve: todas miden lo mismo,
-       ninguna desborda y el nombre de todas arranca a la misma altura. */
-    .piece-img img{
-      position: absolute; inset: 0; margin: auto;
-      width: auto; height: auto;
-      max-width: 100%; max-height: 92%;
-      object-fit: contain;
-    }
     /* La ficha acompaña el tamaño de la foto */
     .piece-info h3{ font-size: 1.3rem; }
     .piece-info .desc{ font-size: 0.97rem; }
@@ -1058,14 +1068,17 @@
        Se probó como grilla y no: con 11 piezas quedaba 4 + 4 + 3 y la última
        fila coja; con cualquier número impar puede terminar en UNA sola, que es
        justo lo que el norte no quiere. En dos filas siempre entra mitad y mitad.
-       Lo que estaba mal no era el carrusel, era el tamaño: piezas de 210px
-       entraban de a 5 y la 6ta quedaba cortada casi entera contra el velo — se
-       leía como foto tajeada, no como que sigue. A 285px entran 4 enteras y la
-       5ta asoma un tercio: el mismo peek deliberado del celu. */
-    .ot-row{ gap: 56px; }
-    .ot-row .piece{ flex: 0 0 285px; }
+       El ancho de cada pieza sale de la fila, no de un número clavado: entran
+       siempre 4 enteras y media, y esa media es la que dice "seguí al costado".
+       Con medida fija había anchos de ventana donde la 5ta no asomaba nada
+       —la fila cortaba seca, con un hueco al costado— y otros donde asomaba
+       casi entera, que se lee como foto tajeada. El clamp la mantiene abajo de
+       los 340px del catálogo: el archivo no compite con lo que está a la venta. */
+    .ot-row{ --ot-gap: 48px; --ot-vis: 4.5; --ot-fade: 90px; gap: var(--ot-gap); }
+    .ot-row .piece{
+      flex: 0 0 clamp(220px, calc((100% - (var(--ot-vis) - 1) * var(--ot-gap)) / var(--ot-vis)), 300px);
+    }
     .ot-row + .ot-row{ margin-top: 52px; }
-    .ot-wrap::after{ width: 110px; }
 
     /* A MEDIDA — el texto quedaba centrado dentro de su mitad y se leía corrido
        a la derecha, lejos de la foto. Ahora arranca pegado a la foto. */
@@ -1119,8 +1132,7 @@
        grandes el aire de más va al gutter: las fotos no crecen. El archivo sí
        crece un poco, pero se queda lejos de los 340px del catálogo: sigue
        leyéndose como archivo y no compite con lo que está para enviar. */
-    .ot-row{ gap: 64px; }
-    .ot-row .piece{ flex: 0 0 300px; }
+    .ot-row{ --ot-gap: 56px; }
   }
 </style>
 </head>
@@ -1679,8 +1691,13 @@
       el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
     });
     const wrap = document.querySelector('.ot-wrap');
+    // La máscara del borde se apaga cuando esa fila ya llegó al final: si no, le
+    // come un pedazo a la última pieza cuando no queda nada más que mostrar.
+    const marcarFin = el => el.classList.toggle('al-final', (el.scrollWidth - el.clientWidth - el.scrollLeft) <= 4);
+    rows.forEach(el => { el.addEventListener('scroll', () => marcarFin(el), { passive: true }); });
     window.otUpdate = () => {
       const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
+      rows.forEach(marcarFin);
       if (hint) hint.style.visibility = overflow ? 'visible' : 'hidden';
       // El velo del borde derecho también se va cuando no hay nada al costado:
       // si queda, se lee como si las piezas estuvieran metidas en una caja.

@@ -1054,14 +1054,22 @@
     .piece-info .desc{ font-size: 0.97rem; }
     .piece-info .precio{ font-size: 1.02rem; }
 
-    /* OTROS TEJIDOS — es el archivo: va más chico que el catálogo, y a este
-       tamaño las 5 piezas de cada fila entran enteras en la pantalla. Por eso
-       desaparecen solos el "Deslizá" y el velo del borde: no hay nada al
-       costado que mostrar. */
-    .ot-row{ gap: 52px; }
-    .ot-row .piece{ flex: 0 0 210px; }
-    .ot-row + .ot-row{ margin-top: 44px; }
-    .ot-wrap::after{ width: 90px; }
+    /* OTROS TEJIDOS — en compu NO hay carrusel. Con piezas de ancho fijo, la
+       fila entraba justa o no entraba: quedaba un chaleco cortado al medio
+       contra el velo del borde, el resto chiquito en el centro de la pantalla
+       y un "Deslizá" pidiendo arrastrar algo que ya se ve. Se leía roto.
+       Acá va como lo que es —archivo—: grilla, más piezas por fila y más
+       chicas que el catálogo (repite [[Norte estético]] 4). Las dos filas del
+       HTML se disuelven con display:contents, así que el JS que las llena y
+       el carrusel del celu quedan intactos. */
+    .ot-hint{ display: none; }
+    .ot-wrap::after{ display: none; }
+    .ot-wrap{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 64px clamp(32px, 4vw, 72px);
+    }
+    .ot-row{ display: contents; }
 
     /* A MEDIDA — el texto quedaba centrado dentro de su mitad y se leía corrido
        a la derecha, lejos de la foto. Ahora arranca pegado a la foto. */
@@ -1112,8 +1120,10 @@
     :root{ --maxw: 1480px; --gutter: 64px; }
     .gallery{ padding: 130px var(--gutter) 150px; }
     /* Las piezas ya tienen tope de ancho, así que en pantallas grandes el aire
-       de más va al gutter: las fotos no crecen. */
-    .ot-row{ gap: 64px; }
+       de más va al gutter: las fotos no crecen. En el archivo entra una más
+       por fila: con 4 columnas a 1480px cada chaleco quedaba casi del tamaño
+       del catálogo, y el archivo no compite con lo que está para enviar. */
+    .ot-wrap{ grid-template-columns: repeat(5, minmax(0, 1fr)); }
   }
 </style>
 </head>
@@ -1662,7 +1672,9 @@
     const hint = document.querySelector('.ot-hint');
     rows.forEach(el => {
       let down = false, startX = 0, startL = 0, moved = false;
-      el.addEventListener('mousedown', e => { down = true; moved = false; startX = e.pageX; startL = el.scrollLeft; el.classList.add('dragging'); });
+      // En compu la fila es grilla (no scrollea): sin esta guarda, un click con
+      // el mouse apenas corrido contaba como arrastre y no abría el visor.
+      el.addEventListener('mousedown', e => { if ((el.scrollWidth - el.clientWidth) <= 4) return; down = true; moved = false; startX = e.pageX; startL = el.scrollLeft; el.classList.add('dragging'); });
       const end = () => { down = false; el.classList.remove('dragging'); };
       window.addEventListener('mouseup', end);
       el.addEventListener('mouseleave', end);

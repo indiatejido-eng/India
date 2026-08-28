@@ -1054,22 +1054,18 @@
     .piece-info .desc{ font-size: 0.97rem; }
     .piece-info .precio{ font-size: 1.02rem; }
 
-    /* OTROS TEJIDOS — en compu NO hay carrusel. Con piezas de ancho fijo, la
-       fila entraba justa o no entraba: quedaba un chaleco cortado al medio
-       contra el velo del borde, el resto chiquito en el centro de la pantalla
-       y un "Deslizá" pidiendo arrastrar algo que ya se ve. Se leía roto.
-       Acá va como lo que es —archivo—: grilla, más piezas por fila y más
-       chicas que el catálogo (repite [[Norte estético]] 4). Las dos filas del
-       HTML se disuelven con display:contents, así que el JS que las llena y
-       el carrusel del celu quedan intactos. */
-    .ot-hint{ display: none; }
-    .ot-wrap::after{ display: none; }
-    .ot-wrap{
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 64px clamp(32px, 4vw, 72px);
-    }
-    .ot-row{ display: contents; }
+    /* OTROS TEJIDOS — dos filas que se deslizan al costado, igual que en el celu.
+       Se probó como grilla y no: con 11 piezas quedaba 4 + 4 + 3 y la última
+       fila coja; con cualquier número impar puede terminar en UNA sola, que es
+       justo lo que el norte no quiere. En dos filas siempre entra mitad y mitad.
+       Lo que estaba mal no era el carrusel, era el tamaño: piezas de 210px
+       entraban de a 5 y la 6ta quedaba cortada casi entera contra el velo — se
+       leía como foto tajeada, no como que sigue. A 285px entran 4 enteras y la
+       5ta asoma un tercio: el mismo peek deliberado del celu. */
+    .ot-row{ gap: 56px; }
+    .ot-row .piece{ flex: 0 0 285px; }
+    .ot-row + .ot-row{ margin-top: 52px; }
+    .ot-wrap::after{ width: 110px; }
 
     /* A MEDIDA — el texto quedaba centrado dentro de su mitad y se leía corrido
        a la derecha, lejos de la foto. Ahora arranca pegado a la foto. */
@@ -1119,11 +1115,12 @@
   @media(min-width: 1600px){
     :root{ --maxw: 1480px; --gutter: 64px; }
     .gallery{ padding: 130px var(--gutter) 150px; }
-    /* Las piezas ya tienen tope de ancho, así que en pantallas grandes el aire
-       de más va al gutter: las fotos no crecen. En el archivo entra una más
-       por fila: con 4 columnas a 1480px cada chaleco quedaba casi del tamaño
-       del catálogo, y el archivo no compite con lo que está para enviar. */
-    .ot-wrap{ grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    /* Las piezas del catálogo ya tienen tope de ancho, así que en pantallas
+       grandes el aire de más va al gutter: las fotos no crecen. El archivo sí
+       crece un poco, pero se queda lejos de los 340px del catálogo: sigue
+       leyéndose como archivo y no compite con lo que está para enviar. */
+    .ot-row{ gap: 64px; }
+    .ot-row .piece{ flex: 0 0 300px; }
   }
 </style>
 </head>

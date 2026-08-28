@@ -405,6 +405,29 @@
   .card-actions .btn-arrow{ padding: 6px 11px; font-weight: 600; line-height: 1; font-size: 1rem; }
   .card-actions .btn-arrow:disabled{ opacity: 0.3; cursor: default; }
 
+  /* ORDEN Y FILAS — el panel tiene otro ancho que la web, así que la cuenta de
+     columnas de acá no dice nada. Lo que ordena es el número de cada foto (el
+     lugar que ocupa en su fila) y, en "Vendidos / Hechos", el separador que
+     marca dónde arranca la segunda fila de la web. */
+  .card-pos{
+    position: absolute; top: 8px; left: 8px; z-index: 1;
+    min-width: 24px; height: 24px; padding: 0 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(34, 26, 19, 0.82); color: #f5f0e8;
+    border-radius: 100px; font-size: 0.78rem; font-weight: 600;
+  }
+  .fila-sep{
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 10px;
+    margin: 8px 0 -4px;
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink);
+  }
+  .fila-sep span{ text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+  .fila-sep::after{ content: ''; flex: 1; height: 1px; background: var(--line); }
+  .panel-hint{ color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin: 0 0 16px; }
+  .panel-hint strong{ color: var(--ink-soft, var(--ink)); font-weight: 600; }
+
   /* AGREGAR */
   .add-card{
     background: transparent;
@@ -809,9 +832,11 @@
         <span style="font-size:0.9rem; color:var(--ink-soft)" id="precios-bar-txt"></span>
         <button class="btn btn-sm" id="btn-precios-talle">Poner los precios de la lista</button>
       </div>
+      <p class="panel-hint">El número de cada foto es el <strong>orden en la web</strong>: la 1 va arriba a la izquierda. En la compu entran 3 por fila; en el celu, 2. Las flechas ↑ ↓ lo cambian.</p>
       <div class="grid-admin" id="grid-disponible"></div>
     </div>
     <div class="tab-panel" id="panel-anterior">
+      <p class="panel-hint">En la web estos van en <strong>dos filas que se deslizan al costado</strong> —la primera mitad arriba, el resto abajo—, igual en la compu que en el celu. El número de cada foto es el lugar que ocupa <strong>dentro de su fila</strong>; con las flechas ↑ ↓ lo cambiás, y si cruzás el separador el chaleco se pasa a la otra fila.</p>
       <div class="grid-admin" id="grid-anterior"></div>
     </div>
     <div class="tab-panel" id="panel-baja">
@@ -1574,7 +1599,17 @@ function renderGrid(estado, items){
     const vacio = esBaja ? 'No hay chalecos dados de baja.' : `Todavía no agregaste ${estado === 'disponible' ? 'chalecos disponibles' : 'trabajos anteriores'}.`;
     grid.innerHTML = addCard + `<div class="empty-state">${vacio}</div>`;
   } else {
+    // "Otros tejidos" se parte en dos filas en la web: la primera mitad arriba y
+    // el resto abajo. El corte tiene que ser EL MISMO que el de renderAnteriores()
+    // en index.html (Math.ceil), o el panel muestra una fila que la web no arma.
+    const corte = estado === 'anterior' ? Math.ceil(items.length / 2) : 0;
     grid.innerHTML = items.map((it, idx) => {
+      const sep = corte && (idx === 0 || idx === corte)
+        ? `<div class="fila-sep">Fila ${idx === 0 ? '1' : '2'} <span>${idx === 0 ? 'la de arriba' : 'la de abajo'}</span></div>`
+        : '';
+      // En anteriores se numera dentro de la fila (1..n de cada una); en el resto,
+      // corrido, que es como se recorre la grilla.
+      const pos = corte ? (idx < corte ? idx + 1 : idx - corte + 1) : idx + 1;
       const nombre = escapeHtml(it.nombre || 'Sin nombre');
       const desc = escapeHtml(it.desc || '');
       const otroEstado = estado === 'disponible' ? 'anterior' : 'disponible';
@@ -1589,9 +1624,10 @@ function renderGrid(estado, items){
               <button class="btn btn-ghost btn-sm" data-move="${it.id}" data-to="${otroEstado}">${otroLabel}</button>
               <button class="btn btn-ghost btn-sm" data-baja="${it.id}" data-estado="${estado}">Dar de baja</button>
               <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>`;
-      return `
+      return `${sep}
         <div class="card" data-id="${it.id}">
           <div class="card-img">
+            ${esBaja ? '' : `<span class="card-pos">${pos}</span>`}
             ${it.foto ? `<img src="${it.foto}" alt="${nombre}">` : `<span class="card-img-empty">Sin foto</span>`}
           </div>
           <div class="card-body">

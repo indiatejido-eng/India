@@ -321,12 +321,14 @@
   var PHONE = '543456268401';
 
   // Los colores son los naturales de la lana, sin teñir.
+  // Los tonos salen de medir las piezas del catálogo, no de elegirlos a ojo:
+  // son los naturales de la lana, sin teñir.
   var LANAS = [
-    { id:'marron-claro',  nombre:'marrón claro',  hex:'#8e7050' },
-    { id:'marron-oscuro', nombre:'marrón oscuro', hex:'#4a3625' },
-    { id:'crudo',         nombre:'crudo',         hex:'#d9cbb2' },
-    { id:'gris',          nombre:'gris',          hex:'#8a8479' },
-    { id:'negro',         nombre:'negro',         hex:'#2c2823' }
+    { id:'marron-claro',  nombre:'marrón claro',  hex:'#8a6144' },
+    { id:'marron-oscuro', nombre:'marrón oscuro', hex:'#5c4134' },
+    { id:'crudo',         nombre:'crudo',         hex:'#cfc3ad' },
+    { id:'gris',          nombre:'gris',          hex:'#71685f' },
+    { id:'negro',         nombre:'negro',         hex:'#332e2a' }
   ];
   var DIBUJOS = [
     { id:'liso',        nombre:'liso' },
@@ -347,34 +349,38 @@
   var estado = { dibujo: DIBUJOS[0], lana: LANAS[1], cuello: CUELLOS[0] };
 
   // --- El tono de la lana -------------------------------------------------
-  // Las fotos se guardan en gris normalizado; acá se les pone el color. Misma
-  // cuenta que en tools/piezas.py: una rampa de la sombra al brillo de esa
-  // lana, ceñida a propósito — si va de negro a blanco, todos los colores
-  // terminan del mismo gris.
-  var NEGRO = [16, 11, 7], BLANCO = [250, 244, 232];
+  // Las fotos se guardan en gris normalizado; acá se les pone el color.
+  //
+  // El color NO se mezcla con blanco y negro: se multiplica. Mezclar lava la
+  // lana —todos los tonos terminan en el mismo gris apagado— y además comprime
+  // el contraste, con lo que en las lanas oscuras el dibujo desaparecía.
+  // Multiplicando, el matiz y la saturación se mantienen en todo el rango, y
+  // el contraste del tejido queda igual para cualquier color.
+  //
+  // La pendiente se calcula para que el tono medio de la foto dé exactamente
+  // el color elegido. Los brillos suman un poco de luz cálida: es el reflejo
+  // sobre la lana, lo que hace que se lea el relieve del punto.
+  var LUZ = [200, 188, 160];
+  var MADERA = [186, 156, 116];   // la percha no es de lana: no se tiñe
 
   function aRgb(hex){
     return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
   }
-  function tabla(hex, media){
-    var c = aRgb(hex), sombra = [], brillo = [], t = [], i;
-    for (i = 0; i < 3; i++) {
-      sombra[i] = c[i] + (NEGRO[i] - c[i]) * 0.55;
-      brillo[i] = c[i] + (BLANCO[i] - c[i]) * 0.45;
-      t[i] = (c[i] - sombra[i]) / Math.max(brillo[i] - sombra[i], 1e-6);
-    }
-    // Dónde cae el color pedido dentro de su propia rampa. Se lleva la media de
-    // la foto ahí: así el negro sale oscuro y el crudo claro.
-    var objetivo = Math.min(0.92, Math.max(0.08, (t[0] + t[1] + t[2]) / 3));
-    var gamma = (media > 0.02 && media < 0.98) ? Math.log(objetivo) / Math.log(media) : 1;
-    // Acotada: sin tope, en las lanas claras aplasta el contraste y el
-    // guardapampa deja de verse (greca crudo sobre fondo crudo).
-    gamma = Math.min(1.9, Math.max(0.55, gamma));
+  function tabla(hex, media, suave){
+    var c = aRgb(hex);
+    // La pendiente va acotada: en un recorte chico la media se dispara y el
+    // contraste sale brutal, la lana deja de parecer lana y queda ruido.
+    // Acotarla no corre el color: el tono medio sigue dando el color exacto.
+    var pend = Math.min(2.2, Math.max(1.05, 0.80 / Math.max(media, 0.12)));
+    if (suave) pend *= 0.72;
+    var desde = Math.min(0.86, media + 0.32);
     var lut = new Uint8Array(768);
     for (var v = 0; v < 256; v++) {
-      var n = Math.pow(v / 255, gamma);
-      for (var k = 0; k < 3; k++) {
-        lut[v*3 + k] = Math.max(0, Math.min(255, sombra[k] + (brillo[k] - sombra[k]) * n));
+      var n = v / 255;
+      var k = Math.min(2.3, Math.max(0.18, 1 + (n - media) * pend));
+      var luz = Math.pow(Math.max(0, n - desde), 1.3) * (suave ? 0.5 : 1);
+      for (var i = 0; i < 3; i++) {
+        lut[v*3 + i] = Math.max(0, Math.min(255, c[i] * k + LUZ[i] * luz));
       }
     }
     return lut;
@@ -395,12 +401,20 @@
         var x = c.getContext('2d', { willReadFrequently: true });
         x.drawImage(img, 0, 0);
         var datos = x.getImageData(0, 0, c.width, c.height);
-        // La media de la lana (sin lo transparente) es lo que ajusta el tono.
-        var d = datos.data, suma = 0, n = 0;
+        // La MEDIANA de la lana, no el promedio: en una pieza de dos colores
+        // —el guardapampa, el rayado— el promedio lo corre la greca y el fondo
+        // termina más oscuro que la lana que se eligió. La mediana es el color
+        // del fondo, que es lo que la persona está eligiendo.
+        var d = datos.data, hist = new Uint32Array(256), n = 0;
         for (var i = 0; i < d.length; i += 4) {
-          if (d[i+3] > 40) { suma += d[i]; n++; }
+          if (d[i+3] > 40) { hist[d[i]]++; n++; }
         }
-        cache[archivo] = { datos: datos, media: n ? (suma / n) / 255 : 0.5 };
+        var mitad = n / 2, acum = 0, mediana = 128;
+        for (var v = 0; v < 256; v++) {
+          acum += hist[v];
+          if (acum >= mitad) { mediana = v; break; }
+        }
+        cache[archivo] = { datos: datos, media: n ? mediana / 255 : 0.5 };
         listo(cache[archivo]);
       };
       img.onerror = function(){ falla(new Error(archivo)); };
@@ -411,14 +425,17 @@
     return traer.pendientes[archivo];
   }
 
-  function pintar(canvas, foto, hex){
-    var lut = tabla(hex, foto.media);
+  function pintar(canvas, foto, hex, suave){
+    var lut = tabla(hex, foto.media, suave);
+    var lutMadera = tabla('#ba9c74', foto.media, true);
     var origen = foto.datos.data;
     var salida = new ImageData(foto.datos.width, foto.datos.height);
     var d = salida.data;
     for (var i = 0; i < origen.length; i += 4) {
+      // El canal azul marca qué es lana y qué es percha (lo pone tools/piezas.py)
+      var t = origen[i+2] < 128 ? lutMadera : lut;
       var v = origen[i] * 3;
-      d[i] = lut[v]; d[i+1] = lut[v+1]; d[i+2] = lut[v+2];
+      d[i] = t[v]; d[i+1] = t[v+1]; d[i+2] = t[v+2];
       d[i+3] = origen[i+3];
     }
     canvas.width = salida.width;
@@ -531,7 +548,7 @@
     var muestra = (PIEZAS.liso || {}).mini || (PIEZAS.veteado || {}).mini;
     if (muestra) {
       LANAS.forEach(function(l){
-        traer(muestra).then(function(foto){ pintar(caras.lana[l.id], foto, l.hex); })['catch'](function(){});
+        traer(muestra).then(function(foto){ pintar(caras.lana[l.id], foto, l.hex, true); })['catch'](function(){});
       });
     }
 

@@ -121,6 +121,26 @@ def encuadrar(im, ocupa=0.80, base=0.965):
     pieza no salta. Arriba queda aire para la percha."""
     im = limpiar(im)
     x0, y0, x1, y1 = cuerpo(im)
+
+    # Los brazos de la percha se abren sobre los hombros y quedan como alas.
+    # Se los reconoce por lo que son: madera clara, arriba y a los costados,
+    # afuera del ancho donde vive el tejido. El gancho del medio se queda.
+    a = np.array(im)
+    solido = a[..., 3] > 60
+    lum = a[..., :3].astype(np.float64) @ np.array([0.299, 0.587, 0.114])
+    if solido.any():
+        alto = max(y1 - y0, 1)
+        ancho = max(x1 - x0, 1)
+        franja = np.zeros(solido.shape, bool)
+        franja[y0:y0 + int(alto * 0.16)] = True
+        lados = np.zeros(solido.shape, bool)
+        lados[:, :x0 + int(ancho * 0.17)] = True
+        lados[:, x1 - int(ancho * 0.17):] = True
+        corte = np.percentile(lum[solido], 88)
+        a[franja & lados & solido & (lum > corte), 3] = 0
+    a[:, :max(0, x0 - 2), 3] = 0
+    a[:, min(a.shape[1], x1 + 3):, 3] = 0
+    im = Image.fromarray(a, 'RGBA')
     escala = (ALTO * ocupa) / max(y1 - y0 + 1, 1)
     if (x1 - x0 + 1) * escala > ANCHO * 0.93:
         escala = (ANCHO * 0.93) / (x1 - x0 + 1)
@@ -134,7 +154,11 @@ def encuadrar(im, ocupa=0.80, base=0.965):
 
 
 def a_gris(im):
-    """Luminancia estirada + alfa. El color lo pone el navegador."""
+    """Luminancia estirada + alfa. El color lo pone el navegador.
+
+    El canal azul se usa de marca: 255 es lana, 0 es percha. Sin eso el
+    navegador le aplica el tono de la lana también a la percha y sale amarilla.
+    """
     im = im.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=3))
     a = np.array(im, dtype=np.float64)
     lum = a[..., :3] @ np.array([0.299, 0.587, 0.114])
@@ -144,7 +168,30 @@ def a_gris(im):
         lo, hi = np.percentile(lum[m], 1.5), np.percentile(lum[m], 98.5)
         lum = np.clip((lum - lo) / max(hi - lo, 1.0), 0, 1) * 255
     g = lum.astype(np.uint8)
-    return Image.fromarray(np.dstack([g, g, g, alpha.astype(np.uint8)]), 'RGBA')
+
+    # Qué es percha: lo que está arriba de los hombros, y la barra que asoma
+    # por el escote (centro, bien arriba, y más clara que casi toda la lana).
+    percha = np.zeros(g.shape, bool)
+    solido = m
+    anchos = solido.sum(axis=1)
+    if anchos.max() > 0:
+        filas = np.where(anchos > anchos.max() * 0.5)[0]
+        if len(filas):
+            y0, y1 = filas[0], filas[-1]
+            percha[:y0] = True
+            cols = np.where(solido[y0:y1 + 1].any(axis=0))[0]
+            if len(cols):
+                x0, x1 = cols[0], cols[-1]
+                alto = y1 - y0
+                zona = np.zeros(g.shape, bool)
+                zona[y0:y0 + int(alto * 0.22),
+                     x0 + int((x1 - x0) * 0.30):x0 + int((x1 - x0) * 0.70)] = True
+                if solido.any():
+                    corte = np.percentile(lum[solido], 90)
+                    percha |= zona & solido & (lum > corte)
+
+    azul = np.where(percha, 0, 255).astype(np.uint8)
+    return Image.fromarray(np.dstack([g, g, azul, alpha.astype(np.uint8)]), 'RGBA')
 
 
 def parche(gris, zona):
@@ -187,7 +234,7 @@ def main():
             elegido = candidatos[min(DESEMPATE.get((dibujo, cuello), 0), len(candidatos) - 1)]
             gris = a_gris(encuadrar(bajar(elegido['foto'])))
             arch = '%s-%s.webp' % (dibujo, cuello)
-            gris.save(os.path.join(SALIDA, arch), 'WEBP', quality=76, method=6)
+            gris.save(os.path.join(SALIDA, arch), 'WEBP', quality=76, method=6, lossless=False)
             manifiesto[dibujo][cuello] = arch
             print('%-14s %-8s <- %-22s %d KB' % (
                 dibujo, cuello, nombre, os.path.getsize(os.path.join(SALIDA, arch)) // 1024))

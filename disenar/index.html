@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diseñá tu chaleco · India</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="description" content="Elegí el dibujo, la lana y el cuello. Lo tejemos a mano con tus medidas.">
+<link rel="canonical" href="https://india-tejidos.vercel.app/disenar">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="India">
+<meta property="og:locale" content="es_AR">
+<meta property="og:url" content="https://india-tejidos.vercel.app/disenar">
+<meta property="og:title" content="Diseñá tu chaleco · India">
+<meta property="og:description" content="Elegí el dibujo, la lana y el cuello. Lo tejemos a mano con tus medidas.">
+<meta property="og:image" content="https://india-tejidos.vercel.app/og-image.jpg?v=1">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Píxel de Meta. Mismo criterio que index.html: arriba de todo, en script clásico, y los
+     dispositivos internos (?interno=1) no ensucian los datos. -->
+<script>
+  (function(){
+    var interno = null;
+    try {
+      var p = new URLSearchParams(location.search).get('interno');
+      if (p === '1') localStorage.setItem('india_interno', '1');
+      else if (p === '0') localStorage.removeItem('india_interno');
+      interno = localStorage.getItem('india_interno');
+    } catch (e) {}
+    if (interno === '1') return;
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '906025832567425');
+    fbq('track', 'PageView');
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #f3ece0;
+    --bg-soft: #ece2d1;
+    --ink: #221a13;
+    --ink-soft: #4a3a2a;
+    --muted: #8a7558;
+    --line: #c9b896;
+    --accent: #8b6535;
+    --accent-deep: #5e4422;
+    --wa: #5e7548;
+    --wa-deep: #4a5c39;
+  }
+  *{margin:0; padding:0; box-sizing:border-box}
+  html{ scroll-behavior:smooth; }
+  body{
+    background-color: var(--bg);
+    background-image: radial-gradient(130% 95% at 50% -12%, #f9f3e8 0%, var(--bg) 46%, #e7d9c1 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img{display:block; max-width:100%; height:auto}
+  a{color: inherit; text-decoration: none}
+  button{ font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  .display{
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 400;
+    font-variation-settings: "SOFT" 50, "opsz" 144;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+  }
+  .it{ font-style: italic; font-weight: 350; color: var(--accent-deep); }
+  .label{
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  /* Grano: el mismo de la home, para que la página no se sienta de otro sitio */
+  body::before{
+    content:""; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+    opacity: 0.25; mix-blend-mode: darken;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.10  0 0 0 0 0.05  0 0 0 0.18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* NAV */
+  nav{
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(243, 236, 224, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 101, 53, 0.12);
+  }
+  .nav-inner{
+    max-width: 1340px; margin: 0 auto;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  }
+  .brand{ display: flex; align-items: center; gap: 12px; }
+  .brand-logo{ height: 46px; width: auto; }
+  .brand-text{ font-family:'Fraunces', Georgia, serif; font-size: 1.25rem; letter-spacing: 0.02em; line-height: 1; display: block; }
+  .brand-tag{ font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 3px; }
+  .nav-back{ font-size: 0.86rem; color: var(--ink-soft); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .25s, color .25s; }
+  .nav-back:hover{ color: var(--accent); border-bottom-color: var(--line); }
+
+  /* CABECERA */
+  .dz-head{ max-width: 1340px; margin: 0 auto; padding: 54px 24px 10px; }
+  .dz-head h1{ font-size: clamp(2.6rem, 9vw, 4.4rem); }
+  .dz-head p{ margin-top: 20px; color: var(--ink-soft); max-width: 30ch; font-size: 1.02rem; }
+
+  /* LAYOUT */
+  .dz{ max-width: 1340px; margin: 0 auto; padding: 0 24px 60px; }
+
+  /* La pieza. Queda arriba mientras se eligen las opciones: es la protagonista. */
+  .dz-vista{
+    position: sticky; top: 68px; z-index: 5;
+    padding: 14px 0 22px;
+    background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 74%, rgba(243,236,224,0) 100%);
+    display: flex; justify-content: center;
+  }
+  .dz-svg{ width: 100%; max-width: 340px; height: auto; display: block; }
+  .dz-svg *{ transition: fill .45s ease, stroke .45s ease; }
+  #capa-dibujo{ transition: opacity .32s ease; }
+
+  /* BLOQUES DE ELECCIÓN */
+  .dz-set{ padding: 44px 0 8px; border-top: 1px solid rgba(201,184,150,0.5); }
+  .dz-set:first-of-type{ border-top: 0; padding-top: 26px; }
+  .dz-set > .label{ display: block; margin-bottom: 26px; }
+  .dz-ops{ display: grid; gap: 28px 14px; }
+  #ops-dibujo{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #ops-lana{ grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  #ops-cuello{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (min-width: 560px){ #ops-dibujo{ grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .dz-op{ display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; text-align: center; }
+  .dz-op .cara{
+    width: 100%; aspect-ratio: 1; border-radius: 3px; overflow: hidden;
+    outline: 1px solid transparent; outline-offset: 5px;
+    transition: outline-color .3s ease;
+  }
+  .dz-op.lana .cara, .dz-op.cuello .cara{ max-width: 66px; }
+  .dz-op.lana .cara{ border-radius: 50%; }
+  .dz-op.cuello .cara{ outline-offset: 7px; }
+  .dz-op .cara svg{ display: block; width: 100%; height: 100%; }
+  .dz-op.cuello .cara{ color: var(--muted); transition: color .3s ease; }
+  .dz-op.cuello[aria-pressed="true"] .cara{ color: var(--accent-deep); }
+  .dz-op .nom{ font-size: 0.76rem; line-height: 1.25; color: var(--muted); transition: color .3s ease; }
+  .dz-op[aria-pressed="true"] .cara{ outline-color: var(--accent); }
+  .dz-op[aria-pressed="true"] .nom{ color: var(--ink); }
+  @media (hover:hover){ .dz-op:hover .nom{ color: var(--ink-soft); } }
+
+  /* CIERRE */
+  .dz-cierre{ padding: 48px 0 0; border-top: 1px solid rgba(201,184,150,0.5); margin-top: 44px; }
+  .dz-resumen{
+    font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 350;
+    font-size: clamp(1.35rem, 5.4vw, 1.9rem); line-height: 1.25; color: var(--accent-deep);
+    letter-spacing: -0.01em;
+  }
+  .dz-acciones{ margin-top: 30px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .dz-cta{
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--wa); color: #fff; padding: 17px 30px; border-radius: 100px;
+    font-weight: 500; font-size: 1rem; transition: background .3s, transform .3s;
+  }
+  .dz-cta:hover{ background: var(--wa-deep); transform: translateY(-2px); }
+  .dz-cta svg{ width: 19px; height: 19px; fill: currentColor; }
+  .dz-guardar{
+    font-size: 0.9rem; color: var(--ink-soft);
+    border-bottom: 1px solid var(--line); padding-bottom: 3px;
+    transition: color .25s, border-color .25s;
+  }
+  .dz-guardar:hover{ color: var(--accent); border-bottom-color: var(--accent); }
+  .dz-nota{ margin-top: 40px; font-size: 0.88rem; color: var(--muted); max-width: 42ch; }
+
+  footer{ border-top: 1px solid rgba(201,184,150,0.5); margin-top: 20px; }
+  .foot-inner{ max-width: 1340px; margin: 0 auto; padding: 40px 24px 56px; display: flex; align-items: center; gap: 14px; }
+  .foot-logo{ height: 40px; width: auto; opacity: .85; }
+  .foot-txt{ font-size: 0.8rem; color: var(--muted); }
+
+  /* COMPU: la pieza al lado de las opciones */
+  @media (min-width: 900px){
+    .dz-head{ padding-top: 80px; }
+    .dz-head p{ font-size: 1.08rem; }
+    .dz{ display: grid; grid-template-columns: 1fr 1fr; gap: 0 90px; align-items: start; padding-bottom: 90px; }
+    .dz-vista{
+      top: 96px; padding: 30px 0; background: none;
+      align-items: center; min-height: 76vh;
+    }
+    .dz-svg{ max-width: 420px; }
+    .dz-set:first-of-type{ padding-top: 46px; }
+  }
+  @media (min-width: 1600px){
+    .dz-head, .dz, .foot-inner{ max-width: 1480px; }
+  }
+
+  /* Aviso de cookies — igual que en la home */
+  .aviso-cookies{
+    display: none; position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 900;
+    background: rgba(250,245,234,0.97); border: 1px solid rgba(139,101,53,0.18); border-radius: 14px;
+    padding: 16px 18px; gap: 14px; align-items: center; justify-content: space-between;
+    box-shadow: 0 18px 40px -22px rgba(60,40,20,0.45);
+    opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .aviso-cookies.visible{ display: flex; }
+  .aviso-cookies.entra{ opacity: 1; transform: none; }
+  .aviso-cookies p{ font-size: 0.82rem; color: var(--ink-soft); margin: 0; }
+  .aviso-cookies a{ border-bottom: 1px solid var(--line); }
+  .aviso-cookies button{ font-size: 0.82rem; color: var(--accent-deep); border-bottom: 1px solid var(--line); padding-bottom: 2px; white-space: nowrap; }
+  @media (min-width: 700px){ .aviso-cookies{ left: auto; right: 24px; bottom: 24px; max-width: 460px; } }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+    html{ scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="brand">
+      <img class="brand-logo" src="/logo-ovillo.png" alt="India" loading="eager">
+      <span>
+        <span class="brand-text">India</span>
+        <span class="brand-tag">tejido a mano</span>
+      </span>
+    </a>
+    <a href="/" class="nav-back">Volver</a>
+  </div>
+</nav>
+
+<header class="dz-head">
+  <h1 class="display">Diseñá tu <span class="it">chaleco.</span></h1>
+  <p>Elegí el dibujo, la lana y el cuello. Lo demás lo hablamos por WhatsApp.</p>
+</header>
+
+<main class="dz">
+
+  <!-- LA PIEZA -->
+  <div class="dz-vista">
+    <svg class="dz-svg" id="pieza" viewBox="0 22 360 448" xmlns="http://www.w3.org/2000/svg"
+         role="img" aria-labelledby="pieza-desc">
+      <title id="pieza-desc">Boceto del chaleco</title>
+
+      <defs>
+        <!-- La silueta sale de las fotos de los chalecos: hombro casi horizontal,
+             sisa larga y suave (no un codo), cuerpo recto. Va cerrada arriba: el
+             escote se dibuja encima, asi el contorno y el recorte son uno solo y
+             no hay que duplicarlos por cada cuello. -->
+        <path id="silueta" d="M 52 64
+          L 130 50 L 230 50 L 308 64
+          C 310 106, 288 158, 285 210
+          C 286 282, 290 362, 292 420
+          L 292 432 Q 292 448, 276 448
+          L 84 448 Q 68 448, 68 432
+          L 68 420
+          C 70 362, 74 282, 75 210
+          C 72 158, 50 106, 52 64 Z"/>
+        <clipPath id="clip-silueta"><use href="#silueta"/></clipPath>
+
+        <!-- Punto derecho: las "V" del tejido -->
+        <pattern id="p-punto" width="9" height="10.5" patternUnits="userSpaceOnUse">
+          <path d="M0.3 9.6 L4.5 4 L8.7 9.6" fill="none" stroke="var(--hi)" stroke-width="1.5" stroke-opacity="0.55"/>
+          <path d="M0.3 11.4 L4.5 5.8 L8.7 11.4" fill="none" stroke="var(--lo)" stroke-width="0.9" stroke-opacity="0.5"/>
+        </pattern>
+
+        <!-- Canaleta: el elastico del ruedo, el cuello, los hombros y las sisas -->
+        <pattern id="p-canaleta" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="8" fill="var(--lana)"/>
+          <rect x="1" width="3" height="8" fill="var(--hi)" opacity="0.5"/>
+          <rect x="5.6" width="1.4" height="8" fill="var(--lo)" opacity="0.5"/>
+        </pattern>
+
+        <!-- Trenza -->
+        <pattern id="p-trenza" width="30" height="15" patternUnits="userSpaceOnUse">
+          <path d="M-3 19 L27 -4" fill="none" stroke="var(--lo)" stroke-width="13" stroke-opacity="0.6"/>
+          <path d="M-3 16 L27 -7" fill="none" stroke="var(--hi)" stroke-width="9" stroke-opacity="0.9"/>
+          <path d="M-3 13 L27 -10" fill="none" stroke="var(--hi)" stroke-width="2.6" stroke-opacity="0.55"/>
+          <rect x="0" width="2.4" height="15" fill="var(--lo)" opacity="0.6"/>
+          <rect x="27.6" width="2.4" height="15" fill="var(--lo)" opacity="0.6"/>
+        </pattern>
+
+        <!-- Ochos: el cable grande que se cruza -->
+        <pattern id="p-ochos" width="54" height="56" patternUnits="userSpaceOnUse">
+          <path d="M27 -2 C11 8 11 20 27 28 C43 36 43 48 27 58" fill="none" stroke="var(--lo)" stroke-width="19" stroke-opacity="0.8"/>
+          <path d="M27 -2 C43 8 43 20 27 28 C11 36 11 48 27 58" fill="none" stroke="var(--lo)" stroke-width="19" stroke-opacity="0.8"/>
+          <path d="M27 -2 C11 8 11 20 27 28 C43 36 43 48 27 58" fill="none" stroke="var(--hi)" stroke-width="13" stroke-opacity="0.92"/>
+          <path d="M27 -2 C43 8 43 20 27 28 C11 36 11 48 27 58" fill="none" stroke="var(--hi)" stroke-width="13" stroke-opacity="0.92"/>
+          <path d="M27 -2 C11 8 11 20 27 28 C43 36 43 48 27 58" fill="none" stroke="var(--hi)" stroke-width="3" stroke-opacity="0.55"/>
+          <rect x="0" width="2.6" height="56" fill="var(--lo)" opacity="0.6"/>
+          <rect x="51.4" width="2.6" height="56" fill="var(--lo)" opacity="0.6"/>
+        </pattern>
+
+        <!-- Guardapampa: la greca escalonada -->
+        <pattern id="p-guarda" width="52" height="32" patternUnits="userSpaceOnUse">
+          <path d="M-4 29 L3 29 L3 22 L10 22 L10 15 L17 15 L17 8 L24 8 L24 15 L31 15 L31 22 L38 22 L38 29 L56 29"
+                fill="none" stroke="var(--alt)" stroke-width="5.5" stroke-linejoin="miter" stroke-linecap="butt"/>
+        </pattern>
+
+        <!-- Vetas de la lana: ruido estirado a lo alto, de mascara -->
+        <filter id="f-veta" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.022 0.09" numOctaves="4" seed="11" result="t"/>
+          <feColorMatrix in="t" type="matrix"
+            values="0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0    0    0    0 1"/>
+          <feComponentTransfer>
+            <feFuncR type="gamma" exponent="2.4" amplitude="1.7" offset="-0.28"/>
+            <feFuncG type="gamma" exponent="2.4" amplitude="1.7" offset="-0.28"/>
+            <feFuncB type="gamma" exponent="2.4" amplitude="1.7" offset="-0.28"/>
+          </feComponentTransfer>
+        </filter>
+        <mask id="m-veta" maskUnits="userSpaceOnUse" x="0" y="0" width="360" height="500">
+          <rect width="360" height="500" filter="url(#f-veta)"/>
+        </mask>
+
+        <!-- Volumen: apenas, para que no parezca un vector plano -->
+        <radialGradient id="volumen" cx="42%" cy="26%" r="82%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+          <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#000000" stop-opacity="0.16"/>
+        </radialGradient>
+
+        <!-- Pelusa de la lana -->
+        <filter id="pelusa" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+          <feColorMatrix values="0 0 0 0 0.13  0 0 0 0 0.09  0 0 0 0 0.05  0 0 0 0.5 0"/>
+        </filter>
+
+        <!-- LOS DIBUJOS. Cada uno se usa en la pieza y en su miniatura. -->
+        <g id="dib-liso"></g>
+
+        <g id="dib-veteado">
+          <rect x="0" y="0" width="360" height="500" fill="var(--alt)" opacity="0.42" mask="url(#m-veta)"/>
+        </g>
+
+        <g id="dib-trenza">
+          <rect x="90" y="30" width="30" height="440" fill="url(#p-trenza)"/>
+          <rect x="135" y="30" width="30" height="440" fill="url(#p-trenza)"/>
+          <rect x="195" y="30" width="30" height="440" fill="url(#p-trenza)"/>
+          <rect x="240" y="30" width="30" height="440" fill="url(#p-trenza)"/>
+        </g>
+
+        <g id="dib-ochos">
+          <rect x="153" y="24" width="54" height="450" fill="url(#p-ochos)"/>
+          <rect x="105" y="24" width="30" height="450" fill="url(#p-trenza)"/>
+          <rect x="225" y="24" width="30" height="450" fill="url(#p-trenza)"/>
+        </g>
+
+        <g id="dib-guarda">
+          <rect x="0" y="166" width="360" height="5" fill="var(--alt)"/>
+          <rect x="0" y="177" width="360" height="32" fill="url(#p-guarda)"/>
+          <rect x="0" y="215" width="360" height="5" fill="var(--alt)"/>
+          <rect x="0" y="338" width="360" height="4" fill="var(--alt)"/>
+          <rect x="0" y="348" width="360" height="32" fill="url(#p-guarda)"/>
+        </g>
+
+        <g id="dib-rayado">
+          <rect x="0" y="52" width="360" height="24" fill="var(--alt)"/>
+          <rect x="0" y="88" width="360" height="12" fill="var(--alt)" opacity="0.5"/>
+          <rect x="0" y="112" width="360" height="17" fill="var(--alt)"/>
+          <rect x="0" y="146" width="360" height="27" fill="var(--alt)" opacity="0.72"/>
+          <rect x="0" y="188" width="360" height="13" fill="var(--alt)"/>
+          <rect x="0" y="214" width="360" height="22" fill="var(--alt)" opacity="0.5"/>
+          <rect x="0" y="252" width="360" height="26" fill="var(--alt)"/>
+          <rect x="0" y="292" width="360" height="14" fill="var(--alt)" opacity="0.72"/>
+          <rect x="0" y="318" width="360" height="21" fill="var(--alt)"/>
+          <rect x="0" y="352" width="360" height="12" fill="var(--alt)" opacity="0.5"/>
+          <rect x="0" y="378" width="360" height="25" fill="var(--alt)"/>
+        </g>
+      </defs>
+
+      <!-- El tejido, recortado por la silueta -->
+      <g clip-path="url(#clip-silueta)">
+        <rect x="0" y="0" width="360" height="500" fill="var(--lana)"/>
+        <use id="capa-dibujo" href="#dib-liso"/>
+        <rect x="0" y="0" width="360" height="500" fill="url(#p-punto)"/>
+        <!-- El elastico del ruedo va encima del dibujo, como en la prenda real -->
+        <rect x="0" y="416" width="360" height="40" fill="url(#p-canaleta)"/>
+        <rect x="0" y="413" width="360" height="3.5" fill="var(--lo)" opacity="0.3"/>
+        <rect x="0" y="0" width="360" height="500" fill="url(#volumen)"/>
+        <rect x="0" y="0" width="360" height="500" filter="url(#pelusa)" opacity="0.2" style="mix-blend-mode:multiply"/>
+      </g>
+
+      <!-- Los remates van recortados por la silueta: si no, asoman por afuera -->
+      <g clip-path="url(#clip-silueta)">
+        <path d="M 52 64 L 130 50" fill="none" stroke="url(#p-canaleta)" stroke-width="13"/>
+        <path d="M 230 50 L 308 64" fill="none" stroke="url(#p-canaleta)" stroke-width="13"/>
+        <path d="M 52 64 L 130 50" fill="none" stroke="var(--lo)" stroke-width="13" stroke-opacity="0.13"/>
+        <path d="M 230 50 L 308 64" fill="none" stroke="var(--lo)" stroke-width="13" stroke-opacity="0.13"/>
+
+        <path d="M 308 64 C 310 106, 288 158, 285 210" fill="none" stroke="url(#p-canaleta)" stroke-width="13"/>
+        <path d="M 52 64 C 50 106, 72 158, 75 210" fill="none" stroke="url(#p-canaleta)" stroke-width="13"/>
+        <path d="M 308 64 C 310 106, 288 158, 285 210" fill="none" stroke="var(--lo)" stroke-width="13" stroke-opacity="0.14"/>
+        <path d="M 52 64 C 50 106, 72 158, 75 210" fill="none" stroke="var(--lo)" stroke-width="13" stroke-opacity="0.14"/>
+      </g>
+
+      <!-- El escote: por el hueco se ve la espalda -->
+      <g id="escote-redondo">
+        <ellipse cx="180" cy="84" rx="55" ry="31" fill="var(--esp)"/>
+        <ellipse cx="180" cy="84" rx="55" ry="31" fill="url(#p-punto)" opacity="0.55"/>
+        <ellipse cx="180" cy="84" rx="55" ry="31" fill="none" stroke="url(#p-canaleta)" stroke-width="15"/>
+        <ellipse cx="180" cy="84" rx="55" ry="31" fill="none" stroke="var(--lo)" stroke-width="15" stroke-opacity="0.16"/>
+      </g>
+
+      <g id="escote-v" style="display:none">
+        <path d="M 130 50 L 180 158 L 230 50 Z" fill="var(--esp)"/>
+        <path d="M 130 50 L 180 158 L 230 50 Z" fill="url(#p-punto)" opacity="0.55"/>
+        <path d="M 130 50 L 180 158 L 230 50" fill="none" stroke="url(#p-canaleta)" stroke-width="15" stroke-linejoin="miter"/>
+        <path d="M 130 50 L 180 158 L 230 50" fill="none" stroke="var(--lo)" stroke-width="15" stroke-opacity="0.16" stroke-linejoin="miter"/>
+      </g>
+
+      <!-- El borde de la prenda -->
+      <use href="#silueta" fill="none" stroke="var(--lo)" stroke-width="1.5" stroke-opacity="0.4"/>
+    </svg>
+  </div>
+
+  <!-- LAS OPCIONES -->
+  <div class="dz-opts">
+
+    <section class="dz-set">
+      <span class="label">El dibujo</span>
+      <div class="dz-ops" id="ops-dibujo"></div>
+    </section>
+
+    <section class="dz-set">
+      <span class="label">La lana</span>
+      <div class="dz-ops" id="ops-lana"></div>
+    </section>
+
+    <section class="dz-set">
+      <span class="label">El cuello</span>
+      <div class="dz-ops" id="ops-cuello"></div>
+    </section>
+
+    <div class="dz-cierre">
+      <p class="dz-resumen" id="resumen"></p>
+      <div class="dz-acciones">
+        <a class="dz-cta" id="cta-wa" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+          <span>Encargalo por WhatsApp</span>
+        </a>
+        <button class="dz-guardar" id="guardar" type="button">Guardar el boceto</button>
+      </div>
+      <p class="dz-nota">Es un boceto, no una foto. Cada chaleco se teje a mano y ninguno sale igual a otro.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <img class="foot-logo" src="/logo-ovillo.png" alt="India" loading="lazy">
+    <span class="foot-txt">Lana, agujas y tiempo.</span>
+  </div>
+</footer>
+
+<div class="aviso-cookies" id="avisoCookies" role="note">
+  <p>Medimos las visitas para saber si nuestra publicidad sirve. <a href="/privacidad.html">Cómo cuidamos tus datos</a></p>
+  <button type="button" id="avisoOk">Entendido</button>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var PHONE = '543456268401';
+
+  // Los colores son los naturales de la lana, sin teñir.
+  var LANAS = [
+    { id:'marron-claro',  nombre:'marrón claro',  hex:'#8e7050' },
+    { id:'marron-oscuro', nombre:'marrón oscuro', hex:'#4a3625' },
+    { id:'crudo',         nombre:'crudo',         hex:'#d9cbb2' },
+    { id:'gris',          nombre:'gris',          hex:'#8a8479' },
+    { id:'negro',         nombre:'negro',         hex:'#2c2823' }
+  ];
+
+  var DIBUJOS = [
+    { id:'liso',        nombre:'liso',        use:'#dib-liso',     foco:'146 236 88 88' },
+    { id:'veteado',     nombre:'veteado',     use:'#dib-veteado',  foco:'120 220 88 88' },
+    { id:'trenza',      nombre:'trenza',      use:'#dib-trenza',  foco:'120 236 88 88' },
+    { id:'ochos',       nombre:'ochos',       use:'#dib-ochos',   foco:'136 242 88 88' },
+    { id:'guardapampa', nombre:'guardapampa', use:'#dib-guarda',  foco:'136 158 88 88' },
+    { id:'rayado',      nombre:'rayado',      use:'#dib-rayado',  foco:'136 176 88 88' }
+  ];
+
+  var CUELLOS = [
+    { id:'redondo', nombre:'redondo', texto:'cuello redondo' },
+    { id:'v',       nombre:'en v',    texto:'cuello en v' }
+  ];
+
+  var estado = { dibujo: DIBUJOS[0], lana: LANAS[1], cuello: CUELLOS[0] };
+
+  // --- Color -------------------------------------------------------------
+  function aRgb(hex){
+    return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+  }
+  function aHex(rgb){
+    return '#' + rgb.map(function(v){
+      var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return s.length === 1 ? '0' + s : s;
+    }).join('');
+  }
+  function mezclar(hex, otro, cuanto){
+    var a = aRgb(hex), b = aRgb(otro);
+    return aHex([0,1,2].map(function(i){ return a[i] + (b[i] - a[i]) * cuanto; }));
+  }
+  function luz(hex){
+    var c = aRgb(hex);
+    return (c[0]*0.299 + c[1]*0.587 + c[2]*0.114) / 255;
+  }
+  // Los tonos de la textura salen de la propia lana: claro hacia crema, oscuro hacia tierra.
+  function tonos(hex){
+    return {
+      lana: hex,
+      hi:   mezclar(hex, '#fdf6e8', luz(hex) > 0.72 ? 0.16 : 0.26),
+      lo:   mezclar(hex, '#1a1209', luz(hex) < 0.22 ? 0.22 : 0.30),
+      // El contraste del rayado y la guarda: crudo sobre lana oscura, tierra sobre lana clara.
+      alt:  luz(hex) > 0.5 ? mezclar(hex, '#3a2b1c', 0.72) : mezclar(hex, '#e2d6bd', 0.80),
+      // Lo que se ve por el escote es la espalda, no un agujero: apenas mas oscura.
+      esp:  mezclar(hex, '#1a1209', luz(hex) < 0.22 ? 0.14 : 0.19)
+    };
+  }
+  function pintar(el, hex){
+    var t = tonos(hex);
+    el.style.setProperty('--lana', t.lana);
+    el.style.setProperty('--hi', t.hi);
+    el.style.setProperty('--lo', t.lo);
+    el.style.setProperty('--esp', t.esp);
+    el.style.setProperty('--alt', t.alt);
+  }
+
+  // --- Miniaturas --------------------------------------------------------
+  var NS = 'http://www.w3.org/2000/svg';
+  function miniDibujo(dib){
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', dib.foco);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    var fondo = document.createElementNS(NS, 'rect');
+    fondo.setAttribute('x', '0'); fondo.setAttribute('y', '0');
+    fondo.setAttribute('width', '360'); fondo.setAttribute('height', '500');
+    fondo.setAttribute('fill', 'var(--lana)');
+    svg.appendChild(fondo);
+    var uso = document.createElementNS(NS, 'use');
+    uso.setAttribute('href', dib.use);
+    svg.appendChild(uso);
+    var punto = fondo.cloneNode();
+    punto.setAttribute('fill', 'url(#p-punto)');
+    svg.appendChild(punto);
+    return svg;
+  }
+  function miniLana(lana){
+    var t = tonos(lana.hex);
+    var id = 'p-punto-' + lana.id;
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 60 60');
+    svg.innerHTML =
+      '<defs><pattern id="' + id + '" width="11" height="13" patternUnits="userSpaceOnUse">' +
+        '<path d="M0.4 12 L5.5 5 L10.6 12" fill="none" stroke="' + t.hi + '" stroke-width="1.3" stroke-opacity="0.5"/>' +
+        '<path d="M0.4 14 L5.5 7 L10.6 14" fill="none" stroke="' + t.lo + '" stroke-width="0.7" stroke-opacity="0.45"/>' +
+      '</pattern></defs>' +
+      '<rect width="60" height="60" fill="' + t.lana + '"/>' +
+      '<rect width="60" height="60" fill="url(#' + id + ')"/>';
+    return svg;
+  }
+  function miniCuello(cuello){
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 60 60');
+    // El hombro y la sisa dan el contexto; el escote es lo que cambia.
+    svg.innerHTML =
+      '<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' +
+        '<path d="M4 16 L20 11 M40 11 L56 16" opacity="0.55"/>' +
+        '<path d="M4 16 C3 26, 9 36, 10 48 M56 16 C57 26, 51 36, 50 48" opacity="0.55"/>' +
+        (cuello.id === 'v'
+          ? '<path d="M20 11 L30 36 L40 11"/>'
+          : '<path d="M20 11 C20 27, 40 27, 40 11"/>') +
+      '</g>';
+    return svg;
+  }
+
+  // --- Armado de las opciones -------------------------------------------
+  function opcion(clase, nombre, mini, alElegir){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dz-op ' + clase;
+    b.setAttribute('aria-pressed', 'false');
+    var cara = document.createElement('span');
+    cara.className = 'cara';
+    cara.appendChild(mini);
+    var nom = document.createElement('span');
+    nom.className = 'nom';
+    nom.textContent = nombre;
+    b.appendChild(cara); b.appendChild(nom);
+    b.addEventListener('click', alElegir);
+    return b;
+  }
+  function marcar(contenedor, elegido){
+    Array.prototype.forEach.call(contenedor.children, function(b){
+      b.setAttribute('aria-pressed', b === elegido ? 'true' : 'false');
+    });
+  }
+
+  var pieza = document.getElementById('pieza');
+  var capaDibujo = document.getElementById('capa-dibujo');
+  var escoteRedondo = document.getElementById('escote-redondo');
+  var escoteV = document.getElementById('escote-v');
+  var resumen = document.getElementById('resumen');
+  var cta = document.getElementById('cta-wa');
+
+  var contDibujo = document.getElementById('ops-dibujo');
+  var contLana = document.getElementById('ops-lana');
+  var contCuello = document.getElementById('ops-cuello');
+
+  DIBUJOS.forEach(function(d){
+    var b = opcion('dibujo', d.nombre, miniDibujo(d), function(){
+      estado.dibujo = d; marcar(contDibujo, b); refrescar();
+    });
+    contDibujo.appendChild(b);
+  });
+  LANAS.forEach(function(l){
+    var b = opcion('lana', l.nombre, miniLana(l), function(){
+      estado.lana = l; marcar(contLana, b); refrescar();
+    });
+    contLana.appendChild(b);
+  });
+  CUELLOS.forEach(function(c){
+    var b = opcion('cuello', c.nombre, miniCuello(c), function(){
+      estado.cuello = c; marcar(contCuello, b); refrescar();
+    });
+    contCuello.appendChild(b);
+  });
+
+  var dibujoPrevio = null;
+  function refrescar(){
+    if (dibujoPrevio !== estado.dibujo.use) {
+      dibujoPrevio = estado.dibujo.use;
+      capaDibujo.style.opacity = '0';
+      capaDibujo.setAttribute('href', estado.dibujo.use);
+      requestAnimationFrame(function(){ capaDibujo.style.opacity = '1'; });
+    }
+    escoteRedondo.style.display = estado.cuello.id === 'redondo' ? '' : 'none';
+    escoteV.style.display = estado.cuello.id === 'v' ? '' : 'none';
+    // Las variables van en el propio <svg> para que el boceto se pueda guardar solo.
+    pintar(pieza, estado.lana.hex);
+    // Las miniaturas del dibujo se tiñen con la lana elegida, como la pieza.
+    Array.prototype.forEach.call(contDibujo.children, function(b){
+      pintar(b.querySelector('svg'), estado.lana.hex);
+    });
+    var texto = estado.dibujo.nombre + ' · ' + estado.lana.nombre + ' · ' + estado.cuello.texto;
+    resumen.textContent = texto;
+    cta.href = 'https://wa.me/' + PHONE + '?text=' + encodeURIComponent(
+      'Hola! Diseñé un chaleco en la página: ' + texto + '. ¿Me lo pueden tejer?'
+    );
+  }
+
+  // Estado inicial
+  marcar(contDibujo, contDibujo.children[DIBUJOS.indexOf(estado.dibujo)]);
+  marcar(contLana, contLana.children[LANAS.indexOf(estado.lana)]);
+  marcar(contCuello, contCuello.children[CUELLOS.indexOf(estado.cuello)]);
+  refrescar();
+
+  // --- Guardar el boceto -------------------------------------------------
+  // El SVG se serializa entero (defs incluidos) y se dibuja en un canvas. Las
+  // variables de color ya viven en el <svg>, así que la imagen sale completa.
+  function bocetoPng(){
+    return new Promise(function(listo, falla){
+      var copia = pieza.cloneNode(true);
+      copia.setAttribute('xmlns', NS);
+      copia.setAttribute('width', '900');
+      copia.setAttribute('height', '1140');
+      var svgTexto = new XMLSerializer().serializeToString(copia);
+      var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgTexto);
+      var img = new Image();
+      img.onload = function(){
+        var lienzo = document.createElement('canvas');
+        lienzo.width = 900; lienzo.height = 1260;
+        var ctx = lienzo.getContext('2d');
+        ctx.fillStyle = '#f3ece0';
+        ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+        ctx.drawImage(img, 0, 0, 900, 1140);
+        ctx.fillStyle = '#8a7558';
+        ctx.textAlign = 'center';
+        ctx.font = 'italic 34px Fraunces, Georgia, serif';
+        ctx.fillText(resumen.textContent, 450, 1190);
+        lienzo.toBlob(function(blob){
+          blob ? listo(blob) : falla(new Error('sin blob'));
+        }, 'image/png');
+      };
+      img.onerror = function(){ falla(new Error('no cargó el svg')); };
+      img.src = url;
+    });
+  }
+
+  document.getElementById('guardar').addEventListener('click', function(){
+    var boton = this;
+    var original = boton.textContent;
+    boton.textContent = 'Armando el boceto...';
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+      .then(bocetoPng)
+      .then(function(blob){
+        var nombre = 'chaleco-' + estado.dibujo.id + '-' + estado.lana.id + '-' + estado.cuello.id + '.png';
+        var archivo = new File([blob], nombre, { type: 'image/png' });
+        // En el celular conviene compartirlo derecho a WhatsApp; en la compu, bajarlo.
+        if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+          return navigator.share({ files: [archivo], text: resumen.textContent });
+        }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = nombre;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      })
+      .catch(function(){ /* si lo cancelan o falla, no se dice nada */ })
+      .then(function(){ boton.textContent = original; });
+  });
+
+  // --- Medición ----------------------------------------------------------
+  var interno = false;
+  try { interno = localStorage.getItem('india_interno') === '1'; } catch (e) {}
+  cta.addEventListener('click', function(){
+    if (interno || !window.fbq) return;
+    fbq('track', 'Contact', { content_name: 'disenar:' + estado.dibujo.id + '-' + estado.lana.id + '-' + estado.cuello.id });
+  });
+})();
+</script>
+
+<script>
+// Aviso de cookies. Mismo comportamiento que la home: aparece una vez, después del primer scroll.
+(function(){
+  var caja = document.getElementById('avisoCookies');
+  var ok = document.getElementById('avisoOk');
+  if (!caja || !ok) return;
+  var visto;
+  try { visto = localStorage.getItem('india_aviso_cookies'); } catch (e) { return; }
+  if (visto) return;
+  function mostrar(){
+    window.removeEventListener('scroll', alScrollear);
+    caja.classList.add('visible');
+    requestAnimationFrame(function(){ caja.classList.add('entra'); });
+  }
+  function alScrollear(){
+    if (window.scrollY > window.innerHeight * 0.9) mostrar();
+  }
+  window.addEventListener('scroll', alScrollear, { passive: true });
+  alScrollear();
+  ok.addEventListener('click', function(){
+    caja.classList.remove('entra');
+    setTimeout(function(){ caja.classList.remove('visible'); }, 500);
+    try { localStorage.setItem('india_aviso_cookies', '1'); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

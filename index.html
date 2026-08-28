@@ -1704,6 +1704,7 @@
       row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
     });
     animatePieces();
+    if (window.otInicio) requestAnimationFrame(window.otInicio);
     if (window.otUpdate) requestAnimationFrame(window.otUpdate);
   }
 
@@ -1756,6 +1757,33 @@
       el.classList.toggle('al-final', (el.scrollWidth - el.clientWidth - el.scrollLeft) <= 4);
     };
     rows.forEach(el => { el.addEventListener('scroll', () => { marcarBordes(el); actualizarFlechas(); }, { passive: true }); });
+
+    // Las filas tienen que arrancar SIEMPRE por la primera pieza: es la que se
+    // eligió mostrar primero y la que más importa. El navegador se guarda el
+    // scroll horizontal de cada caja y lo restaura al recargar —y lo reintenta
+    // durante unos segundos, o sea despues de que Firestore pinta las piezas—,
+    // así que la sección aparecía empezada por el medio y las de la izquierda
+    // no se veían nunca. Mientras nadie la haya tocado, la volvemos al principio.
+    let tocada = false;
+    const marcarTocada = () => { tocada = true; };
+    rows.forEach(el => ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(ev => el.addEventListener(ev, marcarTocada, { passive: true })));
+    if (prev) prev.addEventListener('click', marcarTocada);
+    if (next) next.addEventListener('click', marcarTocada);
+    window.otInicio = () => {
+      if (tocada) return;
+      rows.forEach(r => {
+        if (r.scrollLeft <= 12) return;   // el snap deja 2px de padding: eso ya es el principio
+        const antes = r.style.scrollBehavior;
+        r.style.scrollBehavior = 'auto';   // si no, se ve el viaje de vuelta
+        r.scrollLeft = 0;
+        r.style.scrollBehavior = antes;
+        marcarBordes(r);
+      });
+      actualizarFlechas();
+    };
+    window.addEventListener('load', () => window.otInicio());
+    [300, 900, 2000].forEach(ms => setTimeout(() => window.otInicio(), ms));
+
     window.otUpdate = () => {
       const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
       rows.forEach(marcarBordes);

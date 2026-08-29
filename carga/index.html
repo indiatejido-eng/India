@@ -1403,6 +1403,9 @@
     if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
     else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
     else chips.push(`<span class="cli-chip">Sin enviar</span>`);
+    // Solo mientras el chaleco esté en la casa: una vez que salió ya no se puede pesar
+    // y el aviso pasa a ser un reproche inútil.
+    if(!(Number(p.peso)>0) && !p.enviado && !p.entregado) chips.push(`<span class="cli-chip warn">Sin pesar</span>`);
     let rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
     if(!rev) rev = resenaPorNombre(p.cliente);   // cruce por nombre (reseñas de links sueltos / importados)
     if(rev) chips.push(`<span class="cli-chip star">★ respondió (${Number(rev.estrellas)||0})</span>`);
@@ -1502,7 +1505,15 @@
     const p=(PEDIDOS||[]).find(x=>x.id===id); if(!p) return;
     try{
       if(accion==='cobrar') await window.FB.actualizarPedido(id,{saldoCobrado:true});
-      else if(accion==='enviar') await window.FB.actualizarPedido(id,{enviado:true});
+      else if(accion==='enviar'){
+        // Marcar enviado es la última pantalla donde el chaleco todavía está en la casa.
+        // Si sale sin pesar, ese dato no se recupera nunca: no se avisa antes ni después.
+        if(!(Number(p.peso)>0)){
+          const igual=confirm('Este chaleco todavía no está pesado.\n\nUna vez que sale ya no se puede, y de ahí sale cuánta lana lleva cada talle de verdad.\n\nAceptar: marcarlo enviado igual.\nCancelar: lo peso ahora.');
+          if(!igual){ abrirEdicion(p); return; }
+        }
+        await window.FB.actualizarPedido(id,{enviado:true});
+      }
       else if(accion==='entregar') await window.FB.actualizarPedido(id,{entregado:true});
       else if(accion==='resena'){
         if(generandoResena.has(id) || p.tokenResena) return;   // evita doble token por double-tap

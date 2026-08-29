@@ -1531,7 +1531,7 @@
   function copiarMensajeResena(nombre, token){
     const link=`${location.origin}/resena?token=${token}`;
     const saludo = nombre ? `¡Hola ${String(nombre).trim().split(' ')[0]}!` : '¡Hola!';
-    const msg=`${saludo} Esperamos que estés disfrutando tu chaleco. Cada opinión nos ayuda un montón a crecer y a mejorar. Si te queda un minuto, nos encantaría que nos dejes la tuya acá: ${link}. ¡Gracias por elegirnos!`;
+    const msg=`${saludo} Esperamos que estés disfrutando tu chaleco. Cada opinión nos ayuda un montón a crecer y a mejorar. Si te queda un minuto, nos encantaría que nos dejes la tuya acá: ${link}. Y si te sacás una foto con el chaleco puesto y la subís ahí, mejor todavía. ¡Gracias por elegirnos!`;
     if(navigator.clipboard) navigator.clipboard.writeText(msg).then(()=>alert('Mensaje copiado ✓ Pegalo en el WhatsApp del cliente.')).catch(()=>prompt('Copiá el mensaje:',msg));
     else prompt('Copiá el mensaje:',msg);
   }

@@ -183,6 +183,8 @@
          align-items:baseline;gap:4px 12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
   .rec-t{grid-column:1/-1;color:var(--muted);font-size:12px;font-style:italic;line-height:1.45;
          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rec-t.larga{white-space:normal;font-style:normal}
+  .rec-t.larga .card-a{font-size:13px;padding:0 4px}
   .rec-r:last-child{border-bottom:none}
   .rec-n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rec-q{color:var(--gold-txt);font-size:12.5px}
@@ -2997,7 +2999,7 @@
            <div class="rec-q">cargados a mano</div>
            <div class="rec-d"></div>
            <div class="rec-m">—</div>
-           <div class="rec-t">De cuando el WhatsApp todavía no guardaba las charlas. No se puede decir quiénes fueron ni cuánto sumaron.
+           <div class="rec-t larga">De cuando el WhatsApp todavía no guardaba las charlas. No se puede decir quiénes fueron ni cuánto sumaron.
              <button class="card-a" style="padding:0;margin-left:6px" onclick="cambiarViejos(-1)">−</button>
              <button class="card-a" style="padding:0" onclick="cambiarViejos(1)">+</button></div>
          </div>` : '';

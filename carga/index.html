@@ -232,6 +232,8 @@
   .cl-i{min-width:0;flex:1}
   .cl-n{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cl-q{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+  .cl-d{font-size:11.5px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+  .cl-d .cuando{color:var(--muted);opacity:.8}
   .et{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;flex:none;
       border:1px solid;white-space:nowrap}
   .et.proceso{color:var(--gold-txt);border-color:rgba(201,133,0,.4);background:rgba(201,133,0,.12)}
@@ -825,7 +827,7 @@
       <div class="stat"><div class="sl">Vendido</div><div class="sv" id="n-vendido">—</div></div>
       <div class="stat"><div class="sl">Ganancia</div><div class="sv green" id="n-ganancia">—</div></div>
       <div class="stat"><div class="sl">Gastos</div><div class="sv" id="n-gastos">—</div></div>
-      <div class="stat"><div class="sl">Margen</div><div class="sv" id="n-margen">—</div></div>
+      <div class="stat"><div class="sl">Margen del negocio</div><div class="sv" id="n-margen">—</div><div class="mini" id="n-margen-pie" style="margin-top:6px"></div></div>
       <div class="stat"><div class="sl">Chalecos</div><div class="sv" id="n-chalecos">—</div></div>
       <div class="stat"><div class="sl">Precio promedio</div><div class="sv" id="n-ticket">—</div></div>
       <div class="stat"><div class="sl">Por cobrar</div><div class="sv" id="n-porcobrar">—</div></div>
@@ -851,6 +853,7 @@
     <div class="mini" id="n-pub-pie"></div>
 
     <div class="stat-sec gap">Cuánto deja cada chaleco</div>
+    <div class="stat-period" id="n-margen-expl"></div>
     <div class="seg" id="n-seg-envio">
       <button class="on" onclick="segRent('envio','envio',this)">Con envío</button>
       <button onclick="segRent('envio','local',this)">Acá en Concordia</button>
@@ -1261,7 +1264,7 @@
     $('n-pub-cac').textContent=d.cac?pesos(d.cac):'—';
     $('n-pub-mes').textContent=pesos(techoMensual(d));
     $('n-pub-dia').textContent=pesos(Math.round(techoMensual(d)/30/100)*100);
-    pintarMargen(d);
+    pintarMargen(d); pintarMargenNegocio(d); explicarMargenes(d);
     if(gastoPub>0){
       $('n-pub-box').style.display='block';
       const r=retornoHistorico();
@@ -1388,12 +1391,32 @@
     if(!precio) return Math.round(bruto * 0.3 / 1000) * 1000;
     return Math.max(0, Math.round((bruto - MARGEN_OBJ * precio) / 1000) * 1000);
   }
-  // El margen que está dejando hoy cada chaleco, ya con la publicidad descontada.
-  function margenHoy(d){
-    const precio = Number(d && d.ticket) || 0;
-    if(!precio) return null;
-    return (techoPublicidad(d) - (Number(d.cac) || 0)) / precio;
+  // El margen que deja cada chaleco, calculado sobre las VENTAS DE VERDAD: el
+  // precio al que se vendió cada una menos lo que costó ese talle.
+  //
+  // Antes se hacía con el precio de lista arriba y el precio promedio real abajo,
+  // y eso infla el número: si se vendió a $145.000 lo que la lista dice $160.000,
+  // el margen salía más alto que el de cualquier talle de la tabla. Eran manzanas
+  // divididas por peras. Ahora las dos puntas salen de la misma venta.
+  function margenVentas(d, rows){
+    const filas = (rows || ULTIMO_ROWS || []).filter(r => r.Info === 'Ventas' && (!d.mes || mesDeFila(r) === d.mes));
+    let precio = 0, queda = 0;
+    filas.forEach(r => {
+      const pr = numero(r['Precio ($)']); if(pr <= 0) return;
+      const t = r.Talle || 'M';
+      const lanaKg = d.lanaPorKg || COSTOS.lanaKg;
+      // Sin mano de obra: el Sheet no guarda quién tejió cada chaleco, y el trabajo
+      // de Bárbara no se cobra. Es el mismo supuesto que la tabla por talle.
+      const costo = gramosDe(t, d)/1000*lanaKg + fijosPorVenta(d, !esLocal(r));
+      precio += pr; queda += pr - costo;
+    });
+    return precio > 0 ? { margen: queda/precio, queda, precio, n: filas.length } : null;
   }
+  const mesDeFila = r => { const f = String(r.Fecha||'').trim();
+    if(/^\d{4}-\d{2}-\d{2}/.test(f)) return f.slice(0,7);
+    const p = f.split('/'); return p.length===3 ? p[2]+'-'+String(p[1]).padStart(2,'0') : (r.Mes?String(r.Mes):''); };
+
+  function margenHoy(d){ const m = margenVentas(d); return m ? m.margen : null; }
   function elegirMargen(m){
     MARGEN_OBJ = m;
     try{ localStorage.setItem('india_margen_obj', String(m)); }catch(e){}
@@ -1409,6 +1432,21 @@
   }
   const techoMensual=d=>Math.round(techoSano(d)*ritmoMensual(d)/1000)*1000;
 
+  // Qué mide cada número, en una frase. Son dos cosas distintas y hasta ahora las
+  // dos se llamaban "margen", que es la razón por la que no cerraban.
+  function explicarMargenes(d){
+    const e = $('n-margen-expl'); if(!e) return;
+    const mv = margenVentas(d);
+    const h = ULTIMO_ROWS ? calcular(ULTIMO_ROWS, '') : null;
+    const mh = h ? margenVentas(h) : null;
+    e.innerHTML = `Acá se cuenta <b>pieza por pieza</b>: el precio de venta menos la lana que lleva
+      ese talle, el envío, el transporte, la etiqueta y la publicidad que costó traer la venta.
+      ${mv ? `Sobre las ${plural(mv.n,'venta','ventas')} del período da <b>${Math.round(mv.margen*100)}%</b>` : ''}${mh && mv && Math.abs(mh.margen-mv.margen) > 0.02 ? `, y sobre todas las de siempre <b>${Math.round(mh.margen*100)}%</b>` : ''}.
+      <br><b>El "margen del negocio" de arriba es otra cosa</b>: compara lo que entró con lo que se
+      pagó ese mes, incluida la lana que todavía no se tejió. Por eso salta —un mes que compra lana
+      se ve peor y el siguiente mejor—, y por eso el que sirve para decidir precios es éste.`;
+  }
+
   function pintarMargen(d){
     const c = $('n-margen-obj'); if(!c) return;
     const hoy = margenHoy(d);
@@ -1416,13 +1454,27 @@
     const bruto = precio ? techoPublicidad(d) / precio : 0;   // el techo de margen posible
     c.innerHTML = MARGENES.map(m =>
       `<button class="${m === MARGEN_OBJ ? 'on' : ''}${bruto && m >= bruto ? ' imposible' : ''}" data-margen="${m}">${Math.round(m*100)}%</button>`).join('')
-      + (hoy != null ? `<span class="seg-nota">hoy te queda <b>${Math.round(hoy*100)}%</b> por chaleco</span>` : '');
+      + (hoy != null ? `<span class="seg-nota">hoy cada chaleco te deja <b>${Math.round(hoy*100)}%</b></span>` : '');
     const av = $('n-margen-aviso');
     if(av) av.innerHTML = (bruto && MARGEN_OBJ >= bruto)
       ? `<div class="tip warn" style="margin:12px 0 0"><b>Con ${Math.round(MARGEN_OBJ*100)}% no te sobra nada para publicidad.</b>
          El chaleco deja <b>${Math.round(bruto*100)}%</b> antes de pagar un solo peso de anuncios
          (${pesos(techoPublicidad(d))} sobre ${pesos(precio)}). Para poder pautar, o bajás el objetivo,
          o subís el precio, o abaratás el chaleco.</div>` : '';
+  }
+
+  // El margen del negocio del período, con el de siempre al lado. Con tres o cuatro
+  // ventas por mes el mensual salta —junio 52%, julio 72%, agosto 74%— porque la
+  // lana se compra un mes y se teje en otro, y las etiquetas caen de golpe. El que
+  // vale para decidir es el acumulado.
+  function pintarMargenNegocio(d){
+    const pie = $('n-margen-pie'); if(!pie) return;
+    if(!ULTIMO_ROWS){ pie.textContent = ''; return; }
+    const h = calcular(ULTIMO_ROWS, '');
+    const hist = Number(h.margen) || 0;
+    pie.innerHTML = d.mes
+      ? `de siempre: <b>${hist}%</b>`
+      : 'de siempre, sobre todo lo vendido';
   }
 
   // ── Los consejos: qué mirar y qué hacer ─────────────────────────────────
@@ -2541,10 +2593,17 @@
     if(!abiertos.length){ cont.innerHTML = '<div class="vacio">Todo entregado y cobrado. Buen momento.</div>'; return; }
     cont.innerHTML = abiertos.slice(0, 5).map(p => {
       const [cls, txt] = ETIQ_EST[estadoPedido(p)];
+      const enCamino = p.enviado && !p.entregado;
+      const donde = enCamino
+        ? (p.ubicacion
+            ? `<div class="cl-d">→ ${esc0(p.ubicacion)}${p.ubicacionFecha ? ` <span class="cuando">· ${esc0(p.ubicacionFecha)}</span>` : ''}</div>`
+            : (destinoDe(p) ? `<div class="cl-d">→ ${esc0(destinoDe(p))}<span class="cuando"> · sin novedades todavía</span></div>` : ''))
+        : '';
       return `<button class="cl-r" data-id="${esc0(p.id)}">
         <div class="cl-i">
           <div class="cl-n">${esc0(p.cliente || 'Sin nombre')}</div>
           <div class="cl-q">${esc0(p.queCompro || '—')}</div>
+          ${donde}
         </div>
         <span class="et ${cls}">${txt}</span></button>`;
     }).join('');

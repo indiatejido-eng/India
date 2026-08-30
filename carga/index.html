@@ -731,7 +731,7 @@
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip" onclick="pick(this)">No sé</div></div><div class="hint">Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio. Si no está claro, "No sé" — se cuenta aparte y no ensucia el número.</div></div>
 
-    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="v-recontacto" data-val="No"><div class="chip" onclick="pick(this)">Sí</div><div class="chip sel" onclick="pick(this)">No</div></div><div class="hint">Poné <b>Sí</b> si la charla se había parado y la venta salió porque le volviste a escribir: por las medidas, avisando que entró la lana, con un precio. Es el dato que dice si vale la pena insistir.</div></div>
+    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="v-recontacto" data-val="Lo detecta solo"><div class="chip sel" onclick="pick(this)">Lo detecta solo</div><div class="chip" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div><div class="hint">Dejalo en <b>Lo detecta solo</b>: si la charla está en el WhatsApp, el panel se da cuenta mirando si le volviste a escribir antes de la venta. Tocá <b>Sí</b> o <b>No</b> solo para corregirlo.</div></div>
     <div class="field"><label>Precio</label><input type="text" id="v-precio" inputmode="numeric" placeholder="145.000" oninput="fmtPesos(this)"></div>
     <div class="field"><label>¿A dónde va?</label>
       <div class="duo">
@@ -770,7 +770,7 @@
     </div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="e-anuncio" data-val="No sé"><div class="chip" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip sel" onclick="pick(this)">No sé</div></div>
 
-    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="e-recontacto" data-val="No"><div class="chip" onclick="pick(this)">Sí</div><div class="chip sel" onclick="pick(this)">No</div></div><div class="hint">La charla se había parado y la venta salió porque le volviste a escribir.</div></div>
+    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="e-recontacto" data-val="Lo detecta solo"><div class="chip sel" onclick="pick(this)">Lo detecta solo</div><div class="chip" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div></div><div class="hint">Normalmente se detecta solo leyendo la charla. Tocá Sí o No únicamente para corregirlo.</div></div>
       <div class="hint">Es de lo que sale <b>cuánto te cuesta traer una venta</b>. Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio.</div>
     </div>
     <div class="field"><label>Precio</label><input type="text" id="e-precio" inputmode="numeric" oninput="fmtPesos(this)"></div>
@@ -1527,6 +1527,13 @@
     }
   }
 
+  // "Lo detecta solo" se guarda como null: es la ausencia de opinión, distinta de
+  // un "No" explícito. Firestore guarda el null y el panel lo lee como "mirá la charla".
+  function trePorRecontacto(id){
+    const v = $(id) ? $(id).dataset.val : 'Lo detecta solo';
+    return v === 'Sí' ? true : v === 'No' ? false : null;
+  }
+
   // Crea la ficha de seguimiento en Firebase (pedidos). El Sheet ya recibió el total vía n8n.
   // Si esto falla, la venta igual quedó guardada en el Sheet (solo se pierde la ficha).
   async function crearPedidoDesdeForm(){
@@ -1554,7 +1561,7 @@
       // para poder corregirlo después sin depender de que la fila exista.
       canal: $('v-canal').dataset.val,
       anuncio: $('v-anuncio').dataset.val,
-      porRecontacto: $('v-recontacto').dataset.val === 'Sí',
+      porRecontacto: trePorRecontacto('v-recontacto'),
       total,
       sena,
       saldoCobrado: pagoTodo,
@@ -2039,12 +2046,13 @@
     else chips.push(`<span class="cli-chip">Sin reseña</span>`);
 
     const id=escCli(p.id), btns=[];
-    if(p.porRecontacto) chips.push('<span class="cli-chip star">Recontacto</span>');
+    const esRec = esRecontacto(p);
+    if(esRec) chips.push(`<span class="cli-chip star">Recontacto${p.porRecontacto == null ? ' (detectado)' : ''}</span>`);
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
     if((p.enviado||p.entregado) && !p.seguimiento) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="seguimiento">Nº de seguimiento</button>`);
-    btns.push(`<button class="cli-btn${p.porRecontacto?' pri':''}" data-id="${id}" data-accion="recontacto">${p.porRecontacto?'✓ Fue recontacto':'Fue recontacto'}</button>`);
+    btns.push(`<button class="cli-btn${esRec?' pri':''}" data-id="${id}" data-accion="recontacto">${esRec?'✓ Fue recontacto':'Fue recontacto'}</button>`);
     btns.push(`<button class="cli-btn" data-id="${id}" data-accion="editar">Corregir datos</button>`);
     if(!rev){
       if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
@@ -2085,7 +2093,7 @@
     // se lee de la fila. Si la venta no tiene fila (importadas, viejas), se usa la ficha.
     const fila=p.idVenta ? (ULTIMO_ROWS||[]).find(r=>r.Info==='Ventas'&&String(r.ID||'')===String(p.idVenta)) : null;
     setChip('e-anuncio', normAnuncio(fila ? fila.Anuncio : p.anuncio), 'No sé');
-    setChip('e-recontacto', p.porRecontacto ? 'Sí' : 'No', 'No');
+    setChip('e-recontacto', p.porRecontacto === true ? 'Sí' : p.porRecontacto === false ? 'No' : 'Lo detecta solo', 'Lo detecta solo');
     document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
     $('s-editar').classList.add('on');
   }
@@ -2112,7 +2120,7 @@
       anuncio:  $('e-anuncio').dataset.val,
       // Lo marca Justo. El WhatsApp no alcanza para deducirlo: de once ventas, la
       // charla aparece en el registro en dos. → ver el bloque "de charla a venta".
-      porRecontacto: $('e-recontacto').dataset.val === 'Sí',
+      porRecontacto: trePorRecontacto('e-recontacto'),
     };
     if(campos.sena>campos.total){ alert('La seña ($'+campos.sena.toLocaleString('es-AR')+') no puede ser mayor al precio ($'+campos.total.toLocaleString('es-AR')+').'); return; }
     const btn=document.querySelector('#s-editar .save');
@@ -2177,7 +2185,9 @@
         } finally { generandoResena.delete(id); }
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena, p.entregado);
-      else if(accion==='recontacto') await window.FB.actualizarPedido(id,{porRecontacto:!p.porRecontacto});
+      // Guarda la decisión explícita (sí o no), así corrige a la detección en los
+      // dos sentidos y no vuelve a "sin opinión" sin querer.
+      else if(accion==='recontacto') await window.FB.actualizarPedido(id,{porRecontacto:!esRecontacto(p)});
       else if(accion==='editar') abrirEdicion(p);
     }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }
   }
@@ -2294,6 +2304,15 @@
   }
 
   // ── Los pedidos, ordenados por lo que hay que hacer primero ──────────
+  // Tres estados, no dos: `true` y `false` son decisiones de Justo y ganan; si no
+  // dijo nada (undefined), manda lo que se leyó de la charla.
+  function esRecontacto(p, detId){
+    if(p.porRecontacto === true)  return true;
+    if(p.porRecontacto === false) return false;   // null/undefined = sin opinión
+    return !!(detId || DET_ID)[p.id];
+  }
+  let DET_ID = {};   // lo detectado, para que la ficha del cliente lo sepa también
+
   const ORDEN_EST = { falta_cobrar:0, en_proceso:1, enviado:2, cerrado:3 };
   const ETIQ_EST = {
     falta_cobrar:['cobrar','Falta cobrar'], en_proceso:['proceso','En proceso'],
@@ -2787,13 +2806,15 @@
     });
 
     mirarRecontactos();
-    // Manda lo que marcó Justo en la ficha: es el único que sabe. Lo que se
-    // detecta leyendo las charlas sirve para dos cosas — completar los que
-    // todavía no marcó y mostrar con qué se retomó cada uno.
-    const marcadas = (PEDIDOS || []).filter(p => p.porRecontacto);
+    // Manda la lectura de la charla: si le volvimos a escribir antes de la venta,
+    // eso es un recontacto y no hace falta que nadie lo anote. La marca a mano
+    // queda solo para corregir — las ventas viejas, cuya charla no quedó en el
+    // registro, y el caso raro en que la detección se equivoca.
     const det = RECONTACTOS && RECONTACTOS.lista ? RECONTACTOS.lista : [];
     const detId = {}; det.forEach(r => detId[r.pedido.id] = r);
-    const rec = marcadas.map(p => detId[p.id] || { pedido: p, marcadaSola: true });
+    DET_ID = detId;
+    const rec = (PEDIDOS || []).filter(p => esRecontacto(p, detId))
+                               .map(p => detId[p.id] || { pedido: p, aMano: true });
     const tope = Math.max(charlas, compraron, 1);
     // Lo que salió cada charla, solo si hay publicidad cargada y charlas para dividir.
     const pubHist = ULTIMO_ROWS ? (calcular(ULTIMO_ROWS,'').publicidad||{}).gasto||0 : 0;
@@ -2829,21 +2850,19 @@
       ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.
          <button class="card-a" style="padding:0" onclick="ir('whatsapp')">Abrir el WhatsApp →</button>` : '';
 
-    // Los que el análisis encontró y todavía no están marcados: se ofrecen, no se
-    // cuentan. El que decide es Justo — el sistema solo levanta la mano.
-    const sugeridos = (det || []).filter(r => !r.pedido.porRecontacto);
-    const sug = sugeridos.length
-      ? `<div class="tip info" style="margin:12px 0 0"><b>Puede que falte marcar ${sugeridos.length === 1 ? 'una' : sugeridos.length}.</b>
-         Leyendo las charlas aparece que a ${sugeridos.map(r => '<b>' + esc0(r.pedido.cliente || 'alguien') + '</b>').join(', ')}
-         le volviste a escribir antes de la venta. Si fue así, tocá <i>Fue recontacto</i> en su ficha.</div>` : '';
+    // Las ventas cuya charla no está en el registro: ahí la detección no puede
+    // decir nada, y por eso existe la marca a mano.
+    const sinCharla = RECONTACTOS.sinCharla;
+    const nota = sinCharla
+      ? `<br>De ${sinCharla} ${sinCharla === 1 ? 'venta' : 'ventas'} la charla no está en el WhatsApp, así que ${sinCharla === 1 ? 'esa se detecta sola' : 'ésas no se detectan solas'}: se marcan a mano con <i>Fue recontacto</i> en la ficha.` : '';
 
     if(!rec.length)
-      return pie(`Ninguna venta está marcada como recontacto. Se marca con el botón <i>Fue recontacto</i> en la ficha del cliente: es el dato que dice si vale la pena insistir.${aviso}`) + sug;
+      return pie(`En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${nota}${aviso}`);
 
     const filas = rec.slice().sort((a, b) => (Number(b.pedido.total)||0) - (Number(a.pedido.total)||0)).map(r => `
       <div class="rec-r">
         <div class="rec-n">${esc0(r.pedido.cliente || 'Sin nombre')}</div>
-        <div class="rec-q">${r.motivo || 'lo marcaste vos'}</div>
+        <div class="rec-q">${r.motivo || 'marcado a mano'}</div>
         <div class="rec-d">${r.dias ? (r.dias === 1 ? '1 día' : r.dias + ' días') + ' callado' : ''}</div>
         <div class="rec-m">${pesos(Number(r.pedido.total) || 0)}</div>
         ${r.txt ? `<div class="rec-t" title="${esc0(r.txt)}">${r.media ? esc0(r.txt) : '“' + esc0(r.txt.slice(0, 90)) + (r.txt.length > 90 ? '…' : '') + '”'}</div>` : ''}
@@ -2858,8 +2877,8 @@
       <div class="rec-l">${filas}</div>
       <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
         <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir${rec.length > 1 && top ? `. La mayoría se destrabó <b>${top}</b>` : ''}.
-        ${aviso}
-      </div>${sug}</div>`;
+        ${nota}${aviso}
+      </div></div>`;
   }
 
   // ── El mapa ──────────────────────────────────────────────────────────

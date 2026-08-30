@@ -270,6 +270,10 @@
   .marco{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);
          height:calc(100vh - 168px);min-height:520px}
   .marco iframe{display:block;width:100%;height:100%;border:none}
+  /* Las secciones que son un documento y no una app: sin marco ni scroll propio,
+     para que se lean como una parte más del panel. */
+  .marco.suelto{border:none;border-radius:0;background:none;height:auto;min-height:420px}
+  .marco.suelto iframe{height:420px;transition:height .15s}
 
   /* ===== Formularios ===== */
   .field{margin-bottom:17px}
@@ -692,7 +696,7 @@
         </div>
         <a class="card-a" href="/admin.html#stats" target="_blank" rel="noopener">Abrir en otra pestaña ↗</a>
       </div>
-      <div class="marco"><iframe id="if-web" data-src="/admin.html?embed=1#stats" title="Estadísticas de la web"></iframe></div>
+      <div class="marco suelto"><iframe class="crece" id="if-web" data-src="/admin.html?embed=1#stats" title="Estadísticas de la web"></iframe></div>
     </div>
 
     <div class="screen" id="s-catalogo">
@@ -703,7 +707,7 @@
         </div>
         <a class="card-a" href="/admin.html" target="_blank" rel="noopener">Abrir en otra pestaña ↗</a>
       </div>
-      <div class="marco"><iframe id="if-catalogo" data-src="/admin.html?embed=1" title="Catálogo"></iframe></div>
+      <div class="marco suelto"><iframe class="crece" id="if-catalogo" data-src="/admin.html?embed=1" title="Catálogo"></iframe></div>
     </div>
 
   <div class="screen col" id="s-venta">
@@ -950,7 +954,7 @@
     // Las herramientas que ya existían se cargan recién cuando entrás: son páginas
     // enteras y arrancarlas todas juntas dejaba el panel lento al abrir.
     const marco=$('if-'+s);
-    if(marco && !marco.src && marco.dataset.src) marco.src=marco.dataset.src;
+    if(marco && !marco.src && marco.dataset.src){ marco.src=marco.dataset.src; seguirAlto(marco); }
     if(s==='stats')    cargarNumeros();
     if(s==='clientes') cargarClientes();
     if(s==='geo')      cargarGeo();
@@ -959,6 +963,30 @@
     if(location.hash.slice(1)!==s) history.replaceState(null,'','#'+s);
     window.scrollTo(0,0);
   }
+  // Un iframe con alto fijo deja dos barras de scroll y se siente otra página.
+  // Como son del mismo dominio se puede leer el alto real del contenido y hacer
+  // que el marco crezca con él: así scrollea el panel y no una cajita adentro.
+  function seguirAlto(marco){
+    if(!marco.classList.contains('crece')) return;
+    const ajustar = () => {
+      try{
+        const d = marco.contentDocument;
+        if(!d || !d.body) return;
+        const h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
+        if(h > 240) marco.style.height = (h + 28) + 'px';
+      }catch(e){}
+    };
+    marco.addEventListener('load', () => {
+      ajustar();
+      try{
+        const d = marco.contentDocument;
+        if(window.ResizeObserver && d && d.body) new ResizeObserver(ajustar).observe(d.body);
+      }catch(e){}
+      // Las páginas traen datos después de cargar: se revisa un rato más.
+      let n = 0; const t = setInterval(() => { ajustar(); if(++n > 20) clearInterval(t); }, 600);
+    });
+  }
+
   function home(){ ir('inicio'); }
   function abrirNav(){ $('nav').classList.add('abierta'); $('nav-tap').classList.add('on'); }
   function cerrarNav(){ $('nav').classList.remove('abierta'); $('nav-tap').classList.remove('on'); }
@@ -2588,7 +2616,17 @@
   // Para cruzar el WhatsApp con las ventas: los últimos 8 dígitos son lo único
   // que coincide siempre. El código de área se escribe de mil formas (con 0, con
   // 15, con el 9 del celular) y el jid de WhatsApp trae otra más.
-  const clave8 = v => { const n = String(v || '').replace(/\D/g, ''); return n.length >= 8 ? n.slice(-8) : ''; };
+  // Un teléfono argentino, siempre en la misma forma: sin el 54, sin el 9 de
+  // celular, sin el 0 y sin el 15 viejo. Así "5493454149825", "0345415149825"
+  // y "3454 14-9825" terminan siendo el mismo número.
+  function clave8(v){
+    let n = String(v || '').replace(/\D/g, '');
+    if(n.startsWith('54')) n = n.slice(2);
+    if(n.startsWith('9'))  n = n.slice(1);
+    if(n.startsWith('0'))  n = n.slice(1);
+    n = n.replace(/^(\d{2,4})15(\d{6,8})$/, '$1$2');
+    return n.length >= 8 ? n.slice(-8) : '';
+  }
 
   // Días que puede estar un mensaje del cliente sin respuesta antes de ser un problema.
   const DIAS_SIN_RESPUESTA = 2;
@@ -2631,7 +2669,13 @@
         }));
         tanda.forEach(res => { if(res){ const h = recontactoDe(res.msgs, res.x.pedido); if(h) salida.push({ ...h, pedido: res.x.pedido, cli: res.x.cli }); } });
       }
-      RECONTACTOS = { lista: salida, mirados: aMirar.length, sinCharla: PEDIDOS.length - aMirar.length };
+      // Con menos de la mitad de las ventas encontradas en el WhatsApp, el número
+      // no se puede afirmar: se dice qué pasa en vez de mostrar un cero que parece
+      // un hallazgo. Casi todos los contactos llegan con un ID anónimo de WhatsApp
+      // y sin teléfono, así que no hay con qué cruzarlos.
+      RECONTACTOS = { lista: salida, mirados: aMirar.length,
+                      sinCharla: PEDIDOS.length - aMirar.length,
+                      pocas: aMirar.length * 2 < PEDIDOS.length };
     }catch(e){
       console.error('No se pudieron mirar las charlas:', e);
       RECONTACTOS = { error: true };
@@ -2745,7 +2789,7 @@
       ${fila('Nos escribieron', charlas, 'var(--c-3)')}
       ${fila('Compraron', compraron, 'var(--c-1)')}
       ${fila('Volvieron a comprar', volvieron, 'var(--c-2)')}
-      ${fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
+      ${RECONTACTOS && RECONTACTOS.pocas ? '' : fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
       </div>
       ${bloqueRecontactos(rec, sinContestar)}
       <div class="fun-pie">${charlas > 0
@@ -2764,6 +2808,18 @@
     const pie = txt => `<div class="fun-corte"><div class="fun-pie" style="border:none;padding-top:0;margin-top:0">${txt}</div></div>`;
     if(RECONTACTOS === null) return pie('Mirando las charlas de los que compraron…');
     if(RECONTACTOS.error)    return pie('No se pudieron abrir las charlas del WhatsApp. Probá recargar.');
+    if(RECONTACTOS.pocas)
+      return `<div class="fun-corte"><div class="tip warn" style="margin:0">
+        <b>El recontacto todavía no se puede medir.</b>
+        De ${plural(RECONTACTOS.mirados + RECONTACTOS.sinCharla, 'venta', 'ventas')},
+        la charla aparece en el WhatsApp en <b>${RECONTACTOS.mirados}</b>.
+        No es que no haya recontactos: es que no hay con qué cruzar el resto.
+        WhatsApp identifica a casi todos los contactos con un ID anónimo, sin teléfono,
+        y el registro arrancó después de varias de esas ventas.
+        <br><br>Se arregla de a poco: cada venta nueva que cargues con el teléfono
+        bien escrito y que además te haya escrito por WhatsApp, entra en la cuenta.
+        ${rec.length ? `<br><br>De las ${RECONTACTOS.mirados} que sí se pudieron mirar, <b>${rec.length}</b> vinieron de un recontacto.` : ''}
+        </div></div>`;
 
     const aviso = sinContestar
       ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.

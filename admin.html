@@ -296,7 +296,7 @@
   .chart-wrap{ position: relative; }
   .chart{ display: flex; align-items: flex-end; gap: 3px; height: 150px; overflow: visible; touch-action: pan-y; }
   .chart-bar{
-    flex: 1 1 0; min-width: 0; min-height: 2px;
+    flex: 1 1 0; min-width: 0; max-width: 74px; min-height: 2px;
     background: var(--accent); border-radius: 4px 4px 0 0;
     opacity: 0.82; transition: opacity 0.15s; cursor: pointer;
   }
@@ -305,7 +305,7 @@
   .chart-tip{
     position: absolute; z-index: 6; pointer-events: none;
     left: 0; top: 0; transform: translate(-50%, calc(-100% - 8px));
-    background: var(--ink); color: #fff; font-size: 0.72rem; font-weight: 500;
+    background: var(--ink); color: var(--bg); font-size: 0.72rem; font-weight: 500;
     padding: 5px 9px; border-radius: 7px; white-space: nowrap;
     opacity: 0; transition: opacity 0.12s; font-variant-numeric: tabular-nums;
   }
@@ -639,7 +639,11 @@ html[data-embed] body{
   --line:#332B24; --accent:#D95926; --danger:#E66767; --danger-deep:#D34A3A; --ok:#3FB98C;
   background:#14100D; color:#F2EADC;
 }
-html[data-embed] .topbar{display:none}
+html[data-embed] .topbar,
+html[data-embed] .stats-header,
+html[data-embed] .page-head{display:none}
+html[data-embed] .chart-tip{background:#241E19;color:#F2EADC;border:1px solid #453A31}
+html[data-embed] .chart-tip::after{border-top-color:#241E19}
 html[data-embed] .container{padding-top:22px}
 html[data-embed] #login{background:#14100D}
 html[data-embed] input,html[data-embed] textarea,html[data-embed] select{

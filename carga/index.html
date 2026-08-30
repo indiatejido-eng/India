@@ -1551,10 +1551,22 @@
 
   // El número del comprobante del correo. Es la llave de todo lo que venga después:
   // sin él no hay nada que consultar y el aviso de "llegó" no puede salir solo.
+  // El numero del comprobante del correo. Es la llave de todo lo que viene
+  // despues: n8n lo parte en tres (HC / 461182838 / AR) porque asi lo pide
+  // Correo, y con otro formato la consulta no devuelve nada. Por eso se avisa
+  // aca, que es donde se puede corregir, y no en silencio tres dias despues.
+  const FORMATO_SEGUIMIENTO=/^[A-Za-z]{2}-?\d{7,9}-?[A-Za-z]{2}$/;
   function pedirSeguimiento(actual){
-    const tn=prompt('Número de seguimiento, el del comprobante del correo.\n\nCon esto después se puede avisar solo cuando el paquete llega. Si todavía no lo tenés, dejalo vacío y cargalo cuando lo tengas.', actual||'');
-    return tn===null ? null : String(tn).replace(/\s+/g,'').toUpperCase();
+    const tn=prompt('Número de seguimiento, el del comprobante del correo.\n\nSe escribe como figura ahí: HC-461182838-AR.\n\nCon esto te avisa solo cuando el paquete llega o queda en sucursal. Si todavía no lo tenés, dejalo vacío.', actual||'');
+    if(tn===null) return null;
+    const limpio=String(tn).replace(/\s+/g,'').toUpperCase();
+    if(limpio && !FORMATO_SEGUIMIENTO.test(limpio)){
+      const igual=confirm('Ese número no tiene la forma que espera el correo (dos letras, los dígitos y AR: HC-461182838-AR).\n\nSe guarda igual, pero el aviso automático no va a funcionar con él.\n\nAceptar: guardarlo así.\nCancelar: lo escribo de nuevo.');
+      if(!igual) return pedirSeguimiento(limpio);
+    }
+    return limpio;
   }
+
 
   function copiarMensajeResena(nombre, token, llego){
     const link=`${location.origin}/resena?token=${token}`;

@@ -393,10 +393,6 @@
 
   /* ===== Clientes (pantalla completa) ===== */
   .cli-tools{margin-bottom:14px;max-width:420px}
-  .cli-import{padding:10px 16px;font-size:12.5px;font-family:var(--body);color:var(--muted);
-        background:none;border:1px dashed var(--line2);border-radius:10px;cursor:pointer;margin-bottom:20px}
-  .cli-import:hover{color:var(--ink);border-color:var(--muted)}
-  .cli-import:disabled{opacity:.5}
   .cli-grupo{margin-bottom:24px}
   .cli-grupo-h{font-family:var(--disp);font-weight:500;font-size:16px;display:flex;align-items:center;
         gap:9px;margin-bottom:13px;letter-spacing:-.2px}
@@ -940,7 +936,6 @@
   <div class="screen" id="s-clientes">
     <h1 class="ttl">Clientes</h1>
     <div class="cli-tools"><input type="text" id="cli-buscar" placeholder="Buscar por nombre…" oninput="renderClientes()"></div>
-    <button class="cli-import" id="cli-importar" onclick="importarDelSheet()">↓ Importar ventas del Sheet</button>
     <div id="cli-cont"><div class="cli-vacio">Cargando…</div></div>
   </div>
 
@@ -1827,7 +1822,7 @@
 
     const partes = [];
     partes.push('El punto lleno es que le llega el anuncio; el vacío, que está excluida.');
-    if(sinDestino) partes.push(`⚠️ <b>${sinDestino} venta${sinDestino>1?'s':''}</b> sin provincia cargada, así que no aparece${sinDestino>1?'n':''} en la tabla. Se completan con <b>“Importar ventas del Sheet”</b> en Clientes.`);
+    if(sinDestino) partes.push(`⚠️ <b>${sinDestino} venta${sinDestino>1?'s':''}</b> sin provincia cargada, así que no aparece${sinDestino>1?'n':''} en la tabla. Se completan abriendo la ficha del cliente y tocando <b>“Corregir datos”</b>.`);
     if(sinTel) partes.push(`<b>${sinTel}</b> de ${(GEO_CLIENTES||[]).length} contactos no tienen el teléfono guardado — WhatsApp los identifica con un código anónimo que no dice de dónde son. <b>No hay forma de ubicarlos</b>, así que la tabla de “escriben” muestra solo una parte.`);
     if(sinProv) partes.push(`Otros <b>${sinProv}</b> tienen teléfono pero código de área desconocido o de afuera del país.`);
     partes.push('La provincia de quien escribe sale del código de área, así que es aproximada. La de las ventas es la que cargaste vos, ésa es exacta.');
@@ -1928,82 +1923,6 @@
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
 
-  // Importar las ventas del Sheet como fichas de pedido (una vez; sin duplicar; no toca el Sheet).
-  const slugCli = s => normCli(s).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  function parseFechaSheet(f){
-    f=String(f||'').trim(); let y,m,d;
-    if(/^\d{4}-\d{2}-\d{2}/.test(f)){ const p=f.slice(0,10).split('-'); y=+p[0];m=+p[1];d=+p[2]; }
-    else { const p=f.split('/'); if(p.length!==3) return null; d=+p[0];m=+p[1];y=+p[2]; }
-    if(!y||!m||!d) return null;
-    return new Date(y, m-1, d, 12, 0, 0);   // mediodía local, evita saltos de día por zona horaria
-  }
-  async function importarDelSheet(){
-    const btn=$('cli-importar'); if(btn){ btn.disabled=true; btn.textContent='Importando…'; }
-    try{
-      const r=await fetch(WEBHOOK_NUMEROS,{cache:'no-store',headers:{'Accept':'application/json'}});
-      const data=await r.json();
-      const rows=Array.isArray(data)?data:(data.body||data.data||[]);
-      const ventas=rows.filter(x=>x.Info==='Ventas');
-      const porClave=new Map((PEDIDOS||[]).map(p=>[normCli(p.cliente)+'|'+(Number(p.total)||0),p]));
-      let nuevos=0, completados=0;
-      for(const v of ventas){
-        const cliente=String(v.Cliente||'').trim(); if(!cliente) continue;
-        const total=Number(String(v['Precio ($)']==null?'':v['Precio ($)']).replace(/[^\d.-]/g,''))||0;
-        const key=normCli(cliente)+'|'+total;
-        // Los datos del Sheet que Firebase también guarda. El talle y las medidas
-        // definen el chaleco; el destino y el canal son con lo que se decide la pauta.
-        const num=x=>{const n=Number(String(x==null?'':x).replace(',','.').replace(/[^\d.-]/g,''));return n>0?n:null};
-        const txt=x=>{const s=String(x==null?'':x).trim();return s||null};
-        const delSheet={
-          talle:txt(v.Talle), confeccion:txt(v['A medida o hecho']),
-          ancho:num(v.Ancho), largo:num(v.Largo),
-          destino:provinciaCanonica(v.Destino), ciudad:txt(v.Ciudad),
-          paraQuien:txt(v['Para quién']||v['Para quien']),
-          canal:txt(v.Canal), anuncio:txt(v.Anuncio)
-        };
-        // Match por cliente+total. Si no cruza (pasa cuando pagaron de más y dejaron
-        // el vuelto: el Sheet anota lo que entró y la ficha el precio), se cae al
-        // nombre — pero SOLO si hay una sola ficha con ese nombre, para no mezclar
-        // dos compras del mismo cliente.
-        let yaEsta=porClave.get(key);
-        if(!yaEsta){
-          const mismos=(PEDIDOS||[]).filter(p=>normCli(p.cliente)===normCli(cliente));
-          if(mismos.length===1) yaEsta=mismos[0];
-        }
-        if(yaEsta){
-          // Ya existe: solo se COMPLETA lo que falta. Nunca se pisa lo cargado a mano,
-          // porque acá también viven señas, estados y correcciones que el Sheet no tiene.
-          const patch={};
-          for(const k in delSheet){
-            const actual=yaEsta[k];
-            const vacio = actual===undefined || actual===null || actual==='' || (typeof actual==='number' && !actual);
-            if(vacio && delSheet[k]!=null) patch[k]=delSheet[k];
-          }
-          if(Object.keys(patch).length){ await window.FB.actualizarPedido(yaEsta.id, patch); completados++; }
-          continue;
-        }
-        const fechaStr=String(v.Fecha||'').trim();
-        const id='imp_'+slugCli(cliente)+'_'+fechaStr.replace(/[^\dA-Za-z]/g,'-')+'_'+total;
-        const partes=[v.Modelo, v.Talle&&('talle '+v.Talle), v.Color].filter(Boolean);
-        const limpio={}; for(const k in delSheet) if(delSheet[k]!=null) limpio[k]=delSheet[k];
-        await window.FB.crearPedidoConId(id, {
-          cliente,
-          telefono:String(v['Teléfono']||v.Telefono||'').trim(),
-          queCompro:partes.join(', '),
-          ...limpio,
-          total, sena:0, saldoCobrado:true, enviado:true, entregado:true, tokenResena:'',
-          fecha: parseFechaSheet(fechaStr) || new Date()
-        });
-        porClave.set(key,{id,cliente,total,...limpio});
-        nuevos++;
-      }
-      const partes=[];
-      if(nuevos) partes.push(nuevos+' cliente'+(nuevos===1?'':'s')+' importado'+(nuevos===1?'':'s'));
-      if(completados) partes.push(completados+' ficha'+(completados===1?'':'s')+' completada'+(completados===1?'':'s')+' con los datos que faltaban');
-      alert(partes.length ? ('Listo ✓ '+partes.join(' y ')+'.') : 'Ya estaba todo al día (no había nada nuevo ni que completar).');
-    }catch(e){ console.error('importar:',e); alert('No se pudo importar. Probá de nuevo.'); }
-    finally{ if(btn){ btn.disabled=false; btn.textContent='↓ Importar ventas del Sheet'; } }
-  }
   // Por cobrar = saldos no cobrados (Firebase); Hay en caja = caja del Sheet (vendido − gastos − retiros) − Por cobrar.
   // Mes (YYYY-MM) de un pedido, desde su fecha (serverTimestamp). null si aún no resolvió.
   function mesDePedido(p){

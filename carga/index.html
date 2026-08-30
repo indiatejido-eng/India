@@ -1905,6 +1905,7 @@
   // En Clientes el pedido se agrupa por DONDE ESTA EL CHALECO, no por si pagaron:
   // la deuda ya se ve en el chip "Debe $" de cada tarjeta. `estadoPedido` (deuda
   // primero) sigue mandando en Inicio, que ordena por urgencia de cobro.
+  const destinoDe = p => [p.ciudad, p.destino].filter(Boolean).join(', ');
   function grupoCliente(p){
     if(p.entregado) return 'cerrado';
     if(p.enviado)   return 'enviado';
@@ -2045,7 +2046,7 @@
     const html=grupos.map(([key,titulo])=>{
       const ps=lista.filter(p=>grupoCliente(p)===key).sort(porFecha);
       if(!ps.length) return '';
-      return `<div class="cli-grupo"><div class="cli-grupo-h">${titulo} <span class="cli-count">${ps.length}</span></div>`+ps.map(tarjetaCliente).join('')+`</div>`;
+      return `<div class="cli-grupo"><div class="cli-grupo-h">${titulo} <span class="cli-count">${ps.length}</span></div>`+ps.map(x=>tarjetaCliente(x)).join('')+`</div>`;
     }).join('');
     cont.innerHTML = html || '<div class="cli-vacio">Sin resultados.</div>';
     cont.querySelectorAll('[data-accion]').forEach(b=>b.addEventListener('click',()=>accionCliente(b.dataset.id,b.dataset.accion)));
@@ -2160,12 +2161,10 @@
   function tarjetaCliente(p, full){
     const chips=[];
     if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)))}</span>`);
-    else if(full) chips.push(`<span class="cli-chip ok">Pagado</span>`);
-    if(full){
-      if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
-      else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
-      else chips.push(`<span class="cli-chip">Sin enviar</span>`);
-    }
+    else chips.push(`<span class="cli-chip ok">Pagado</span>`);
+    if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
+    else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
+    else chips.push(`<span class="cli-chip">Sin enviar</span>`);
     // Afuera el numero crudo no se acciona y la linea "→ donde esta" dice mas.
     if(p.seguimiento && full) chips.push(`<span class="cli-chip">${escCli(p.seguimiento)}</span>`);
     // Solo mientras el chaleco esté en la casa: una vez que salió ya no se puede pesar
@@ -2199,9 +2198,11 @@
     return `<div class="cli-card">
       <button class="cli-nombre cli-abrir" data-ver="${id}">${escCli(p.cliente||'Sin nombre')}</button>
       <div class="cli-sub">${escCli(p.queCompro||'')}${p.telefono?' · '+escCli(p.telefono):''}</div>
-      <div class="cli-total">${pesosCli(p.total)}${p.sena>0?` · seña ${pesosCli(p.sena)}`:''}</div>
+      <div class="cli-total">${pesosCli(p.total)}${p.sena>0 && !cobradoP(p)?` · seña ${pesosCli(p.sena)}`:''}</div>
       ${chips.length ? `<div class="cli-chips">${chips.join('')}</div>` : ''}
-      ${p.ubicacion ? `<div class="cli-envio"><span>→</span><span><b>${escCli(p.ubicacion)}</b>${p.ubicacionFecha ? ` <span class="cuando">· ${escCli(p.ubicacionFecha)}</span>` : ''}</span></div>` : ''}
+      ${p.ubicacion
+        ? `<div class="cli-envio"><span>→</span><span><b>${escCli(p.ubicacion)}</b>${p.ubicacionFecha ? ` <span class="cuando">· ${escCli(p.ubicacionFecha)}</span>` : ''}</span></div>`
+        : (destinoDe(p) ? `<div class="cli-envio"><span>→</span><span class="cuando">${escCli(destinoDe(p))}</span></div>` : '')}
       <div class="cli-acciones">${(BTNS_TMP = btns.join(''))}</div>
     </div>`;
   }

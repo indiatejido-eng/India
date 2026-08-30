@@ -420,10 +420,25 @@
   .cli-btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
   .cli-btn.pri:hover{background:#E8703C}
   .cli-vacio{color:var(--muted);font-size:13.5px;padding:18px 0;text-align:center}
-  /* Columnas y no grilla: con grilla, un grupo largo empujaba al siguiente a
-     una fila nueva y quedaba media pantalla vacía. */
-  #cli-cont{column-width:290px;column-gap:22px}
-  #cli-cont .cli-grupo{break-inside:avoid-column;margin-bottom:26px}
+  .cli-abrir{background:none;border:none;padding:0;cursor:pointer;text-align:left;color:var(--ink);
+             font-family:var(--disp);font-weight:500;font-size:17px;letter-spacing:-.3px}
+  .cli-abrir:hover{color:var(--accent-txt);text-decoration:underline}
+  .fic-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+           flex-wrap:wrap;margin-bottom:16px}
+  .fic-acc{display:flex;gap:9px;flex-wrap:wrap}
+  .fic-acc .cli-btn{text-decoration:none;display:inline-block}
+  .fic-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start}
+  .fic-r{display:flex;justify-content:space-between;gap:16px;padding:7px 0;font-size:13.5px;
+         border-bottom:1px solid var(--line)}
+  .fic-r:last-child{border-bottom:none}
+  .fic-r span{color:var(--muted);flex:none}
+  .fic-r b{font-weight:500;text-align:right;min-width:0;overflow-wrap:anywhere}
+  .fic-r b.falta{color:var(--line2);font-weight:400;font-style:italic}
+  /* Cada estado es una columna y se quedan al lado sí o sí. Si no entran, la
+     tira scrollea de costado: es preferible a que un grupo se caiga abajo. */
+  #cli-cont{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(258px,1fr);
+            gap:20px;align-items:start;overflow-x:auto;padding-bottom:10px}
+  #cli-cont .cli-grupo{margin-bottom:0;min-width:0}
 
   /* ===== Entrar ===== */
   .login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;
@@ -474,7 +489,8 @@
     .fun-l{font-size:12.5px}
     .marco{height:calc(100vh - 140px)}
     .n-sel{width:100%}
-    #cli-cont{grid-template-columns:minmax(0,1fr)}
+    #cli-cont{grid-auto-flow:row;grid-auto-columns:auto;overflow-x:visible}
+    #cli-cont .cli-grupo{margin-bottom:24px}
     .ttl{font-size:24px}
   }
   @media(max-width:420px){
@@ -746,6 +762,11 @@
     <button class="save" onclick="send('venta')">Guardar venta</button>
   </div>
 
+  <div class="screen" id="s-ficha">
+    <button class="back" onclick="ir('clientes')">← Todos los clientes</button>
+    <div id="ficha-cont"></div>
+  </div>
+
   <div class="screen col" id="s-editar">
     <button class="back" onclick="cerrarEdicion()">← Volver</button>
     <h1 class="ttl">Corregir la venta</h1>
@@ -848,6 +869,20 @@
     </div>
     <div class="mini" id="n-rent-pie"></div>
 
+    <div class="stat-sec gap">Los centímetros</div>
+    <div class="stat-period">El ancho y el largo que pasó cada clienta. <b>Es el dato que define el talle de verdad</b>, más que la letra: dos "L" pueden pedir 58 y 60 de ancho.</div>
+    <div class="stat-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px">
+      <div class="stat"><div class="sl">Ancho promedio</div><div class="sv" id="geo-ancho">—</div></div>
+      <div class="stat"><div class="sl">Largo promedio</div><div class="sv" id="geo-largo">—</div></div>
+    </div>
+    <div class="geo-wrap" style="max-width:640px">
+      <table class="geo-tbl">
+        <thead><tr><th>Talle</th><th>Ancho</th><th>Largo</th><th>Chalecos</th></tr></thead>
+        <tbody id="geo-cm"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="geo-note" id="geo-cm-pie" style="max-width:640px"></div>
+
     <div class="stat-sec gap">Qué dicen los números</div>
     <div id="n-tips"></div>
 
@@ -894,19 +929,6 @@
     </div>
     <div class="geo-note" id="geo-pie"></div>
 
-    <div class="stat-sec gap">Los centímetros</div>
-    <div class="stat-period">El ancho y el largo que pasaron las clientas. Es el dato que define el talle de verdad.</div>
-    <div class="stat-grid">
-      <div class="stat"><div class="sl">Ancho promedio</div><div class="sv" id="geo-ancho">—</div></div>
-      <div class="stat"><div class="sl">Largo promedio</div><div class="sv" id="geo-largo">—</div></div>
-    </div>
-    <div class="geo-wrap">
-      <table class="geo-tbl">
-        <thead><tr><th>Talle</th><th>Ancho</th><th>Largo</th><th>Chalecos</th></tr></thead>
-        <tbody id="geo-cm"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="geo-note" id="geo-cm-pie"></div>
 
     <div class="stat-sec gap">Lo que fuimos descubriendo</div>
     <div class="stat-period">Una prueba por vez: se mueve una sola variable y el resto queda quieto. Si no, no se sabe qué la movió.</div>
@@ -944,6 +966,7 @@
     inicio:'Inicio', responder:'Responder', clientes:'Clientes', stats:'Números',
     anuncios:'Anuncios', geo:'Mapa del país', web:'La web', venta:'Vendí un chaleco',
     gasto:'Anoté un gasto', whatsapp:'WhatsApp', catalogo:'Catálogo', editar:'Corregir datos',
+    ficha:'Cliente',
   };
   let SECCION='inicio';
 
@@ -960,7 +983,7 @@
     // enteras y arrancarlas todas juntas dejaba el panel lento al abrir.
     const marco=$('if-'+s);
     if(marco && !marco.src && marco.dataset.src){ marco.src=marco.dataset.src; seguirAlto(marco); }
-    if(s==='stats')    cargarNumeros();
+    if(s==='stats'){   cargarNumeros(); renderCentimetros(); }
     if(s==='clientes') cargarClientes();
     if(s==='geo')      cargarGeo();
     if(s==='anuncios'){ asegurarAnuncios(); renderAnuncios(); }
@@ -1889,7 +1912,7 @@
     cliIniciado=true;
     unsubPedidos = window.FB.escucharPedidos(list => { const antes=(PEDIDOS||[]).length; PEDIDOS=list;
       if(list.length!==antes) olvidarRecontactos();   // hay una venta nueva: se vuelve a mirar
-      renderClientes(); renderCaja(); renderGeo(); renderInicio(); });
+      renderClientes(); renderCaja(); renderGeo(); renderInicio(); if(SECCION==='ficha') renderFicha(); });
     unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
@@ -2016,6 +2039,7 @@
     }).join('');
     cont.innerHTML = html || '<div class="cli-vacio">Sin resultados.</div>';
     cont.querySelectorAll('[data-accion]').forEach(b=>b.addEventListener('click',()=>accionCliente(b.dataset.id,b.dataset.accion)));
+    cont.querySelectorAll('[data-ver]').forEach(b=>b.addEventListener('click',()=>verFicha(b.dataset.ver)));
   }
 
   // Cruza una reseña con el cliente por nombre completo (para reseñas de links sueltos o clientes importados sin token).
@@ -2028,6 +2052,98 @@
     }
     return null;
   }
+  // La ficha completa: todo lo que el sistema sabe de esa venta, junto y sin
+  // tener que abrir el formulario de corrección para leerlo.
+  let FICHA_ID = null;
+
+  function verFicha(id){
+    FICHA_ID = id;
+    ir('ficha');
+    renderFicha();
+  }
+
+  function renderFicha(){
+    const cont = $('ficha-cont'); if(!cont) return;
+    const p = (PEDIDOS || []).find(x => x.id === FICHA_ID);
+    if(!p){ cont.innerHTML = '<div class="vacio">No se encontró el cliente.</div>'; return; }
+
+    const saldo = Math.max(0, (Number(p.total)||0) - (Number(p.sena)||0));
+    const tel = String(p.telefono || '').replace(/\D/g, '');
+    const rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : resenaPorNombre(p.cliente);
+    const cm = (v, u) => Number(v) > 0 ? Number(v) + (u || '') : null;
+    const est = estadoDe(p);
+    const si = v => v ? 'Sí' : 'No';
+
+    // Cada grupo es un bloque; adentro, etiqueta y dato. Lo que no está cargado
+    // se muestra igual, en gris: el hueco es información — dice qué falta pedir.
+    const grupos = [
+      ['El pedido', [
+        ['Qué compró', p.queCompro],
+        ['Talle', p.talle],
+        ['A medida o ya hecho', p.confeccion],
+        ['Fecha', p.fecha ? new Date(fechaPedido(p)).toLocaleDateString('es-AR') : null],
+      ]],
+      ['La plata', [
+        ['Precio', pesosCli(p.total)],
+        ['Seña', Number(p.sena) > 0 ? pesosCli(p.sena) : 'sin seña'],
+        ['Saldo', cobradoP(p) ? 'cobrado' : pesosCli(saldo)],
+      ]],
+      ['Las medidas', [
+        ['Ancho', cm(p.ancho, ' cm')],
+        ['Largo', cm(p.largo, ' cm')],
+        ['Peso del chaleco', cm(p.peso, ' g')],
+      ]],
+      ['A dónde fue', [
+        ['Ciudad', p.ciudad],
+        ['Provincia', p.destino],
+        ['Enviado', si(p.enviado)],
+        ['Entregado', si(p.entregado)],
+        ['Nº de seguimiento', p.seguimiento],
+        ['Dónde está', p.ubicacion ? p.ubicacion + (p.ubicacionFecha ? ' · ' + p.ubicacionFecha : '') : null],
+      ]],
+      ['Cómo llegó', [
+        ['Canal', p.canal],
+        ['¿Vino de un anuncio?', p.anuncio],
+        ['¿Lo cerraste recontactando?', esRecontacto(p) ? (p.porRecontacto == null ? 'Sí, detectado en la charla' : 'Sí') : 'No'],
+      ]],
+      ['La reseña', [
+        ['Respondió', rev ? '★'.repeat(Number(rev.estrellas) || 0) + ' (' + (Number(rev.estrellas)||0) + ')' : null],
+        ['Lo que escribió', rev && rev.texto ? rev.texto : null],
+        ['Link enviado', p.tokenResena ? 'Sí' : 'No'],
+      ]],
+    ];
+
+    cont.innerHTML = `
+      <div class="fic-top">
+        <div>
+          <h1 class="ttl" style="margin-bottom:2px">${escCli(p.cliente || 'Sin nombre')}</h1>
+          <div class="h-sub">${escCli(p.queCompro || '')}${p.telefono ? ' · ' + escCli(p.telefono) : ''}</div>
+        </div>
+        <div class="fic-acc">
+          ${tel ? `<a class="cli-btn" href="https://wa.me/${tel}" target="_blank" rel="noopener">Escribirle por WhatsApp ↗</a>` : ''}
+          <button class="cli-btn" data-fic="editar">Corregir datos</button>
+        </div>
+      </div>
+      <div class="cli-chips" style="margin:0 0 22px">${est.chips.join('')}</div>
+      <div class="fic-g">${grupos.map(([titulo, filas]) => {
+        const vivas = filas.filter(f => f[1] != null && f[1] !== '');
+        if(!vivas.length && titulo === 'La reseña') return '';
+        return `<section class="card"><div class="card-t" style="font-size:16px;margin-bottom:12px">${titulo}</div>
+          ${filas.map(([k, v]) => `<div class="fic-r"><span>${k}</span><b class="${v == null || v === '' ? 'falta' : ''}">${v == null || v === '' ? 'sin cargar' : escCli(v)}</b></div>`).join('')}
+        </section>`;
+      }).join('')}</div>
+      <div class="cli-acciones" style="margin-top:22px">${est.btns}</div>`;
+
+    cont.querySelectorAll('[data-fic]').forEach(b => b.addEventListener('click', () => abrirEdicion(p)));
+    cont.querySelectorAll('[data-accion]').forEach(b =>
+      b.addEventListener('click', () => accionCliente(b.dataset.id, b.dataset.accion)));
+  }
+
+  // Los chips y los botones los arma tarjetaCliente; se guardan para que la ficha
+  // muestre exactamente lo mismo y no haya dos verdades sobre el estado.
+  let CHIPS_TMP = [], BTNS_TMP = '';
+  function estadoDe(p){ tarjetaCliente(p); return { chips: CHIPS_TMP, btns: BTNS_TMP }; }
+
   function tarjetaCliente(p){
     const chips=[];
     if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)))}</span>`);
@@ -2048,6 +2164,7 @@
     const id=escCli(p.id), btns=[];
     const esRec = esRecontacto(p);
     if(esRec) chips.push(`<span class="cli-chip star">Recontacto${p.porRecontacto == null ? ' (detectado)' : ''}</span>`);
+    CHIPS_TMP = chips;
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
@@ -2060,12 +2177,12 @@
     }
 
     return `<div class="cli-card">
-      <div class="cli-nombre">${escCli(p.cliente||'Sin nombre')}</div>
+      <button class="cli-nombre cli-abrir" data-ver="${id}">${escCli(p.cliente||'Sin nombre')}</button>
       <div class="cli-sub">${escCli(p.queCompro||'')}${p.telefono?' · '+escCli(p.telefono):''}</div>
       <div class="cli-total">${pesosCli(p.total)}${p.sena>0?` · seña ${pesosCli(p.sena)}`:''}</div>
       <div class="cli-chips">${chips.join('')}</div>
       ${p.ubicacion ? `<div class="cli-envio"><span>→</span><span><b>${escCli(p.ubicacion)}</b>${p.ubicacionFecha ? ` <span class="cuando">· ${escCli(p.ubicacionFecha)}</span>` : ''}</span></div>` : ''}
-      <div class="cli-acciones">${btns.join('')}</div>
+      <div class="cli-acciones">${(BTNS_TMP = btns.join(''))}</div>
     </div>`;
   }
 
@@ -2098,7 +2215,10 @@
     $('s-editar').classList.add('on');
   }
   function cerrarEdicion(){
+    const p = EDITANDO;
     EDITANDO=null;
+    // Si se entró desde la ficha, se vuelve a la ficha y no a la lista entera.
+    if(p && FICHA_ID === p.id){ ir('ficha'); renderFicha(); return; }
     $('s-editar').classList.remove('on');
     $('s-clientes').classList.add('on');
     renderClientes();
@@ -2270,6 +2390,8 @@
 
   function asegurarAnuncios(){
     if(anunciosIniciado) return; anunciosIniciado = true;
+    if(window.FB && window.FB.escucharAjustes)
+      window.FB.escucharAjustes(a => { RECON_VIEJOS = Number((a||{}).recontactosViejos) || 0; renderEmbudo(); });
     if(window.FB && window.FB.escucharAnuncios)
       unsubAnuncios = window.FB.escucharAnuncios(l => { ANUNCIOS = l || []; renderInicio(); renderAnuncios(); });
     else ANUNCIOS = [];
@@ -2479,18 +2601,14 @@
     if(!abiertos.length){ cont.innerHTML = '<div class="vacio">Todo entregado y cobrado. Buen momento.</div>'; return; }
     cont.innerHTML = abiertos.slice(0, 5).map(p => {
       const [cls, txt] = ETIQ_EST[estadoPedido(p)];
-      return `<button class="cl-r" data-cli="${esc0(p.cliente||'')}">
+      return `<button class="cl-r" data-id="${esc0(p.id)}">
         <div class="cl-i">
           <div class="cl-n">${esc0(p.cliente || 'Sin nombre')}</div>
           <div class="cl-q">${esc0(p.queCompro || '—')}</div>
         </div>
         <span class="et ${cls}">${txt}</span></button>`;
     }).join('');
-    cont.querySelectorAll('.cl-r').forEach(b => b.addEventListener('click', () => {
-      if($('cli-buscar')) $('cli-buscar').value = b.dataset.cli;
-      ir('clientes');
-      renderClientes();
-    }));
+    cont.querySelectorAll('.cl-r').forEach(b => b.addEventListener('click', () => verFicha(b.dataset.id)));
   }
   const fechaPedido = p => {
     const f = p && p.fecha;
@@ -2672,6 +2790,12 @@
   // Se abren solo las de los que COMPRARON — son diez o quince, no doscientas.
   let RECONTACTOS = null, recontactosPedidos = false;
 
+  // Los recontactos anteriores al registro de charlas. De esas ventas no quedó
+  // conversación guardada, así que no hay nada que leer: el número lo puso Justo
+  // de memoria y vive en Firestore para poder corregirlo sin tocar el código.
+  // No es una estimación del sistema — es un dato cargado, y la pantalla lo dice.
+  let RECON_VIEJOS = null;
+
   async function mirarRecontactos(){
     if(recontactosPedidos || !PEDIDOS || !GEO_CLIENTES) return;
     if(!PEDIDOS.length || !GEO_CLIENTES.length) return;
@@ -2815,6 +2939,7 @@
     DET_ID = detId;
     const rec = (PEDIDOS || []).filter(p => esRecontacto(p, detId))
                                .map(p => detId[p.id] || { pedido: p, aMano: true });
+    const viejos = Number(RECON_VIEJOS) || 0;
     const tope = Math.max(charlas, compraron, 1);
     // Lo que salió cada charla, solo si hay publicidad cargada y charlas para dividir.
     const pubHist = ULTIMO_ROWS ? (calcular(ULTIMO_ROWS,'').publicidad||{}).gasto||0 : 0;
@@ -2829,9 +2954,9 @@
       ${fila('Nos escribieron', charlas, 'var(--c-3)')}
       ${fila('Compraron', compraron, 'var(--c-1)')}
       ${fila('Volvieron a comprar', volvieron, 'var(--c-2)')}
-      ${fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
+      ${fila('Vinieron de un recontacto', rec.length + viejos, 'var(--gold)', true)}
       </div>
-      ${bloqueRecontactos(rec, sinContestar, det)}
+      ${bloqueRecontactos(rec, sinContestar, det, viejos)}
       <div class="fun-pie">${charlas > 0
         ? `Compra <b>1 de cada ${Math.max(1, Math.round(charlas/Math.max(1, compraron)))}</b> que escriben (${cierre.toFixed(1)}%).`
         : 'Sin charlas cargadas todavía.'}
@@ -2842,22 +2967,45 @@
     if(sub) sub.textContent = 'Las charlas salen del WhatsApp del negocio.';
   }
 
+  // El número de antes del registro se corrige acá mismo, sin tocar código.
+  async function cambiarViejos(d){
+    const n = Math.max(0, (Number(RECON_VIEJOS) || 0) + d);
+    RECON_VIEJOS = n; renderEmbudo();
+    try{ await window.FB.guardarAjuste('recontactosViejos', n); }
+    catch(e){ console.error('no se pudo guardar el ajuste:', e); }
+  }
+
   // Quiénes fueron, uno por uno. El número solo no sirve: lo que hay que ver es
   // si la venta la salimos a buscar nosotros o si el cliente volvió por su cuenta.
-  function bloqueRecontactos(rec, sinContestar, det){
+  function bloqueRecontactos(rec, sinContestar, det, viejos){
     const pie = txt => `<div class="fun-corte"><div class="fun-pie" style="border:none;padding-top:0;margin-top:0">${txt}</div></div>`;
     const aviso = sinContestar
       ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.
          <button class="card-a" style="padding:0" onclick="ir('whatsapp')">Abrir el WhatsApp →</button>` : '';
+
+    if(RECONTACTOS === null) return pie('Mirando las charlas de los que compraron…');
+    if(RECONTACTOS.error)    return pie('No se pudieron abrir las charlas del WhatsApp. Probá recargar.');
 
     // Las ventas cuya charla no está en el registro: ahí la detección no puede
     // decir nada, y por eso existe la marca a mano.
     const sinCharla = RECONTACTOS.sinCharla;
     const nota = sinCharla
       ? `<br>De ${sinCharla} ${sinCharla === 1 ? 'venta' : 'ventas'} la charla no está en el WhatsApp, así que ${sinCharla === 1 ? 'esa se detecta sola' : 'ésas no se detectan solas'}: se marcan a mano con <i>Fue recontacto</i> en la ficha.` : '';
+    const notaViejos = viejos
+      ? `<div class="rec-r" style="border-bottom:none;opacity:.85">
+           <div class="rec-n">${viejos} de antes</div>
+           <div class="rec-q">cargados a mano</div>
+           <div class="rec-d"></div>
+           <div class="rec-m">—</div>
+           <div class="rec-t">De cuando el WhatsApp todavía no guardaba las charlas. No se puede decir quiénes fueron ni cuánto sumaron.
+             <button class="card-a" style="padding:0;margin-left:6px" onclick="cambiarViejos(-1)">−</button>
+             <button class="card-a" style="padding:0" onclick="cambiarViejos(1)">+</button></div>
+         </div>` : '';
 
     if(!rec.length)
-      return pie(`En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${nota}${aviso}`);
+      return `<div class="fun-corte">${notaViejos}<div class="fun-pie" style="border:none;padding-top:${notaViejos ? 12 : 0}px;margin-top:0">
+        En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${nota}${aviso}
+        </div></div>`;
 
     const filas = rec.slice().sort((a, b) => (Number(b.pedido.total)||0) - (Number(a.pedido.total)||0)).map(r => `
       <div class="rec-r">
@@ -2874,7 +3022,7 @@
     const top = (porMotivo[cand] > 1 && porMotivo[cand] * 2 >= rec.length) ? cand : null;
 
     return `<div class="fun-corte">
-      <div class="rec-l">${filas}</div>
+      <div class="rec-l">${filas}${notaViejos}</div>
       <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
         <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir${rec.length > 1 && top ? `. La mayoría se destrabó <b>${top}</b>` : ''}.
         ${nota}${aviso}
@@ -3032,6 +3180,10 @@
     // anuncio, con nombre, estado, gasto y charlas. Mientras la colección no exista
     // devuelve vacío y el panel se arregla con lo que hay cargado en el Sheet.
     escucharAnuncios: (cb) => onSnapshot(collection(db, 'anuncios'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => cb([])),
+    // Números que se cargan a mano y no salen de ningún cálculo. Hoy: los
+    // recontactos anteriores al registro de charlas de WhatsApp.
+    escucharAjustes: (cb) => onSnapshot(doc(db, 'config', 'panel'), s => cb(s.exists() ? s.data() : {}), () => cb({})),
+    guardarAjuste: (campo, valor) => setDoc(doc(db, 'config', 'panel'), { [campo]: valor }, { merge: true }),
     // El CRM (Evolution, en el server propio) usa el mismo idToken de Firebase que /carga.
     tokenApi: () => (auth.currentUser ? auth.currentUser.getIdToken() : Promise.reject(new Error('sin sesión'))),
     actualizarPedido: (id, patch) => updateDoc(doc(db, 'pedidos', id), patch),

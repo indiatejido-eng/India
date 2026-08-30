@@ -630,9 +630,31 @@
   }
   .lana-badge.is-on{ background: rgba(79,122,58,0.92); color: #fff; }
   .lana-badge.is-off{ background: rgba(138,117,88,0.9); color: #fff; }
+
+/* ===== Adentro del panel: los mismos tonos del cockpit ===== */
+html[data-embed]{color-scheme:dark}
+html[data-embed] body{
+  --bg:#14100D; --bg-soft:#1C1714; --bg-card:#1C1714;
+  --ink:#F2EADC; --ink-soft:#B5A794; --muted:#97876F;
+  --line:#332B24; --accent:#D95926; --danger:#E66767; --danger-deep:#D34A3A; --ok:#3FB98C;
+  background:#14100D; color:#F2EADC;
+}
+html[data-embed] .topbar{display:none}
+html[data-embed] .container{padding-top:22px}
+html[data-embed] #login{background:#14100D}
+html[data-embed] input,html[data-embed] textarea,html[data-embed] select{
+  background:#241E19;color:#F2EADC;border-color:#453A31}
+html[data-embed] input::placeholder,html[data-embed] textarea::placeholder{color:#97876F}
 </style>
 </head>
 <body>
+<script>
+// Modo embebido: el panel (/carga) carga esta página adentro suyo. Cuando pasa eso
+// se viste de oscuro y se le esconde su propia barra de arriba — la del panel ya está.
+if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== window.self)
+  document.documentElement.setAttribute('data-embed', '1');
+</script>
+
 
 <!-- LOGIN -->
 <div class="login-screen" id="login">

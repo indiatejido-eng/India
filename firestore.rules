@@ -71,6 +71,13 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // Un documento por anuncio de Meta: nombre, estado, gasto y charlas de los
+    // últimos 30 días. Lo escribe n8n con el usuario del panel, igual que `geo`.
+    // Nunca público: dice cuánto se paga por cliente.
+    match /anuncios/{id} {
+      allow read, write: if request.auth != null;
+    }
+
     // Configuración interna. Hoy: config/asistente, el manual que usa /responder.
     // Nunca público: tiene la estrategia de venta completa.
     match /config/{doc} {

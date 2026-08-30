@@ -121,9 +121,38 @@
   .toast.show{transform:translateX(-50%) translateY(0)}
   .load{margin:auto;color:var(--muted);font-style:italic;padding:30px;font-size:1rem}
   @media(max-width:900px){ .side{display:none} .list{width:100%} .conv{display:none} .conv.on{display:flex;position:fixed;inset:0;z-index:20} }
+
+/* ===== Adentro del panel: los mismos tonos del cockpit ===== */
+html[data-embed]{color-scheme:dark}
+html[data-embed] body{
+  --bg:#14100D; --panel:#1C1714; --panel2:#241E19;
+  --ink:#F2EADC; --soft:#B5A794; --muted:#97876F;
+  --line:#332B24; --line2:#453A31;
+  --green:#2F5C45; --green-soft:#1E2A22; --tan:#B5A794; --accent:#D95926;
+  --in:#241E19; --out:#22301F;
+  background:#14100D; color:#F2EADC;
+}
+html[data-embed] .top{background:#14100D;border-bottom-color:#332B24}
+html[data-embed] .top .brand,
+html[data-embed] #bout{display:none}
+html[data-embed] #login{background:#14100D}
+html[data-embed] input,html[data-embed] textarea,html[data-embed] select{
+  background:#241E19;color:#F2EADC;border-color:#453A31}
+html[data-embed] input::placeholder,html[data-embed] textarea::placeholder{color:#97876F}
+html[data-embed] .card,html[data-embed] .comp-in,html[data-embed] .grabando{
+  background:#241E19;border-color:#453A31}
+html[data-embed] .err,html[data-embed] .estado.no{
+  background:rgba(230,103,103,.14);color:#E66767}
 </style>
 </head>
 <body>
+<script>
+// Modo embebido: el panel (/carga) carga esta página adentro suyo. Cuando pasa eso
+// se viste de oscuro y se le esconde su propia barra de arriba — la del panel ya está.
+if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== window.self)
+  document.documentElement.setAttribute('data-embed', '1');
+</script>
+
 
 <div id="login">
   <div class="loginbox">

@@ -1302,7 +1302,8 @@
     RENT[cual]=val;
     Array.from(btn.parentNode.children).forEach(b=>b.classList.remove('on'));
     btn.classList.add('on');
-    if(ULTIMO_NUM) renderRentabilidad(ULTIMO_NUM);
+    if(ULTIMO_NUM) renderNumeros(ULTIMO_NUM);   // arrastra tabla, margen y presupuesto
+    renderInicio();
   }
   function fijosPorVenta(d,conEnvio){
     return (conEnvio?COSTOS.envio:0)+(d.transportePorVenta||0)+(d.publicidadPorChaleco||0)+COSTOS.etiqueta;
@@ -1366,7 +1367,7 @@
     if(!talles.length) talles=['M'];
     let suma=0,n=0;
     talles.forEach(t=>{
-      const f=filaTalle(d,t,true,false), cant=vend[t]||1;
+      const f=filaTalle(d,t,true,RENT.teje==='tejedora'), cant=vend[t]||1;
       suma+=(f.queda+(d.publicidadPorChaleco||0))*cant; n+=cant;
     });
     return n?Math.round(suma/n/1000)*1000:0;
@@ -1405,9 +1406,10 @@
       const pr = numero(r['Precio ($)']); if(pr <= 0) return;
       const t = r.Talle || 'M';
       const lanaKg = d.lanaPorKg || COSTOS.lanaKg;
-      // Sin mano de obra: el Sheet no guarda quién tejió cada chaleco, y el trabajo
-      // de Bárbara no se cobra. Es el mismo supuesto que la tabla por talle.
-      const costo = gramosDe(t, d)/1000*lanaKg + fijosPorVenta(d, !esLocal(r));
+      // La mano de obra sigue al interruptor "Lo teje Bárbara / Lo teje la tejedora",
+      // igual que la tabla por talle: un solo control para todos los numeros.
+      const mano = RENT.teje === 'tejedora' ? (esNino(t) ? TARIFA_TEJEDORA.nino : TARIFA_TEJEDORA.adulto) : 0;
+      const costo = gramosDe(t, d)/1000*lanaKg + fijosPorVenta(d, !esLocal(r)) + mano;
       precio += pr; queda += pr - costo;
     });
     return precio > 0 ? { margen: queda/precio, queda, precio, n: filas.length } : null;
@@ -1439,8 +1441,13 @@
     const mv = margenVentas(d);
     const h = ULTIMO_ROWS ? calcular(ULTIMO_ROWS, '') : null;
     const mh = h ? margenVentas(h) : null;
+    const conTeje = RENT.teje === 'tejedora';
     e.innerHTML = `Acá se cuenta <b>pieza por pieza</b>: el precio de venta menos la lana que lleva
-      ese talle, el envío, el transporte, la etiqueta y la publicidad que costó traer la venta.
+      ese talle, el envío, el transporte, la etiqueta y la publicidad que costó traer la venta${
+        conTeje ? `, <b>más ${pesos(TARIFA_TEJEDORA.adulto)} de tejido</b>` : ''}.
+      ${conTeje
+        ? 'Es el número si el tejido se paga.'
+        : '<b>El trabajo de Bárbara va en cero</b>: tocá <i>Lo teje la tejedora</i> abajo para ver cuánto queda pagándolo.'}
       ${mv ? `Sobre las ${plural(mv.n,'venta','ventas')} del período da <b>${Math.round(mv.margen*100)}%</b>` : ''}${mh && mv && Math.abs(mh.margen-mv.margen) > 0.02 ? `, y sobre todas las de siempre <b>${Math.round(mh.margen*100)}%</b>` : ''}.
       <br><b>El "margen del negocio" de arriba es otra cosa</b>: compara lo que entró con lo que se
       pagó ese mes, incluida la lana que todavía no se tejió. Por eso salta —un mes que compra lana
@@ -2941,13 +2948,10 @@
     const viejos = Number(RECON_VIEJOS) || 0;
     const tope = Math.max(charlas, compraron, 1);
     // Lo que salió cada charla, solo si hay publicidad cargada y charlas para dividir.
-    const pubHist = ULTIMO_ROWS ? (calcular(ULTIMO_ROWS,'').publicidad||{}).gasto||0 : 0;
-    const porCharla = (pubHist > 0 && charlas > 0) ? Math.round(pubHist/charlas) : 0;
     const fila = (t, n, color, accion) => `<div class="fun-r">
       <div class="fun-l">${t}</div>
       <div class="fun-t"><div class="fun-f" style="width:${Math.max(2, n/tope*100).toFixed(1)}%;background:${color}"></div></div>
       <div class="fun-n"${accion ? ' style="color:' + color + '"' : ''}>${n}</div></div>`;
-    const cierre = charlas > 0 ? compraron / charlas * 100 : 0;
 
     cont.innerHTML = `<div class="fun">
       ${fila('Nos escribieron', charlas, 'var(--c-3)')}
@@ -2955,13 +2959,7 @@
       ${fila('Volvieron a comprar', volvieron, 'var(--c-2)')}
       ${fila('Vinieron de un recontacto', rec.length + viejos, 'var(--gold)', true)}
       </div>
-      ${bloqueRecontactos(rec, sinContestar, det, viejos)}
-      <div class="fun-pie">${charlas > 0
-        ? `Compra <b>1 de cada ${Math.max(1, Math.round(charlas/Math.max(1, compraron)))}</b> que escriben (${cierre.toFixed(1)}%).`
-        : 'Sin charlas cargadas todavía.'}
-        ${volvieron ? ` Y <b>${plural(volvieron, 'cliente volvió', 'clientes volvieron')}</b> a comprar.` : ''}
-        ${porCharla ? `<br>Cada charla salió <b>${pesos(porCharla)}</b> de publicidad; cada venta, <b>${pesos(ULTIMO_NUM.cac||0)}</b>.` : ''}
-        <br>Las charlas son todos los contactos del WhatsApp, no las de este mes.</div>`;
+      ${bloqueRecontactos(rec, sinContestar, det, viejos)}`;
     const sub = $('d-fun-sub');
     if(sub) sub.textContent = 'Las charlas salen del WhatsApp del negocio.';
   }
@@ -2978,33 +2976,21 @@
   // si la venta la salimos a buscar nosotros o si el cliente volvió por su cuenta.
   function bloqueRecontactos(rec, sinContestar, det, viejos){
     const pie = txt => `<div class="fun-corte"><div class="fun-pie" style="border:none;padding-top:0;margin-top:0">${txt}</div></div>`;
-    const aviso = sinContestar
-      ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.
-         <button class="card-a" style="padding:0" onclick="ir('whatsapp')">Abrir el WhatsApp →</button>` : '';
-
     if(RECONTACTOS === null) return pie('Mirando las charlas de los que compraron…');
     if(RECONTACTOS.error)    return pie('No se pudieron abrir las charlas del WhatsApp. Probá recargar.');
 
-    // Las ventas cuya charla no está en el registro: ahí la detección no puede
-    // decir nada, y por eso existe la marca a mano.
-    const sinCharla = RECONTACTOS.sinCharla;
-    const nota = sinCharla
-      ? `<br>De ${sinCharla} ${sinCharla === 1 ? 'venta' : 'ventas'} la charla no está en el WhatsApp, así que ${sinCharla === 1 ? 'esa se detecta sola' : 'ésas no se detectan solas'}: se marcan a mano con <i>Fue recontacto</i> en la ficha.` : '';
     const notaViejos = viejos
       ? `<div class="rec-r" style="border-bottom:none;opacity:.85">
            <div class="rec-n">${viejos} de antes</div>
            <div class="rec-q">cargados a mano</div>
            <div class="rec-d"></div>
            <div class="rec-m">—</div>
-           <div class="rec-t larga">De cuando el WhatsApp todavía no guardaba las charlas. No se puede decir quiénes fueron ni cuánto sumaron.
+           <div class="rec-t larga">
              <button class="card-a" style="padding:0;margin-left:6px" onclick="cambiarViejos(-1)">−</button>
              <button class="card-a" style="padding:0" onclick="cambiarViejos(1)">+</button></div>
          </div>` : '';
 
-    if(!rec.length)
-      return `<div class="fun-corte">${notaViejos}<div class="fun-pie" style="border:none;padding-top:${notaViejos ? 12 : 0}px;margin-top:0">
-        En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${nota}${aviso}
-        </div></div>`;
+    if(!rec.length) return notaViejos ? `<div class="fun-corte">${notaViejos}</div>` : '';
 
     const filas = rec.slice().sort((a, b) => (Number(b.pedido.total)||0) - (Number(a.pedido.total)||0)).map(r => `
       <div class="rec-r">
@@ -3014,18 +3000,7 @@
         <div class="rec-m">${pesos(Number(r.pedido.total) || 0)}</div>
         ${r.txt ? `<div class="rec-t" title="${esc0(r.txt)}">${r.media ? esc0(r.txt) : '“' + esc0(r.txt.slice(0, 90)) + (r.txt.length > 90 ? '…' : '') + '”'}</div>` : ''}
       </div>`).join('');
-    const plata = rec.reduce((a, r) => a + (Number(r.pedido.total) || 0), 0);
-    const porMotivo = {};
-    rec.forEach(r => { if(r.motivo) porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + 1; });
-    const cand = Object.keys(porMotivo).sort((a, b) => porMotivo[b] - porMotivo[a])[0];
-    const top = (porMotivo[cand] > 1 && porMotivo[cand] * 2 >= rec.length) ? cand : null;
-
-    return `<div class="fun-corte">
-      <div class="rec-l">${filas}${notaViejos}</div>
-      <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
-        <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir${rec.length > 1 && top ? `. La mayoría se destrabó <b>${top}</b>` : ''}.
-        ${nota}${aviso}
-      </div></div>`;
+    return `<div class="fun-corte"><div class="rec-l">${filas}${notaViejos}</div></div>`;
   }
 
   // ── El mapa ──────────────────────────────────────────────────────────

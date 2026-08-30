@@ -315,7 +315,7 @@
   .stat-sec{font-family:var(--disp);font-weight:500;font-size:18px;margin:4px 0 14px;letter-spacing:-.3px}
   .stat-sec.gap{margin-top:34px}
   .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-  .bar-lbl{font-size:13px;width:100px;flex:none;color:var(--soft)}
+  .bar-lbl{font-size:13px;width:100px;flex:none;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bar-track{flex:1;height:9px;background:var(--surface2);border-radius:5px;overflow:hidden}
   .bar-fill{height:100%;background:var(--accent);border-radius:5px}
   .bar-num{font-size:13px;font-weight:500;width:26px;text-align:right;color:var(--soft)}
@@ -2402,13 +2402,22 @@
     const porMes = techoMensual(d), porDia = Math.round(porMes / 30 / 100) * 100;
     const meses = Math.max(1, Number(d.mesesEnPeriodo) || 1), gastoMes = Math.round(pub / meses);
 
+    // El último que corrió, para cuando no hay ninguno prendido. Sirve más que
+    // un cartel vacío: es el que hay que volver a prender o mejorar.
+    const frescos = anunciosFrescos() || [];
+    const ultimo = frescos.slice().sort((a, b) => (Number(b.gasto)||0) - (Number(a.gasto)||0))[0];
     if(pill){
-      pill.className = 'pill ' + (viva ? 'on' : (pub > 0 ? 'off' : 'off'));
-      pill.textContent = viva ? 'Andando' : (ANUNCIOS === null ? '…' : 'Sin dato de Meta');
+      pill.className = 'pill ' + (viva ? 'on' : 'off');
+      pill.textContent = viva ? 'Andando'
+        : ANUNCIOS === null ? '…'
+        : frescos.length ? 'Ninguno andando'
+        : 'Sin dato de Meta';
     }
     const nombre = viva ? esc0(viva.nombre || 'Anuncio sin nombre')
-                        : (pub > 0 ? 'Lo que se pagó de publicidad' : 'Todavía no cargaste publicidad');
+      : ultimo ? esc0(ultimo.nombre || 'Anuncio sin nombre') + ' <span style="color:var(--muted);font-family:var(--body);font-size:13px">· parado</span>'
+      : (pub > 0 ? 'Lo que se pagó de publicidad' : 'Todavía no cargaste publicidad');
     const gastado = viva && viva.gasto != null ? Number(viva.gasto) : pub;
+    const nadaPrendido = !viva && frescos.length;
     const dato = (l, v, cls) => `<div><div class="ad-l">${l}</div><div class="ad-v ${cls||''}">${v}</div></div>`;
     const money = n => `<span class="cur">$</span>${Math.round(Number(n)||0).toLocaleString('es-AR')}`;
     const roas = pub > 0 && vAn > 0 ? Math.round(vAn / pub) : 0;
@@ -2433,6 +2442,7 @@
         <div class="presu-l"><span>Presupuesto del mes</span><span>${pesos(gastoMes)} de ${pesos(porMes)}</span></div>
         <div class="presu-t"><div class="presu-f" style="width:${Math.min(100, porMes > 0 ? gastoMes / porMes * 100 : 0).toFixed(1)}%;background:${gastoMes > porMes ? 'var(--red)' : 'var(--gold)'}"></div></div>
         <div class="presu-l"><span>${gastoMes > porMes ? 'Te pasaste' : 'Te sobran ' + pesos(porMes - gastoMes)}</span><span>${plural(d.ventasDeAnuncios||0, 'venta de anuncio', 'ventas de anuncio')}</span></div>
+        ${nadaPrendido ? `<div class="mini" style="margin-top:10px;color:var(--gold-txt)">No hay ningún anuncio corriendo. Tenés ${pesos(porDia)} por día sin usar.</div>` : ''}
       </div>
       ${listaCorta}`;
     if($('d-anuncios').querySelector('.ad-v.green'))
@@ -2462,7 +2472,9 @@
       return;
     }
     const alDia = diaMes(lista[0] && lista[0].actualizado);
+    const vivos = lista.filter(a => a.estado === 'ACTIVE' || a.activo).length;
     if(sub) sub.textContent = plural(lista.length, 'anuncio', 'anuncios') +
+      ' · ' + (vivos ? plural(vivos, 'andando ahora', 'andando ahora') : 'ninguno andando ahora') +
       ' · lo que gastaron en los últimos 30 días' + (alDia ? ', al ' + alDia : '');
     const orden = lista.slice().sort((a, b) => (Number(b.gasto)||0) - (Number(a.gasto)||0));
     const gastoTot = orden.reduce((a, x) => a + (Number(x.gasto)||0), 0);
@@ -2479,8 +2491,9 @@
       <div class="stat-sec gap">En qué anuncio se fue la plata</div>
       <div id="ad-barras">${orden.map(a => {
         const g = Number(a.gasto)||0;
-        return `<div class="bar-row"><div class="bar-lbl" style="width:190px" title="${esc0(a.nombre||'')}">${esc0((a.nombre||a.id||'—').slice(0,26))}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(g/topG*100).toFixed(1)}%;background:${(a.estado==='ACTIVE'||a.activo)?'var(--c-1)':'var(--line2)'}"></div></div>
+        const on = a.estado === 'ACTIVE' || a.activo;
+        return `<div class="bar-row"><div class="bar-lbl" style="width:230px" title="${esc0(a.nombre||'')}">${esc0((a.nombre||a.id||'—').slice(0,36))}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(g/topG*100).toFixed(1)}%;background:var(--c-1);opacity:${on?1:.45}"></div></div>
           <div class="bar-num" style="width:74px">${pesos(g)}</div></div>`;
       }).join('')}</div>
       <div class="mini">${andando ? plural(andando,'anuncio andando ahora','anuncios andando ahora') : 'Ninguno está andando ahora.'} · Lo apagado es lo que ya no corre.</div>

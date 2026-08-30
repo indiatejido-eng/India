@@ -53,7 +53,8 @@
   .nav{position:fixed;inset:0 auto 0 0;width:var(--nav-w);background:var(--nav);
        border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40}
   .nav-top{padding:22px 18px 16px;display:flex;align-items:center;gap:11px}
-  .nav-logo{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none;border:1px solid var(--line2)}
+  /* Sin recuadro: el PNG ya viene recortado, el marco lo agregaba el CSS. */
+  .nav-logo{width:38px;height:40px;object-fit:contain;flex:none}
   .nav-brand{font-family:var(--disp);font-weight:600;font-size:16.5px;letter-spacing:-.2px;line-height:1.15}
   .nav-brand span{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;
                   color:var(--muted);letter-spacing:.03em;margin-top:1px}
@@ -429,7 +430,7 @@
          justify-content:center;padding:24px;z-index:60}
   .login-box{width:100%;max-width:350px;background:var(--surface);border:1px solid var(--line);
              border-radius:18px;padding:32px 26px}
-  .login-logo{display:block;width:88px;height:88px;object-fit:contain;margin:0 auto 16px;border-radius:16px}
+  .login-logo{display:block;width:78px;height:104px;object-fit:contain;margin:0 auto 18px}
   .login-brand{font-family:var(--disp);font-weight:500;font-size:24px;letter-spacing:-.5px;text-align:center}
   .login-sub{color:var(--muted);font-size:13px;margin:3px 0 20px;text-align:center}
   .login-lbl{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin:14px 0 7px}
@@ -502,7 +503,7 @@
 
 <div class="login" id="login">
   <div class="login-box">
-    <img class="login-logo" src="/logo-crema.png" alt="India Tejidos">
+    <img class="login-logo" src="/logo-ovillo.png" alt="India Tejidos">
     <div class="login-brand">India Tejidos</div>
     <div class="login-sub">Panel privado</div>
     <div class="login-err" id="login-error"></div>
@@ -520,7 +521,7 @@
 
   <nav class="nav" id="nav">
     <div class="nav-top">
-      <img class="nav-logo" src="/favicon.png" alt="">
+      <img class="nav-logo" src="/logo-ovillo.png" alt="">
       <div class="nav-brand">India Tejidos<span>Panel privado</span></div>
     </div>
     <div class="nav-list">
@@ -729,6 +730,8 @@
     <div class="field"><label>¿A medida o ya hecho?</label><div class="chips" id="v-confeccion" data-val="A medida" onclick="toggleMedidas()"><div class="chip sel" onclick="pick(this)">A medida</div><div class="chip" onclick="pick(this)">Ya hecho</div></div></div>
     <div class="field"><label>¿Cómo llegó la venta?</label><div class="chips" id="v-canal" data-val="Instagram"><div class="chip sel" onclick="pick(this)">Instagram</div><div class="chip" onclick="pick(this)">Facebook</div><div class="chip" onclick="pick(this)">Referido</div><div class="chip" onclick="pick(this)">WhatsApp</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="v-anuncio" data-val="Sí"><div class="chip sel" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip" onclick="pick(this)">No sé</div></div><div class="hint">Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio. Si no está claro, "No sé" — se cuenta aparte y no ensucia el número.</div></div>
+
+    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="v-recontacto" data-val="No"><div class="chip" onclick="pick(this)">Sí</div><div class="chip sel" onclick="pick(this)">No</div></div><div class="hint">Poné <b>Sí</b> si la charla se había parado y la venta salió porque le volviste a escribir: por las medidas, avisando que entró la lana, con un precio. Es el dato que dice si vale la pena insistir.</div></div>
     <div class="field"><label>Precio</label><input type="text" id="v-precio" inputmode="numeric" placeholder="145.000" oninput="fmtPesos(this)"></div>
     <div class="field"><label>¿A dónde va?</label>
       <div class="duo">
@@ -766,6 +769,8 @@
       <div class="hint">Se pesa cuando está terminado, antes de mandarlo. Es lo que dice cuánta lana lleva cada talle de verdad — hoy está estimado y de ahí sale el margen.</div>
     </div>
     <div class="field"><label>¿Vino de un anuncio?</label><div class="chips" id="e-anuncio" data-val="No sé"><div class="chip" onclick="pick(this)">Sí</div><div class="chip" onclick="pick(this)">No</div><div class="chip sel" onclick="pick(this)">No sé</div></div>
+
+    <div class="field"><label>¿La cerraste vos volviendo a escribir?</label><div class="chips" id="e-recontacto" data-val="No"><div class="chip" onclick="pick(this)">Sí</div><div class="chip sel" onclick="pick(this)">No</div></div><div class="hint">La charla se había parado y la venta salió porque le volviste a escribir.</div></div>
       <div class="hint">Es de lo que sale <b>cuánto te cuesta traer una venta</b>. Si no te seguía y escribió mientras corrían anuncios, contalo como anuncio.</div>
     </div>
     <div class="field"><label>Precio</label><input type="text" id="e-precio" inputmode="numeric" oninput="fmtPesos(this)"></div>
@@ -1549,6 +1554,7 @@
       // para poder corregirlo después sin depender de que la fila exista.
       canal: $('v-canal').dataset.val,
       anuncio: $('v-anuncio').dataset.val,
+      porRecontacto: $('v-recontacto').dataset.val === 'Sí',
       total,
       sena,
       saldoCobrado: pagoTodo,
@@ -2033,10 +2039,12 @@
     else chips.push(`<span class="cli-chip">Sin reseña</span>`);
 
     const id=escCli(p.id), btns=[];
+    if(p.porRecontacto) chips.push('<span class="cli-chip star">Recontacto</span>');
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
     if((p.enviado||p.entregado) && !p.seguimiento) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="seguimiento">Nº de seguimiento</button>`);
+    btns.push(`<button class="cli-btn${p.porRecontacto?' pri':''}" data-id="${id}" data-accion="recontacto">${p.porRecontacto?'✓ Fue recontacto':'Fue recontacto'}</button>`);
     btns.push(`<button class="cli-btn" data-id="${id}" data-accion="editar">Corregir datos</button>`);
     if(!rev){
       if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
@@ -2077,6 +2085,7 @@
     // se lee de la fila. Si la venta no tiene fila (importadas, viejas), se usa la ficha.
     const fila=p.idVenta ? (ULTIMO_ROWS||[]).find(r=>r.Info==='Ventas'&&String(r.ID||'')===String(p.idVenta)) : null;
     setChip('e-anuncio', normAnuncio(fila ? fila.Anuncio : p.anuncio), 'No sé');
+    setChip('e-recontacto', p.porRecontacto ? 'Sí' : 'No', 'No');
     document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
     $('s-editar').classList.add('on');
   }
@@ -2101,6 +2110,9 @@
       total:    pesosDe('e-precio'),
       sena:     pesosDe('e-sena'),
       anuncio:  $('e-anuncio').dataset.val,
+      // Lo marca Justo. El WhatsApp no alcanza para deducirlo: de once ventas, la
+      // charla aparece en el registro en dos. → ver el bloque "de charla a venta".
+      porRecontacto: $('e-recontacto').dataset.val === 'Sí',
     };
     if(campos.sena>campos.total){ alert('La seña ($'+campos.sena.toLocaleString('es-AR')+') no puede ser mayor al precio ($'+campos.total.toLocaleString('es-AR')+').'); return; }
     const btn=document.querySelector('#s-editar .save');
@@ -2165,6 +2177,7 @@
         } finally { generandoResena.delete(id); }
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena, p.entregado);
+      else if(accion==='recontacto') await window.FB.actualizarPedido(id,{porRecontacto:!p.porRecontacto});
       else if(accion==='editar') abrirEdicion(p);
     }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }
   }
@@ -2774,7 +2787,13 @@
     });
 
     mirarRecontactos();
-    const rec = RECONTACTOS && RECONTACTOS.lista ? RECONTACTOS.lista : [];
+    // Manda lo que marcó Justo en la ficha: es el único que sabe. Lo que se
+    // detecta leyendo las charlas sirve para dos cosas — completar los que
+    // todavía no marcó y mostrar con qué se retomó cada uno.
+    const marcadas = (PEDIDOS || []).filter(p => p.porRecontacto);
+    const det = RECONTACTOS && RECONTACTOS.lista ? RECONTACTOS.lista : [];
+    const detId = {}; det.forEach(r => detId[r.pedido.id] = r);
+    const rec = marcadas.map(p => detId[p.id] || { pedido: p, marcadaSola: true });
     const tope = Math.max(charlas, compraron, 1);
     // Lo que salió cada charla, solo si hay publicidad cargada y charlas para dividir.
     const pubHist = ULTIMO_ROWS ? (calcular(ULTIMO_ROWS,'').publicidad||{}).gasto||0 : 0;
@@ -2789,9 +2808,9 @@
       ${fila('Nos escribieron', charlas, 'var(--c-3)')}
       ${fila('Compraron', compraron, 'var(--c-1)')}
       ${fila('Volvieron a comprar', volvieron, 'var(--c-2)')}
-      ${RECONTACTOS && RECONTACTOS.pocas ? '' : fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
+      ${fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
       </div>
-      ${bloqueRecontactos(rec, sinContestar)}
+      ${bloqueRecontactos(rec, sinContestar, det)}
       <div class="fun-pie">${charlas > 0
         ? `Compra <b>1 de cada ${Math.max(1, Math.round(charlas/Math.max(1, compraron)))}</b> que escriben (${cierre.toFixed(1)}%).`
         : 'Sin charlas cargadas todavía.'}
@@ -2804,44 +2823,34 @@
 
   // Quiénes fueron, uno por uno. El número solo no sirve: lo que hay que ver es
   // si la venta la salimos a buscar nosotros o si el cliente volvió por su cuenta.
-  function bloqueRecontactos(rec, sinContestar){
+  function bloqueRecontactos(rec, sinContestar, det){
     const pie = txt => `<div class="fun-corte"><div class="fun-pie" style="border:none;padding-top:0;margin-top:0">${txt}</div></div>`;
-    if(RECONTACTOS === null) return pie('Mirando las charlas de los que compraron…');
-    if(RECONTACTOS.error)    return pie('No se pudieron abrir las charlas del WhatsApp. Probá recargar.');
-    if(RECONTACTOS.pocas)
-      return `<div class="fun-corte"><div class="tip warn" style="margin:0">
-        <b>El recontacto todavía no se puede medir.</b>
-        De ${plural(RECONTACTOS.mirados + RECONTACTOS.sinCharla, 'venta', 'ventas')},
-        la charla aparece en el WhatsApp en <b>${RECONTACTOS.mirados}</b>.
-        No es que no haya recontactos: es que no hay con qué cruzar el resto.
-        WhatsApp identifica a casi todos los contactos con un ID anónimo, sin teléfono,
-        y el registro arrancó después de varias de esas ventas.
-        <br><br>Se arregla de a poco: cada venta nueva que cargues con el teléfono
-        bien escrito y que además te haya escrito por WhatsApp, entra en la cuenta.
-        ${rec.length ? `<br><br>De las ${RECONTACTOS.mirados} que sí se pudieron mirar, <b>${rec.length}</b> vinieron de un recontacto.` : ''}
-        </div></div>`;
-
     const aviso = sinContestar
       ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.
          <button class="card-a" style="padding:0" onclick="ir('whatsapp')">Abrir el WhatsApp →</button>` : '';
-    const sc = RECONTACTOS.sinCharla;
-    const sinCharla = sc
-      ? ` De ${sc} ${sc === 1 ? 'venta' : 'ventas'} no se encontró la charla en el WhatsApp, así que no ${sc === 1 ? 'entra' : 'entran'} en la cuenta.` : '';
+
+    // Los que el análisis encontró y todavía no están marcados: se ofrecen, no se
+    // cuentan. El que decide es Justo — el sistema solo levanta la mano.
+    const sugeridos = (det || []).filter(r => !r.pedido.porRecontacto);
+    const sug = sugeridos.length
+      ? `<div class="tip info" style="margin:12px 0 0"><b>Puede que falte marcar ${sugeridos.length === 1 ? 'una' : sugeridos.length}.</b>
+         Leyendo las charlas aparece que a ${sugeridos.map(r => '<b>' + esc0(r.pedido.cliente || 'alguien') + '</b>').join(', ')}
+         le volviste a escribir antes de la venta. Si fue así, tocá <i>Fue recontacto</i> en su ficha.</div>` : '';
 
     if(!rec.length)
-      return pie(`En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${sinCharla}${aviso}`);
+      return pie(`Ninguna venta está marcada como recontacto. Se marca con el botón <i>Fue recontacto</i> en la ficha del cliente: es el dato que dice si vale la pena insistir.${aviso}`) + sug;
 
     const filas = rec.slice().sort((a, b) => (Number(b.pedido.total)||0) - (Number(a.pedido.total)||0)).map(r => `
       <div class="rec-r">
         <div class="rec-n">${esc0(r.pedido.cliente || 'Sin nombre')}</div>
-        <div class="rec-q">${r.motivo}</div>
-        <div class="rec-d">${r.dias === 1 ? '1 día' : r.dias + ' días'} callado</div>
+        <div class="rec-q">${r.motivo || 'lo marcaste vos'}</div>
+        <div class="rec-d">${r.dias ? (r.dias === 1 ? '1 día' : r.dias + ' días') + ' callado' : ''}</div>
         <div class="rec-m">${pesos(Number(r.pedido.total) || 0)}</div>
-        <div class="rec-t" title="${esc0(r.txt)}">${r.media ? esc0(r.txt) : '“' + esc0(r.txt.slice(0, 90)) + (r.txt.length > 90 ? '…' : '') + '”'}</div>
+        ${r.txt ? `<div class="rec-t" title="${esc0(r.txt)}">${r.media ? esc0(r.txt) : '“' + esc0(r.txt.slice(0, 90)) + (r.txt.length > 90 ? '…' : '') + '”'}</div>` : ''}
       </div>`).join('');
     const plata = rec.reduce((a, r) => a + (Number(r.pedido.total) || 0), 0);
     const porMotivo = {};
-    rec.forEach(r => porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + 1);
+    rec.forEach(r => { if(r.motivo) porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + 1; });
     const cand = Object.keys(porMotivo).sort((a, b) => porMotivo[b] - porMotivo[a])[0];
     const top = (porMotivo[cand] > 1 && porMotivo[cand] * 2 >= rec.length) ? cand : null;
 
@@ -2849,8 +2858,8 @@
       <div class="rec-l">${filas}</div>
       <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
         <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir${rec.length > 1 && top ? `. La mayoría se destrabó <b>${top}</b>` : ''}.
-        ${sinCharla}${aviso}
-      </div></div>`;
+        ${aviso}
+      </div>${sug}</div>`;
   }
 
   // ── El mapa ──────────────────────────────────────────────────────────

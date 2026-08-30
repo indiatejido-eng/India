@@ -2152,24 +2152,31 @@
   // Los chips y los botones los arma tarjetaCliente; se guardan para que la ficha
   // muestre exactamente lo mismo y no haya dos verdades sobre el estado.
   let CHIPS_TMP = [], BTNS_TMP = '';
-  function estadoDe(p){ tarjetaCliente(p); return { chips: CHIPS_TMP, btns: BTNS_TMP }; }
+  function estadoDe(p){ tarjetaCliente(p, true); return { chips: CHIPS_TMP, btns: BTNS_TMP }; }
 
-  function tarjetaCliente(p){
+  // `full` = la ficha, que muestra todo. La tarjeta de la lista muestra solo lo
+  // que alarma o se puede hacer hoy: lo obvio y lo ya resuelto son ruido cuando
+  // hay diez tarjetas en pantalla, y el titulo del grupo ya dice el estado.
+  function tarjetaCliente(p, full){
     const chips=[];
     if(!p.saldoCobrado) chips.push(`<span class="cli-chip warn">Debe ${pesosCli(Math.max(0,(Number(p.total)||0)-(Number(p.sena)||0)))}</span>`);
-    else chips.push(`<span class="cli-chip ok">Pagado</span>`);
-    if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
-    else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
-    else chips.push(`<span class="cli-chip">Sin enviar</span>`);
-    if(p.seguimiento) chips.push(`<span class="cli-chip">${escCli(p.seguimiento)}</span>`);
+    else if(full) chips.push(`<span class="cli-chip ok">Pagado</span>`);
+    if(full){
+      if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
+      else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
+      else chips.push(`<span class="cli-chip">Sin enviar</span>`);
+    }
+    // Afuera el numero crudo no se acciona y la linea "→ donde esta" dice mas.
+    if(p.seguimiento && full) chips.push(`<span class="cli-chip">${escCli(p.seguimiento)}</span>`);
     // Solo mientras el chaleco esté en la casa: una vez que salió ya no se puede pesar
     // y el aviso pasa a ser un reproche inútil.
     if(!(Number(p.peso)>0) && !p.enviado && !p.entregado) chips.push(`<span class="cli-chip warn">Sin pesar</span>`);
     let rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
     if(!rev) rev = resenaPorNombre(p.cliente);   // cruce por nombre (reseñas de links sueltos / importados)
+    const yaSalio = !!(p.enviado || p.entregado);   // antes de que salga no hay reseña que pedir
     if(rev) chips.push(`<span class="cli-chip star">★ respondió (${Number(rev.estrellas)||0})</span>`);
     else if(p.tokenResena) chips.push(`<span class="cli-chip">Link enviado</span>`);
-    else chips.push(`<span class="cli-chip">Sin reseña</span>`);
+    else if(full || yaSalio) chips.push(`<span class="cli-chip">Sin reseña</span>`);
 
     const id=escCli(p.id), btns=[];
     const esRec = esRecontacto(p);
@@ -2178,10 +2185,13 @@
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
-    if((p.enviado||p.entregado) && !p.seguimiento) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="seguimiento">Nº de seguimiento</button>`);
-    btns.push(`<button class="cli-btn${esRec?' pri':''}" data-id="${id}" data-accion="recontacto">${esRec?'✓ Fue recontacto':'Fue recontacto'}</button>`);
-    btns.push(`<button class="cli-btn" data-id="${id}" data-accion="editar">Corregir datos</button>`);
-    if(!rev){
+    // Entregado hace rato ya no necesita numero de seguimiento: el paquete llego.
+    if(!p.seguimiento && (full ? (p.enviado||p.entregado) : (p.enviado && !p.entregado)))
+      btns.push(`<button class="cli-btn" data-id="${id}" data-accion="seguimiento">Nº de seguimiento</button>`);
+    // Marcar el recontacto y corregir datos son de la ficha: no son el trabajo del dia.
+    // "Corregir datos" ya esta arriba de la ficha; abajo era el mismo boton dos veces.
+    if(full) btns.push(`<button class="cli-btn${esRec?' pri':''}" data-id="${id}" data-accion="recontacto">${esRec?'✓ Fue recontacto':'Fue recontacto'}</button>`);
+    if(!rev && (full || yaSalio)){
       if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
       else btns.push(`<button class="cli-btn" data-id="${id}" data-accion="resena-copiar">Copiar mensaje</button>`);
     }
@@ -2190,7 +2200,7 @@
       <button class="cli-nombre cli-abrir" data-ver="${id}">${escCli(p.cliente||'Sin nombre')}</button>
       <div class="cli-sub">${escCli(p.queCompro||'')}${p.telefono?' · '+escCli(p.telefono):''}</div>
       <div class="cli-total">${pesosCli(p.total)}${p.sena>0?` · seña ${pesosCli(p.sena)}`:''}</div>
-      <div class="cli-chips">${chips.join('')}</div>
+      ${chips.length ? `<div class="cli-chips">${chips.join('')}</div>` : ''}
       ${p.ubicacion ? `<div class="cli-envio"><span>→</span><span><b>${escCli(p.ubicacion)}</b>${p.ubicacionFecha ? ` <span class="cuando">· ${escCli(p.ubicacionFecha)}</span>` : ''}</span></div>` : ''}
       <div class="cli-acciones">${(BTNS_TMP = btns.join(''))}</div>
     </div>`;

@@ -1292,7 +1292,13 @@ async function cargarAnalytics() {
     // La colección stats acumula un documento por métrica y día para siempre, así que leerla
     // entera se vuelve más lenta y cara cada mes. Se leen solo los tramos que se usan: los últimos
     // 40 días (Hoy y Este mes nunca necesitan más) y los documentos mensuales, para el Total.
-    STATS_DIA = {}; STATS_MES = {}; CHALECO_TOTAL = {};
+    // `chalecoPedidos` se limpia junto con CHALECO_TOTAL. Si no, pasa esto: el
+    // catálogo llega por onSnapshot ANTES que analytics, se piden los totales y
+    // quedan todos los ids marcados como pedidos; después analytics vacía
+    // CHALECO_TOTAL y al volver a pedir no queda ningún id sin marcar, así que
+    // no se pide nada y el mapa queda vacío para siempre. Síntoma: "Clicks por
+    // chaleco" decía "Sin datos todavía" con los contadores llenos en Firestore.
+    STATS_DIA = {}; STATS_MES = {}; CHALECO_TOTAL = {}; chalecoPedidos.clear();
     const desde = new Date(); desde.setDate(desde.getDate() - 40);
     try {
       const [porDia, porMes] = await Promise.all([

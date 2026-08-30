@@ -175,14 +175,16 @@
   /* Las dos últimas no bajan del embudo: son la fuga. Van separadas a propósito. */
   .fun-corte{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line2)}
   .rec-l{display:flex;flex-direction:column}
-  .rec-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) auto auto;
-         align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rec-r{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.15fr) auto auto;
+         align-items:baseline;gap:4px 12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rec-t{grid-column:1/-1;color:var(--muted);font-size:12px;font-style:italic;line-height:1.45;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rec-r:last-child{border-bottom:none}
   .rec-n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rec-q{color:var(--gold-txt);font-size:12.5px}
   .rec-d{color:var(--muted);font-size:12.5px;white-space:nowrap}
   .rec-m{font-family:var(--disp);font-weight:500;text-align:right;white-space:nowrap}
-  @media(max-width:640px){ .rec-r{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+  @media(max-width:640px){ .rec-r{grid-template-columns:minmax(0,1fr) auto;gap:3px 10px}
     .rec-q{grid-column:1} .rec-d{grid-column:2;text-align:right} }
   .fun-pie b{color:var(--soft);font-weight:500}
 
@@ -2517,9 +2519,7 @@
   // 15, con el 9 del celular) y el jid de WhatsApp trae otra más.
   const clave8 = v => { const n = String(v || '').replace(/\D/g, ''); return n.length >= 8 ? n.slice(-8) : ''; };
 
-  // Días sin hablar para considerar una charla fría. Una semana es el corte que
-  // usa Justo cuando revisa a quién volver a escribirle.
-  const DIAS_FRIA = 7;
+  // Días que puede estar un mensaje del cliente sin respuesta antes de ser un problema.
   const DIAS_SIN_RESPUESTA = 2;
 
   // La fecha del CRM viene "YYYY-MM-DD HH:MM". Safari no la parsea con el espacio.
@@ -2558,7 +2558,7 @@
             return { x: x, msgs: await r.json() };
           }catch(e){ return null; }
         }));
-        tanda.forEach(res => { if(res){ const h = huecoDe(res.msgs, res.x.pedido); if(h) salida.push({ ...h, pedido: res.x.pedido, cli: res.x.cli }); } });
+        tanda.forEach(res => { if(res){ const h = recontactoDe(res.msgs, res.x.pedido); if(h) salida.push({ ...h, pedido: res.x.pedido, cli: res.x.cli }); } });
       }
       RECONTACTOS = { lista: salida, mirados: aMirar.length, sinCharla: PEDIDOS.length - aMirar.length };
     }catch(e){
@@ -2568,22 +2568,59 @@
     renderEmbudo();
   }
 
-  // Devuelve el hueco más largo ANTES de la venta, si llega a ser de una semana.
-  // El corte en la fecha del pedido importa: si no, un silencio POSTERIOR a la
-  // venta (lo normal — se entregó y listo) contaría como recontacto.
-  function huecoDe(msgs, pedido){
+  // ¿Le volvimos a escribir? Esa es la firma del recontacto, no el calendario.
+  // Justo lo dijo así: "capaz no me respondió más y le volví a escribir", "quedan
+  // en pasarme las medidas y no me pasan y recontacto", "recontacto con oferta",
+  // "recontacto diciendo que ingresó la lana que quería".
+  //
+  // Todo eso es un mensaje NUESTRO que reabre una charla parada. Dos formas:
+  //   · insistimos  -> escribimos dos veces seguidas, sin respuesta en el medio
+  //   · lo buscamos -> escribimos después de tres días o más de silencio
+  // Un ida y vuelta normal no dispara ninguna de las dos.
+  const DIAS_INSISTIR = 1;   // segundo mensaje nuestro, un día después o más
+  const DIAS_BUSCAR   = 3;   // volvimos después de un silencio de los dos lados
+
+  // Con qué se retomó. Sale del texto del mensaje: son los cuatro motivos que
+  // Justo nombró, y el resto cae en "le volvimos a escribir".
+  const MOTIVOS = [
+    [/medid|ancho|larg|\bcm\b|talle|contorn/i,               'por las medidas'],
+    [/lana|color|lleg|ingres|entr[oó]|stock|nuev[ao]|tengo/i,  'avisando de la lana'],
+    [/oferta|descuent|promo|precio|\$|cuota|transferenc/i,     'con precio u oferta'],
+    [/foto|mir[áa]|te mand|ac[áa] va|\[\w+Message\]/i,          'mandando una foto'],
+  ];
+  function motivoDe(txt){
+    for(const [re, m] of MOTIVOS) if(re.test(String(txt || ''))) return m;
+    return 'le volvimos a escribir';
+  }
+  // Los mensajes de foto/audio llegan como "[imageMessage]": se muestran en castellano.
+  const MEDIA_ES = { imageMessage:'una foto', audioMessage:'un audio', videoMessage:'un video',
+                     documentMessage:'un documento', stickerMessage:'un sticker' };
+  function textoLindo(s){
+    const m = String(s || '').match(/^\[(\w+)\]$/);
+    return m ? { media: true, txt: 'le mandamos ' + (MEDIA_ES[m[1]] || 'un archivo') }
+             : { media: false, txt: String(s || '') };
+  }
+
+  // Devuelve el ÚLTIMO recontacto anterior a la venta: es el que la destrabó.
+  // El corte en la fecha de la venta importa — sin él, el silencio de después de
+  // entregar (lo normal) contaría como recontacto e inflaría el número.
+  function recontactoDe(msgs, pedido){
     if(!Array.isArray(msgs) || msgs.length < 2) return null;
     const corte = fechaPedido(pedido) || Infinity;
-    const orden = msgs.map(m => ({ t: fechaCRM(m.fecha), dir: m.direccion }))
+    const orden = msgs.map(m => ({ t: fechaCRM(m.fecha), dir: m.direccion, txt: m.texto }))
                       .filter(m => m.t && m.t <= corte).sort((a, b) => a.t - b.t);
-    if(orden.length < 2) return null;
-    let mejor = null;
+    let ultimo = null;
     for(let i = 1; i < orden.length; i++){
-      const dias = (orden[i].t - orden[i-1].t) / 86400000;
-      if(dias >= DIAS_FRIA && (!mejor || dias > mejor.dias))
-        mejor = { dias: Math.round(dias), quien: orden[i].dir === 'saliente' ? 'nosotros' : 'cliente', cuando: orden[i].t };
+      const m = orden[i], prev = orden[i-1];
+      if(m.dir !== 'saliente') continue;
+      const dias = (m.t - prev.t) / 86400000;
+      const insistimos = prev.dir === 'saliente' && dias >= DIAS_INSISTIR;
+      const buscamos   = dias >= DIAS_BUSCAR;
+      if(insistimos || buscamos)
+        ultimo = { dias: Math.max(1, Math.round(dias)), ...textoLindo(m.txt),
+                   motivo: motivoDe(m.txt), como: insistimos ? 'insistimos' : 'lo buscamos' };
     }
-    return mejor;
+    return ultimo;
   }
 
   function renderEmbudo(){
@@ -2665,25 +2702,26 @@
       ? ` De ${sc} ${sc === 1 ? 'venta' : 'ventas'} no se encontró la charla en el WhatsApp, así que no ${sc === 1 ? 'entra' : 'entran'} en la cuenta.` : '';
 
     if(!rec.length)
-      return pie(`Ninguna de las ${plural(RECONTACTOS.mirados, 'charla mirada', 'charlas miradas')} se enfrió más de ${DIAS_FRIA} días antes de la venta: se cerraron todas de una.${sinCharla}${aviso}`);
+      return pie(`En ${plural(RECONTACTOS.mirados, 'la charla mirada', 'las charlas miradas')} no hubo que volver a escribir antes de la venta: se cerraron todas de una.${sinCharla}${aviso}`);
 
-    const nuestros = rec.filter(r => r.quien === 'nosotros').length;
-    const filas = rec.slice().sort((a, b) => b.dias - a.dias).map(r => `
+    const filas = rec.slice().sort((a, b) => (Number(b.pedido.total)||0) - (Number(a.pedido.total)||0)).map(r => `
       <div class="rec-r">
         <div class="rec-n">${esc0(r.pedido.cliente || 'Sin nombre')}</div>
-        <div class="rec-q">${r.quien === 'nosotros' ? 'la retomamos nosotros' : 'volvió solo'}</div>
-        <div class="rec-d">${r.dias} días frío</div>
+        <div class="rec-q">${r.motivo}</div>
+        <div class="rec-d">${r.dias === 1 ? '1 día' : r.dias + ' días'} callado</div>
         <div class="rec-m">${pesos(Number(r.pedido.total) || 0)}</div>
+        <div class="rec-t" title="${esc0(r.txt)}">${r.media ? esc0(r.txt) : '“' + esc0(r.txt.slice(0, 90)) + (r.txt.length > 90 ? '…' : '') + '”'}</div>
       </div>`).join('');
     const plata = rec.reduce((a, r) => a + (Number(r.pedido.total) || 0), 0);
+    const porMotivo = {};
+    rec.forEach(r => porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + 1);
+    const cand = Object.keys(porMotivo).sort((a, b) => porMotivo[b] - porMotivo[a])[0];
+    const top = (porMotivo[cand] > 1 && porMotivo[cand] * 2 >= rec.length) ? cand : null;
 
     return `<div class="fun-corte">
       <div class="rec-l">${filas}</div>
       <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
-        <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir.
-        ${!nuestros ? (rec.length === 1 ? ' Volvió solo.' : ' Volvieron todos solos.')
-          : nuestros === rec.length ? (rec.length === 1 ? ' Esa la salimos a buscar nosotros.' : ' A todas las salimos a buscar nosotros.')
-          : ` <b>${nuestros}</b> de ${rec.length} las salimos a buscar nosotros; el resto volvió solo.`}
+        <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir${rec.length > 1 && top ? `. La mayoría se destrabó <b>${top}</b>` : ''}.
         ${sinCharla}${aviso}
       </div></div>`;
   }

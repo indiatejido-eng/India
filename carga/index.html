@@ -151,6 +151,9 @@
   .g-grid{stroke:var(--line);stroke-width:1}
   .g-axis{font-family:var(--body);font-size:11px;fill:var(--muted)}
   .g-val{font-family:var(--body);font-size:11px;fill:var(--soft);font-weight:500}
+  /* Los chalecos van abajo del mes, no en un segundo eje: dos escalas en un
+     mismo gráfico es la forma más fácil de mentir sin querer. */
+  .g-cant{font-family:var(--disp);font-size:12px;font-weight:600;fill:var(--soft)}
   .g-hit{fill:transparent;cursor:pointer}
   .g-hit:hover+.g-hl,.g-col.on .g-hl{opacity:1}
   .g-hl{fill:rgba(242,234,220,.05);opacity:0;pointer-events:none;transition:opacity .12s}
@@ -327,6 +330,10 @@
         border:1px solid var(--line2);background:var(--surface);border-radius:9px;cursor:pointer;color:var(--muted)}
   .seg button:hover,.geo-seg button:hover{color:var(--ink)}
   .seg button.on,.geo-seg button.on{background:var(--surface2);color:var(--ink);border-color:var(--muted)}
+  .seg-nota{font-size:12.5px;color:var(--muted);align-self:center;margin-left:6px}
+  .seg button.imposible{opacity:.45}
+  .seg button.imposible.on{opacity:1;border-color:var(--gold);color:var(--gold-txt)}
+  .seg-nota b{color:var(--soft);font-weight:500}
 
   .rent-wrap,.geo-wrap{background:var(--surface);border:1px solid var(--line);border-radius:13px;overflow:auto}
   .rent,.geo-tbl{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -584,6 +591,7 @@
             <div class="leg">
               <span><i style="background:var(--c-2)"></i>Te quedó</span>
               <span><i style="background:var(--c-1)"></i>Se fue en costos</span>
+              <span style="color:var(--muted)">abajo, los chalecos</span>
             </div>
           </div>
           <div class="chart" id="d-plata"></div>
@@ -798,6 +806,9 @@
     </div>
 
     <div class="stat-sec gap">La publicidad</div>
+    <div class="stat-period">¿Cuánto querés que te quede de cada chaleco? De ahí sale hasta cuánto podés pagar por una venta.</div>
+    <div class="seg" id="n-margen-obj"></div>
+    <div id="n-margen-aviso"></div>
     <div class="stat-grid">
       <div class="stat"><div class="sl">Gastado</div><div class="sv" id="n-pub-gasto">—</div></div>
       <div class="stat"><div class="sl">Cada venta te salió</div><div class="sv" id="n-pub-cac">—</div></div>
@@ -1197,14 +1208,15 @@
     $('n-pub-cac').textContent=d.cac?pesos(d.cac):'—';
     $('n-pub-mes').textContent=pesos(techoMensual(d));
     $('n-pub-dia').textContent=pesos(Math.round(techoMensual(d)/30/100)*100);
+    pintarMargen(d);
     if(gastoPub>0){
       $('n-pub-box').style.display='block';
-      const vAn=Number(pub.ventas)||0;
-      $('n-pub-txt').textContent = vAn>0
-        ? pesos(gastoPub)+' → '+pesos(vAn)+' ('+Math.round(vAn/gastoPub)+' a 1)'
+      const r=retornoHistorico();
+      $('n-pub-txt').textContent = r
+        ? pesos(r.gasto)+' → '+pesos(r.facturado)+' ('+r.roas+' a 1)'
         : pesos(gastoPub)+' → todavía sin ventas de anuncio';
       const cajaTxt=$('n-pub-box').querySelector('div');
-      if(cajaTxt) cajaTxt.textContent='Retorno de la publicidad · solo ventas que vinieron de anuncios';
+      if(cajaTxt) cajaTxt.textContent='Retorno de la publicidad · de siempre, solo ventas que vinieron de anuncios';
     }
     else $('n-pub-box').style.display='none';
     const an=d.ventasDeAnuncios, du=Number(d.ventasDudosas)||0;
@@ -1215,8 +1227,9 @@
     const ritmo=ritmoMensual(d);
     $('n-pub-pie').innerHTML=
       '<b>Cada venta te salió</b>: lo gastado en publicidad dividido por las '+(an||0)+' ventas que vinieron de un anuncio.<br>'+
-      '<b>Podés gastar por mes</b>: '+pesos(techoSano(d))+' por venta × <b>'+(Math.round(ritmo*10)/10)+' chalecos por mes</b> que venís vendiendo. Cuanto más vendas, más sube.<br>'+
-      'Los '+pesos(techoSano(d))+' por venta son un tercio de lo que deja el chaleco sin contar publicidad ('+pesos(techoPublicidad(d))+'). Pagando '+pesos(techoPublicidad(d))+' por una venta se gana cero, por eso el techo es más abajo.';
+      '<b>Podés gastar por mes</b>: '+pesos(techoSano(d))+' por venta × <b>'+(Math.round(ritmo*10)/10)+' chalecos por mes</b> que venís vendiendo. <b>Cuanto más vendas, más sube.</b><br>'+
+      'De dónde salen los '+pesos(techoSano(d))+' por venta: el chaleco deja <b>'+pesos(techoPublicidad(d))+'</b> antes de publicidad y sale '+pesos(Number(d.ticket)||0)+' en promedio. Para que te quede el <b>'+Math.round(MARGEN_OBJ*100)+'%</b> ('+pesos(Math.round(MARGEN_OBJ*(Number(d.ticket)||0)))+'), podés pagar hasta la diferencia. Pagando los '+pesos(techoPublicidad(d))+' enteros se gana cero.<br>'+
+      '<b>Retorno</b>: se cuenta sobre todas las ventas de siempre, no sobre el mes. Con tres o cuatro ventas por mes el número salta de 26× a 83× según el mes y no significa nada.';
 
     barras('n-gastos-bars',d.gastosPorTipo,it=>it.tipo,it=>it.monto,true);
     barras('n-modelos',d.modelos,it=>it.modelo,it=>it.cantidad,false);
@@ -1279,6 +1292,18 @@
   }
   // Lo máximo que se puede pagar por traer una venta antes de perder plata:
   // lo que deja el chaleco típico, sin descontar la publicidad que ya se pagó.
+  // El retorno se mide sobre TODO el historial, nunca sobre el mes. Con tres o
+  // cuatro ventas mensuales el ratio salta de 26× a 83× según qué mes se mire, y
+  // eso no es una señal: es la muestra chica. Es un acumulado, como la caja.
+  function retornoHistorico(){
+    if(!ULTIMO_ROWS) return null;
+    const h = calcular(ULTIMO_ROWS, '');
+    const gasto = Number((h.publicidad||{}).gasto) || 0;
+    const fact  = Number((h.publicidad||{}).ventas) || 0;
+    if(gasto <= 0 || fact <= 0) return null;
+    return { gasto, facturado: fact, roas: Math.round(fact / gasto), ventas: h.ventasDeAnuncios || 0 };
+  }
+
   function techoPublicidad(d){
     const vend=d.tallesVendidos||{};
     let talles=Object.keys(vend).filter(t=>PRECIOS_LISTA[t]);
@@ -1290,9 +1315,37 @@
     });
     return n?Math.round(suma/n/1000)*1000:0;
   }
-  // Lo que conviene pagar de verdad: un tercio de lo que deja el chaleco.
-  // El resto tiene que quedar para reponer la lana y para el negocio.
-  const techoSano=d=>Math.round(techoPublicidad(d)*0.3/1000)*1000;
+  // Cuánto se puede pagar por una venta y que el chaleco SIGA dejando lo que Justo
+  // quiere que deje. La cuenta es directa:
+  //
+  //     lo que deja el chaleco sin publicidad  −  (margen que quiero × precio)
+  //
+  // Ejemplo con un M: deja $96.000 antes de publicidad y sale $160.000. Si quiero
+  // que me quede el 50% ($80.000), puedo pagar hasta $16.000 por traer esa venta.
+  // Si me conformo con 40% ($64.000), puedo pagar $32.000.
+  //
+  // Antes era "un tercio de lo que deja", un número inventado que no decía nada
+  // sobre la ganancia. Justo: "podés gastar hasta tanto y vas a seguir ganando bien".
+  let MARGEN_OBJ = Number(localStorage.getItem('india_margen_obj')) || 0.5;
+  const MARGENES = [0.6, 0.5, 0.4, 0.3];
+
+  function techoSano(d){
+    const bruto = techoPublicidad(d);              // lo que deja el chaleco sin publicidad
+    const precio = Number(d && d.ticket) || 0;     // el precio promedio real, con descuentos
+    if(!precio) return Math.round(bruto * 0.3 / 1000) * 1000;
+    return Math.max(0, Math.round((bruto - MARGEN_OBJ * precio) / 1000) * 1000);
+  }
+  // El margen que está dejando hoy cada chaleco, ya con la publicidad descontada.
+  function margenHoy(d){
+    const precio = Number(d && d.ticket) || 0;
+    if(!precio) return null;
+    return (techoPublicidad(d) - (Number(d.cac) || 0)) / precio;
+  }
+  function elegirMargen(m){
+    MARGEN_OBJ = m;
+    try{ localStorage.setItem('india_margen_obj', String(m)); }catch(e){}
+    if(ULTIMO_NUM){ renderNumeros(ULTIMO_NUM); renderInicio(); }
+  }
   // Chalecos por mes. Se toma el mejor entre el ritmo del período elegido y el
   // histórico, para que un mes flojo no achique el presupuesto justo cuando hay
   // que empujar más.
@@ -1302,6 +1355,22 @@
     return Math.max(propio,hist);
   }
   const techoMensual=d=>Math.round(techoSano(d)*ritmoMensual(d)/1000)*1000;
+
+  function pintarMargen(d){
+    const c = $('n-margen-obj'); if(!c) return;
+    const hoy = margenHoy(d);
+    const precio = Number(d && d.ticket) || 0;
+    const bruto = precio ? techoPublicidad(d) / precio : 0;   // el techo de margen posible
+    c.innerHTML = MARGENES.map(m =>
+      `<button class="${m === MARGEN_OBJ ? 'on' : ''}${bruto && m >= bruto ? ' imposible' : ''}" data-margen="${m}">${Math.round(m*100)}%</button>`).join('')
+      + (hoy != null ? `<span class="seg-nota">hoy te queda <b>${Math.round(hoy*100)}%</b> por chaleco</span>` : '');
+    const av = $('n-margen-aviso');
+    if(av) av.innerHTML = (bruto && MARGEN_OBJ >= bruto)
+      ? `<div class="tip warn" style="margin:12px 0 0"><b>Con ${Math.round(MARGEN_OBJ*100)}% no te sobra nada para publicidad.</b>
+         El chaleco deja <b>${Math.round(bruto*100)}%</b> antes de pagar un solo peso de anuncios
+         (${pesos(techoPublicidad(d))} sobre ${pesos(precio)}). Para poder pautar, o bajás el objetivo,
+         o subís el precio, o abaratás el chaleco.</div>` : '';
+  }
 
   // ── Los consejos: qué mirar y qué hacer ─────────────────────────────────
   function renderTips(d){
@@ -2234,7 +2303,7 @@
     const tope = paso1 * 4;
 
     // Geometría en unidades del viewBox. El SVG se estira solo al ancho de la tarjeta.
-    const W = 640, H = 300, PL = 54, PR = 8, PB = 26, PT = 16;
+    const W = 640, H = 306, PL = 54, PR = 8, PB = 34, PT = 16;
     const gw = W - PL - PR, gh = H - PT - PB;
     const paso = gw / datos.length;
     const ancho = Math.min(46, paso * 0.58);
@@ -2270,7 +2339,8 @@
       return `<g class="g-col" data-i="${i}">
         <rect class="g-hl" x="${(cx - paso/2).toFixed(1)}" y="${PT}" width="${paso.toFixed(1)}" height="${gh}" rx="6"/>
         ${barras}${etiqVal}
-        <text class="g-axis" x="${cx}" y="${H - 8}" text-anchor="middle">${d.etiq.split(' ')[0].slice(0,3)}</text>
+        <text class="g-axis" x="${cx}" y="${H - 14}" text-anchor="middle">${d.etiq.split(' ')[0].slice(0,3)}</text>
+        <text class="g-cant" x="${cx}" y="${H - 2}" text-anchor="middle">${d.chalecos || '—'}</text>
         <rect class="g-hit" x="${(cx - paso/2).toFixed(1)}" y="${PT}" width="${paso.toFixed(1)}" height="${gh}"/>
       </g>`;
     }).join('');
@@ -2422,7 +2492,8 @@
     const nadaPrendido = !viva && frescos.length;
     const dato = (l, v, cls) => `<div><div class="ad-l">${l}</div><div class="ad-v ${cls||''}">${v}</div></div>`;
     const money = n => `<span class="cur">$</span>${Math.round(Number(n)||0).toLocaleString('es-AR')}`;
-    const roas = pub > 0 && vAn > 0 ? Math.round(vAn / pub) : 0;
+    const rh = retornoHistorico();
+    const roas = rh ? rh.roas : 0;
 
     // Los otros anuncios, cortitos: si no, la tarjeta queda con un hueco al lado del embudo.
     const otros = (anunciosFrescos() || []).slice()
@@ -2438,7 +2509,7 @@
         ${dato('Gastado', money(gastado))}
         ${dato('Cada venta salió', cac ? money(cac) : '—')}
         ${dato('Podés poner por día', money(porDia))}
-        ${dato('Retorno', roas ? roas + '×' : '—', roas >= 5 ? 'green' : '')}
+        ${dato('Retorno <span style="opacity:.7">de siempre</span>', roas ? roas + '×' : '—', roas >= 5 ? 'green' : '')}
       </div>
       <div class="presu">
         <div class="presu-l"><span>Presupuesto del mes</span><span>${pesos(gastoMes)} de ${pesos(porMes)}</span></div>
@@ -2837,6 +2908,7 @@
     if(panelIniciado) return; panelIniciado = true;
     document.addEventListener('click', e => {
       const b = e.target.closest('#d-periodo button'); if(b) elegirPeriodo(b.dataset.per);
+      const g = e.target.closest('#n-margen-obj button'); if(g) elegirMargen(Number(g.dataset.margen));
     });
     cargarNumeros();
     asegurarPedidos();

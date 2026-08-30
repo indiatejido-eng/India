@@ -1403,6 +1403,7 @@
     if(p.entregado) chips.push(`<span class="cli-chip ok">Entregado</span>`);
     else if(p.enviado) chips.push(`<span class="cli-chip ok">Enviado</span>`);
     else chips.push(`<span class="cli-chip">Sin enviar</span>`);
+    if(p.seguimiento) chips.push(`<span class="cli-chip">${escCli(p.seguimiento)}</span>`);
     // Solo mientras el chaleco esté en la casa: una vez que salió ya no se puede pesar
     // y el aviso pasa a ser un reproche inútil.
     if(!(Number(p.peso)>0) && !p.enviado && !p.entregado) chips.push(`<span class="cli-chip warn">Sin pesar</span>`);
@@ -1416,6 +1417,7 @@
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
+    if((p.enviado||p.entregado) && !p.seguimiento) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="seguimiento">Nº de seguimiento</button>`);
     btns.push(`<button class="cli-btn" data-id="${id}" data-accion="editar">Corregir datos</button>`);
     if(!rev){
       if(!p.tokenResena) btns.push(`<button class="cli-btn pri" data-id="${id}" data-accion="resena">Link de reseña</button>`);
@@ -1512,25 +1514,57 @@
           const igual=confirm('Este chaleco todavía no está pesado.\n\nUna vez que sale ya no se puede, y de ahí sale cuánta lana lleva cada talle de verdad.\n\nAceptar: marcarlo enviado igual.\nCancelar: lo peso ahora.');
           if(!igual){ abrirEdicion(p); return; }
         }
-        await window.FB.actualizarPedido(id,{enviado:true});
+        const tn=pedirSeguimiento(p.seguimiento);
+        if(tn===null) return;                       // canceló el número: no marca nada
+        await window.FB.actualizarPedido(id,{enviado:true, seguimiento:tn});
       }
-      else if(accion==='entregar') await window.FB.actualizarPedido(id,{entregado:true});
+      else if(accion==='seguimiento'){
+        const tn=pedirSeguimiento(p.seguimiento);
+        if(tn!==null) await window.FB.actualizarPedido(id,{seguimiento:tn});
+      }
+      else if(accion==='entregar'){
+        await window.FB.actualizarPedido(id,{entregado:true});
+        // Que el paquete haya llegado es el mejor momento para escribirle, y es el único
+        // que se pasa solo. El mensaje sale ya copiado, con la reseña adentro.
+        const yaOpino = resenaPorNombre(p.cliente) || (p.tokenResena && RESENAS_MAP[p.tokenResena]);
+        if(!yaOpino){
+          if(p.tokenResena) copiarMensajeResena(p.cliente, p.tokenResena, true);
+          else if(!generandoResena.has(id)){
+            generandoResena.add(id);
+            try{ copiarMensajeResena(p.cliente, await window.FB.generarLinkResena(id, p.cliente), true); }
+            finally{ generandoResena.delete(id); }
+          }
+        }
+      }
       else if(accion==='resena'){
         if(generandoResena.has(id) || p.tokenResena) return;   // evita doble token por double-tap
         generandoResena.add(id);
         try{
           const token=await window.FB.generarLinkResena(id, p.cliente);
-          copiarMensajeResena(p.cliente, token);
+          copiarMensajeResena(p.cliente, token, p.entregado);
         } finally { generandoResena.delete(id); }
       }
-      else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena);
+      else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena, p.entregado);
       else if(accion==='editar') abrirEdicion(p);
     }catch(e){ console.error('accion cliente:',e); alert('No se pudo. Probá de nuevo.'); }
   }
 
-  function copiarMensajeResena(nombre, token){
+  // El número del comprobante del correo. Es la llave de todo lo que venga después:
+  // sin él no hay nada que consultar y el aviso de "llegó" no puede salir solo.
+  function pedirSeguimiento(actual){
+    const tn=prompt('Número de seguimiento, el del comprobante del correo.\n\nCon esto después se puede avisar solo cuando el paquete llega. Si todavía no lo tenés, dejalo vacío y cargalo cuando lo tengas.', actual||'');
+    return tn===null ? null : String(tn).replace(/\s+/g,'').toUpperCase();
+  }
+
+  function copiarMensajeResena(nombre, token, llego){
     const link=`${location.origin}/resena?token=${token}`;
     const saludo = nombre ? `¡Hola ${String(nombre).trim().split(' ')[0]}!` : '¡Hola!';
+    if(llego){
+      const m=`${saludo} Vi que te llegó el paquete. ¿Cómo te quedó? Si te queda un minuto, contanos acá: ${link}. Y si subís una foto con el chaleco puesto, mejor todavía. ¡Gracias!`;
+      if(navigator.clipboard) navigator.clipboard.writeText(m).then(()=>alert('Entregado ✓ y mensaje copiado.\n\nPegalo en su WhatsApp.')).catch(()=>prompt('Copiá el mensaje:',m));
+      else prompt('Copiá el mensaje:',m);
+      return;
+    }
     const msg=`${saludo} Esperamos que estés disfrutando tu chaleco. Cada opinión nos ayuda un montón a crecer y a mejorar. Si te queda un minuto, nos encantaría que nos dejes la tuya acá: ${link}. Y si te sacás una foto con el chaleco puesto y la subís ahí, mejor todavía. ¡Gracias por elegirnos!`;
     if(navigator.clipboard) navigator.clipboard.writeText(msg).then(()=>alert('Mensaje copiado ✓ Pegalo en el WhatsApp del cliente.')).catch(()=>prompt('Copiá el mensaje:',msg));
     else prompt('Copiá el mensaje:',msg);

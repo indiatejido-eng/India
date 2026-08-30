@@ -166,7 +166,7 @@
 
   /* Embudo */
   .fun{display:flex;flex-direction:column;gap:14px}
-  .fun-r{display:grid;grid-template-columns:134px 1fr auto;align-items:center;gap:13px}
+  .fun-r{display:grid;grid-template-columns:158px 1fr auto;align-items:center;gap:13px}
   .fun-l{font-size:13px;color:var(--soft)}
   .fun-t{height:26px;background:var(--surface2);border-radius:5px;overflow:hidden}
   .fun-f{height:100%;border-radius:5px}
@@ -174,10 +174,20 @@
   .fun-pie{font-size:12.5px;color:var(--muted);margin-top:16px;padding-top:14px;border-top:1px solid var(--line);line-height:1.55}
   /* Las dos últimas no bajan del embudo: son la fuga. Van separadas a propósito. */
   .fun-corte{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line2)}
+  .rec-l{display:flex;flex-direction:column}
+  .rec-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) auto auto;
+         align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rec-r:last-child{border-bottom:none}
+  .rec-n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rec-q{color:var(--gold-txt);font-size:12.5px}
+  .rec-d{color:var(--muted);font-size:12.5px;white-space:nowrap}
+  .rec-m{font-family:var(--disp);font-weight:500;text-align:right;white-space:nowrap}
+  @media(max-width:640px){ .rec-r{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+    .rec-q{grid-column:1} .rec-d{grid-column:2;text-align:right} }
   .fun-pie b{color:var(--soft);font-weight:500}
 
   /* Mapa */
-  .mapa-row{display:grid;grid-template-columns:minmax(140px,196px) minmax(0,1fr);gap:34px;align-items:start}
+  .mapa-row{display:grid;grid-template-columns:minmax(140px,196px) minmax(0,1fr);gap:30px;align-items:start}
   .mapa svg{display:block;width:100%;height:auto}
   .mapa path{stroke:var(--bg);stroke-width:.9;transition:fill .15s;cursor:pointer}
   .mapa path:hover{stroke:var(--ink);stroke-width:1.3}
@@ -186,16 +196,21 @@
   .esc-b{display:flex;flex:1;height:7px;border-radius:4px;overflow:hidden}
   .esc-b i{flex:1;display:block}
   .top-p{display:flex;flex-direction:column;gap:11px}
-  .top-r{display:grid;grid-template-columns:126px minmax(0,220px) auto;align-items:center;gap:14px;justify-content:start;
+  .top-r,.top-h{display:grid;grid-template-columns:126px minmax(60px,1fr) 46px 56px 48px;
+         align-items:center;gap:14px;
          background:none;border:none;padding:0;font-family:var(--body);color:var(--ink);
          cursor:pointer;text-align:left}
+  .top-h{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+         color:var(--muted);cursor:default;margin-bottom:2px}
+  .top-h span:nth-child(n+3){text-align:right}
+  .top-c{text-align:right;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+  .top-c.fuerte{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .top-c .poco{color:var(--line2)}
   .top-r:hover .top-n{color:var(--accent-txt)}
   .top-n{font-size:13.5px;display:flex;align-items:center;gap:7px;min-width:0}
   .top-n em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .top-t{height:9px;background:var(--surface2);border-radius:5px;overflow:hidden}
   .top-f{height:100%;background:var(--accent);border-radius:5px}
-  .top-v{font-size:13px;font-weight:500;min-width:78px;text-align:right;color:var(--soft)}
-  .top-v b{font-family:var(--disp);font-weight:600;color:var(--ink);font-size:14.5px}
   .fuera-d{width:6px;height:6px;border-radius:50%;background:var(--line2);flex:none}
   .fuera-d.in{background:var(--accent)}
 
@@ -450,7 +465,7 @@
   }
   @media(max-width:420px){
     .kpis{grid-template-columns:minmax(0,1fr)}
-    .top-r{grid-template-columns:96px 1fr auto;gap:9px}
+    .top-r,.top-h{grid-template-columns:88px minmax(30px,1fr) 34px 44px 40px;gap:8px}
   }
 </style>
 </head>
@@ -608,13 +623,10 @@
       <section class="card">
         <div class="card-h">
           <div>
-            <div class="card-t" id="d-mapa-t">Dónde <i>compran</i></div>
-            <div class="card-sub" id="d-mapa-sub">Más brillante = más ventas. Rayado = está afuera de la publicidad.</div>
+            <div class="card-t">Dónde <i>compran</i></div>
+            <div class="card-sub">El mapa se pinta por ventas. Rayado = está afuera de la publicidad.</div>
           </div>
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-            <div class="seg-per" id="d-mapa-seg"></div>
-            <button class="card-a" onclick="ir('geo')">Provincia por provincia →</button>
-          </div>
+          <button class="card-a" onclick="ir('geo')">Provincia por provincia →</button>
         </div>
         <div class="mapa-row">
           <div class="mapa" id="d-mapa"></div>
@@ -622,6 +634,7 @@
             <div class="ad-g" id="d-mapa-resumen" style="grid-template-columns:repeat(3,1fr);margin:0 0 22px"></div>
             <div class="top-p" id="d-top-prov"><div class="vacio">Cargando…</div></div>
             <div class="esc" id="d-mapa-esc"></div>
+            <div class="geo-note" style="margin-top:9px">Las <b>ventas</b> las cargaste vos, ésas son exactas. Los que <b>escriben</b> salen del código de área del teléfono, así que es aproximado. El <b>cierre</b> aparece desde las 5 charlas: con menos, una sola venta da 100% y no significa nada.</div>
           </div>
         </div>
       </section>
@@ -1561,6 +1574,8 @@
     cargarClientesCRM();
   }
 
+  function olvidarRecontactos(){ RECONTACTOS = null; recontactosPedidos = false; }
+
   function limpiarGeo(){
     if(unsubGeo)unsubGeo(); if(unsubHall)unsubHall();
     unsubGeo=unsubHall=null; geoIniciado=false;
@@ -1760,7 +1775,9 @@
   function asegurarPedidos(){
     if(!window.FB || cliIniciado) return;
     cliIniciado=true;
-    unsubPedidos = window.FB.escucharPedidos(list => { PEDIDOS=list; renderClientes(); renderCaja(); renderGeo(); renderInicio(); });
+    unsubPedidos = window.FB.escucharPedidos(list => { const antes=(PEDIDOS||[]).length; PEDIDOS=list;
+      if(list.length!==antes) olvidarRecontactos();   // hay una venta nueva: se vuelve a mirar
+      renderClientes(); renderCaja(); renderGeo(); renderInicio(); });
     unsubResenasCli = window.FB.escucharResenas(map => { RESENAS_MAP=map; renderClientes(); });
   }
   function cargarClientes(){ asegurarPedidos(); renderClientes(); }
@@ -2495,6 +2512,67 @@
   // La fecha del CRM viene "YYYY-MM-DD HH:MM". Safari no la parsea con el espacio.
   const fechaCRM = s => { const d = new Date(String(s || '').replace(' ', 'T')); return isNaN(d) ? 0 : d.getTime(); };
 
+  // ── ¿Qué venta vino de un recontacto? ────────────────────────────────
+  // La lista de clientes del CRM trae solo el ÚLTIMO mensaje, y con eso no se
+  // puede saber si la charla se enfrió y se retomó. Hay que abrir la conversación.
+  // Se abren solo las de los que COMPRARON — son diez o quince, no doscientas.
+  let RECONTACTOS = null, recontactosPedidos = false;
+
+  async function mirarRecontactos(){
+    if(recontactosPedidos || !PEDIDOS || !GEO_CLIENTES) return;
+    if(!PEDIDOS.length || !GEO_CLIENTES.length) return;
+    recontactosPedidos = true;
+
+    // Del teléfono del pedido al jid de WhatsApp, por los últimos 8 dígitos.
+    const porTel = {};
+    GEO_CLIENTES.forEach(c => { const k = clave8(c.telefono || c.numero || c.jid); if(k && !porTel[k]) porTel[k] = c; });
+    const aMirar = [];
+    PEDIDOS.forEach(p => {
+      const c = porTel[clave8(p.telefono)];
+      if(c && !aMirar.some(x => x.jid === c.jid)) aMirar.push({ jid: c.jid, pedido: p, cli: c });
+    });
+
+    const salida = [];
+    try{
+      const tok = await window.FB.tokenApi();
+      // De a cinco: son pocas, pero no hace falta abrirle veinte conexiones al server.
+      for(let i = 0; i < aMirar.length; i += 5){
+        const tanda = await Promise.all(aMirar.slice(i, i + 5).map(async x => {
+          try{
+            const r = await fetch(CRM_API + '/conversacion?jid=' + encodeURIComponent(x.jid),
+                                  { headers: { 'Authorization': 'Bearer ' + tok } });
+            if(!r.ok) return null;
+            return { x: x, msgs: await r.json() };
+          }catch(e){ return null; }
+        }));
+        tanda.forEach(res => { if(res){ const h = huecoDe(res.msgs, res.x.pedido); if(h) salida.push({ ...h, pedido: res.x.pedido, cli: res.x.cli }); } });
+      }
+      RECONTACTOS = { lista: salida, mirados: aMirar.length, sinCharla: PEDIDOS.length - aMirar.length };
+    }catch(e){
+      console.error('No se pudieron mirar las charlas:', e);
+      RECONTACTOS = { error: true };
+    }
+    renderEmbudo();
+  }
+
+  // Devuelve el hueco más largo ANTES de la venta, si llega a ser de una semana.
+  // El corte en la fecha del pedido importa: si no, un silencio POSTERIOR a la
+  // venta (lo normal — se entregó y listo) contaría como recontacto.
+  function huecoDe(msgs, pedido){
+    if(!Array.isArray(msgs) || msgs.length < 2) return null;
+    const corte = fechaPedido(pedido) || Infinity;
+    const orden = msgs.map(m => ({ t: fechaCRM(m.fecha), dir: m.direccion }))
+                      .filter(m => m.t && m.t <= corte).sort((a, b) => a.t - b.t);
+    if(orden.length < 2) return null;
+    let mejor = null;
+    for(let i = 1; i < orden.length; i++){
+      const dias = (orden[i].t - orden[i-1].t) / 86400000;
+      if(dias >= DIAS_FRIA && (!mejor || dias > mejor.dias))
+        mejor = { dias: Math.round(dias), quien: orden[i].dir === 'saliente' ? 'nosotros' : 'cliente', cuando: orden[i].t };
+    }
+    return mejor;
+  }
+
   function renderEmbudo(){
     const cont = $('d-embudo'); if(!cont) return;
     if(GEO_CLIENTES === null || PEDIDOS === null){ cont.innerHTML = '<div class="vacio">Cargando…</div>'; return; }
@@ -2517,23 +2595,22 @@
     // Se separan en dos porque se arreglan distinto:
     //   · sin contestar -> el último mensaje es del cliente. Eso es culpa nuestra.
     //   · para recontactar -> el último es nuestro. La pelota está del otro lado.
+    // Las que están esperando respuesta nuestra. No es la lista de recontacto:
+    // acá el último mensaje es del cliente y nadie contestó.
     const compradores = {};
     (PEDIDOS || []).forEach(p => { const k = clave8(p.telefono); if(k) compradores[k] = true; });
     const ahora = Date.now();
-    let recontactar = 0, sinContestar = 0, masVieja = 0;
+    let sinContestar = 0;
     (GEO_CLIENTES || []).forEach(c => {
-      if(compradores[clave8(c.telefono || c.numero || c.jid)]) return;   // ya compró, no es fuga
+      if(compradores[clave8(c.telefono || c.numero || c.jid)]) return;   // ya compró
       const cuando = fechaCRM(c.ultima_fecha);
-      if(!cuando) return;                                                // sin fecha no se puede afirmar nada
-      const dias = (ahora - cuando) / 86400000;
-      if(c.ultima_dir === 'saliente'){
-        if(dias >= DIAS_FRIA){ recontactar++; if(dias > masVieja) masVieja = dias; }
-      }else if(dias >= DIAS_SIN_RESPUESTA){
-        sinContestar++;
-      }
+      if(!cuando || c.ultima_dir === 'saliente') return;
+      if((ahora - cuando) / 86400000 >= DIAS_SIN_RESPUESTA) sinContestar++;
     });
 
-    const tope = Math.max(charlas, compraron, recontactar, 1);
+    mirarRecontactos();
+    const rec = RECONTACTOS && RECONTACTOS.lista ? RECONTACTOS.lista : [];
+    const tope = Math.max(charlas, compraron, 1);
     // Lo que salió cada charla, solo si hay publicidad cargada y charlas para dividir.
     const pubHist = ULTIMO_ROWS ? (calcular(ULTIMO_ROWS,'').publicidad||{}).gasto||0 : 0;
     const porCharla = (pubHist > 0 && charlas > 0) ? Math.round(pubHist/charlas) : 0;
@@ -2542,26 +2619,14 @@
       <div class="fun-t"><div class="fun-f" style="width:${Math.max(2, n/tope*100).toFixed(1)}%;background:${color}"></div></div>
       <div class="fun-n"${accion ? ' style="color:' + color + '"' : ''}>${n}</div></div>`;
     const cierre = charlas > 0 ? compraron / charlas * 100 : 0;
-    const perdido = porCharla ? recontactar * porCharla : 0;
 
     cont.innerHTML = `<div class="fun">
       ${fila('Nos escribieron', charlas, 'var(--c-3)')}
       ${fila('Compraron', compraron, 'var(--c-1)')}
       ${fila('Volvieron a comprar', volvieron, 'var(--c-2)')}
+      ${fila('Vinieron de un recontacto', rec.length, 'var(--gold)', true)}
       </div>
-      <div class="fun-corte">
-        <div class="fun">
-          ${fila('Para recontactar', recontactar, 'var(--gold)', true)}
-          ${fila('Sin contestar', sinContestar, 'var(--red)', true)}
-        </div>
-        <div class="fun-pie" style="border:none;padding-top:11px;margin-top:4px">
-          <b>Para recontactar:</b> escribieron, no compraron y hace más de ${DIAS_FRIA} días
-          que la pelota está del lado de ellos${masVieja > 30 ? ` (la más vieja, hace ${Math.round(masVieja)} días)` : ''}.
-          ${perdido ? ` Pagaste <b>${pesos(perdido)}</b> de publicidad por traerlas.` : ''}
-          ${sinContestar ? `<br><b>Sin contestar:</b> el último mensaje es de ellos y hace más de ${DIAS_SIN_RESPUESTA} días que espera. Esas van primero.` : ''}
-          ${(recontactar || sinContestar) ? '<br><button class="card-a" style="padding:0;margin-top:6px" onclick="ir(\'whatsapp\')">Abrir el WhatsApp →</button>' : ''}
-        </div>
-      </div>
+      ${bloqueRecontactos(rec, sinContestar)}
       <div class="fun-pie">${charlas > 0
         ? `Compra <b>1 de cada ${Math.max(1, Math.round(charlas/Math.max(1, compraron)))}</b> que escriben (${cierre.toFixed(1)}%).`
         : 'Sin charlas cargadas todavía.'}
@@ -2572,6 +2637,44 @@
     if(sub) sub.textContent = 'Las charlas salen del WhatsApp del negocio.';
   }
 
+  // Quiénes fueron, uno por uno. El número solo no sirve: lo que hay que ver es
+  // si la venta la salimos a buscar nosotros o si el cliente volvió por su cuenta.
+  function bloqueRecontactos(rec, sinContestar){
+    const pie = txt => `<div class="fun-corte"><div class="fun-pie" style="border:none;padding-top:0;margin-top:0">${txt}</div></div>`;
+    if(RECONTACTOS === null) return pie('Mirando las charlas de los que compraron…');
+    if(RECONTACTOS.error)    return pie('No se pudieron abrir las charlas del WhatsApp. Probá recargar.');
+
+    const aviso = sinContestar
+      ? `<br><b>Ojo:</b> hay <b>${sinContestar}</b> ${sinContestar === 1 ? 'charla' : 'charlas'} donde el último mensaje es del cliente y hace más de ${DIAS_SIN_RESPUESTA} días que espera.
+         <button class="card-a" style="padding:0" onclick="ir('whatsapp')">Abrir el WhatsApp →</button>` : '';
+    const sc = RECONTACTOS.sinCharla;
+    const sinCharla = sc
+      ? ` De ${sc} ${sc === 1 ? 'venta' : 'ventas'} no se encontró la charla en el WhatsApp, así que no ${sc === 1 ? 'entra' : 'entran'} en la cuenta.` : '';
+
+    if(!rec.length)
+      return pie(`Ninguna de las ${plural(RECONTACTOS.mirados, 'charla mirada', 'charlas miradas')} se enfrió más de ${DIAS_FRIA} días antes de la venta: se cerraron todas de una.${sinCharla}${aviso}`);
+
+    const nuestros = rec.filter(r => r.quien === 'nosotros').length;
+    const filas = rec.slice().sort((a, b) => b.dias - a.dias).map(r => `
+      <div class="rec-r">
+        <div class="rec-n">${esc0(r.pedido.cliente || 'Sin nombre')}</div>
+        <div class="rec-q">${r.quien === 'nosotros' ? 'la retomamos nosotros' : 'volvió solo'}</div>
+        <div class="rec-d">${r.dias} días frío</div>
+        <div class="rec-m">${pesos(Number(r.pedido.total) || 0)}</div>
+      </div>`).join('');
+    const plata = rec.reduce((a, r) => a + (Number(r.pedido.total) || 0), 0);
+
+    return `<div class="fun-corte">
+      <div class="rec-l">${filas}</div>
+      <div class="fun-pie" style="border:none;padding-top:12px;margin-top:2px">
+        <b>${pesos(plata)}</b> que no existirían si la charla se hubiera dejado morir.
+        ${!nuestros ? (rec.length === 1 ? ' Volvió solo.' : ' Volvieron todos solos.')
+          : nuestros === rec.length ? (rec.length === 1 ? ' Esa la salimos a buscar nosotros.' : ' A todas las salimos a buscar nosotros.')
+          : ` <b>${nuestros}</b> de ${rec.length} las salimos a buscar nosotros; el resto volvió solo.`}
+        ${sinCharla}${aviso}
+      </div></div>`;
+  }
+
   // ── El mapa ──────────────────────────────────────────────────────────
   // La rampa va de apagado a brillante en un solo tono: más brillante,
   // más ventas. Una sola familia de color — nunca arcoíris.
@@ -2579,41 +2682,7 @@
   // Abajo de esto el porcentaje de cierre es ruido: con 1 charla y 1 venta da 100%.
   const MIN_CIERRE = 5;
 
-  // Qué está pintando el mapa. Ventas es el arranque porque es el dato duro:
-  // lo cargó Justo venta por venta. Las charlas salen del código de área, que es
-  // aproximado, y el cierre encima divide una por otra.
-  let MAPA_MET = 'ventas';
-  const MAPA_METS = {
-    ventas:  { seg:'Compran', ttl:'Dónde <i>compran</i>',
-               sub:'Más brillante = más ventas. Rayado = está afuera de la publicidad.',
-               val:f => f.ven, piso:'sin ventas',
-               fmt:n => n + (n === 1 ? ' venta' : ' ventas'), esc:n => n + (n === 1 ? ' venta' : ' ventas') },
-    escriben:{ seg:'Escriben', ttl:'Dónde <i>escriben</i>',
-               sub:'Más brillante = más gente que escribió. Sale del código de área del teléfono, así que es aproximado.',
-               val:f => f.esc, piso:'sin charlas',
-               fmt:n => n + (n === 1 ? ' charla' : ' charlas'), esc:n => n + ' charlas' },
-    cierre:  { seg:'Cierre', ttl:'Dónde <i>cierra</i> mejor',
-               sub:'De los que escriben, cuántos compran. Solo se pinta la provincia con ' + MIN_CIERRE + ' charlas o más: con menos, un solo caso da 100% y no significa nada.',
-               val:f => (f.esc >= MIN_CIERRE ? f.ven / f.esc * 100 : null), piso:'no cierra',
-               fmt:n => n == null ? 'pocas charlas' : n.toFixed(n >= 10 ? 0 : 1) + '% de cierre',
-               esc:n => Math.round(n) + '%' },
-  };
-
-  function pintarSegMapa(){
-    const c = $('d-mapa-seg'); if(!c) return;
-    c.innerHTML = Object.keys(MAPA_METS).map(k =>
-      `<button class="${k === MAPA_MET ? 'on' : ''}" data-met="${k}">${MAPA_METS[k].seg}</button>`).join('');
-  }
-  function elegirMetricaMapa(k){
-    if(!MAPA_METS[k]) return;
-    MAPA_MET = k; pintarSegMapa(); renderMapa();
-    const m = MAPA_METS[k];
-    if($('d-mapa-t'))   $('d-mapa-t').innerHTML = m.ttl;
-    if($('d-mapa-sub')) $('d-mapa-sub').textContent = m.sub;
-  }
-
   function renderMapa(){
-    pintarSegMapa();
     pintarMapa('d-mapa', 'd-mapa-esc', 'd-top-prov');
     pintarMapa('geo-mapa', 'geo-mapa-esc', null);
   }
@@ -2621,16 +2690,15 @@
   function pintarMapa(idMapa, idEsc, idLista){
     const cont = $(idMapa), lista = idLista ? $(idLista) : null; if(!cont) return;
     const filas = geoDatos().filas;
-    const M = MAPA_METS[MAPA_MET];
-    const valores = filas.map(f => M.val(f)).filter(v => v != null);
-    const maxVal = valores.length ? Math.max.apply(null, valores) : 0;
+    // El mapa se pinta por ventas: es el dato duro, cargado venta por venta. Las
+    // charlas salen del código de área y son aproximadas — van en la tabla de al
+    // lado, no en el color, para que el mapa no diga algo que no se puede afirmar.
+    const maxVen = Math.max.apply(null, filas.map(f => f.ven)) || 0;
     const porProv = {}; filas.forEach(f => porProv[f.prov] = f);
 
     const tono = f => {
-      if(!f || !maxVal) return RAMPA[0];
-      const v = M.val(f);
-      if(v == null || !v) return RAMPA[0];
-      const i = Math.ceil(v / maxVal * (RAMPA.length - 1));
+      if(!f || !maxVen || !f.ven) return RAMPA[0];
+      const i = Math.ceil(f.ven / maxVen * (RAMPA.length - 1));
       return RAMPA[Math.min(RAMPA.length - 1, Math.max(1, i))];
     };
     const paths = Object.keys(MAPA_PROV).map(p => {
@@ -2642,7 +2710,7 @@
     }).join('');
     // CABA no viene en el contorno (es un punto en el mapa) y sí compra: va como marca aparte.
     const caba = porProv['CABA'];
-    const puntoCaba = `<circle class="caba" cx="303.5" cy="292.7" r="${caba && M.val(caba) ? 5 : 3.4}" fill="${tono(caba)}"><title>${esc0('CABA: ' + (caba ? M.fmt(M.val(caba)) : 'sin datos'))}</title></circle>`;
+    const puntoCaba = `<circle class="caba" cx="303.5" cy="292.7" r="${caba && caba.ven ? 5 : 3.4}" fill="${tono(caba)}"><title>${esc0('CABA: ' + (caba && caba.ven ? plural(caba.ven,'venta','ventas') : 'sin ventas'))}</title></circle>`;
 
     cont.innerHTML = `<svg viewBox="${MAPA_VB}" role="img" aria-label="Mapa de Argentina por provincia">
       <defs><pattern id="rayas-${idMapa}" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
@@ -2650,9 +2718,9 @@
       ${paths}${puntoCaba}</svg>`;
 
     const esc = $(idEsc);
-    if(esc) esc.innerHTML = `<span>${M.piso}</span>
+    if(esc) esc.innerHTML = `<span>sin ventas</span>
       <span class="esc-b">${RAMPA.map(c => `<i style="background:${c}"></i>`).join('')}</span>
-      <span>${maxVal ? M.esc(maxVal) : '—'}</span>`;
+      <span>${maxVen || 0} ${maxVen === 1 ? 'venta' : 'ventas'}</span>`;
 
     const resumen = idLista ? $('d-mapa-resumen') : null;
     if(resumen){
@@ -2668,22 +2736,25 @@
     }
 
     if(lista){
-      const conDato = filas.filter(f => M.val(f) != null && M.val(f) > 0);
-      const top = conDato.sort((a, b) => M.val(b) - M.val(a) || b.esc - a.esc).slice(0, 6);
-      const topMax = top.length ? M.val(top[0]) : 1;
+      // Todo junto: cuántas compraron, cuántas escribieron y qué cierra. Ordenado
+      // por ventas, y a igualdad por charlas — así una provincia que escribe mucho
+      // y no compra nada igual aparece, que es justo la que hay que mirar.
+      const top = filas.filter(f => f.ven > 0 || f.esc > 0)
+        .sort((a, b) => b.ven - a.ven || b.esc - a.esc).slice(0, 7);
+      const topMax = top.length ? Math.max(top[0].ven, 1) : 1;
       lista.innerHTML = !top.length
-        ? `<div class="vacio">${MAPA_MET === 'cierre'
-              ? 'Ninguna provincia llega a ' + MIN_CIERRE + ' charlas todavía.'
-              : 'Todavía no hay datos cargados.'}</div>`
-        : top.map(f => {
-            const v = M.val(f);
-            const chico = MAPA_MET === 'cierre'
-              ? `<b>${v.toFixed(v >= 10 ? 0 : 1)}%</b> <span style="opacity:.75">${f.ven}/${f.esc}</span>`
-              : `<b>${v}</b> ${MAPA_MET === 'ventas' ? (v === 1 ? 'venta' : 'ventas') : 'charlas'}`;
+        ? '<div class="vacio">Todavía no hay ventas ni charlas cargadas.</div>'
+        : `<div class="top-h"><span></span><span></span><span>ventas</span><span>escriben</span><span>cierre</span></div>` +
+          top.map(f => {
+            const cie = f.esc >= MIN_CIERRE
+              ? (f.ven / f.esc * 100).toFixed(f.ven / f.esc * 100 >= 10 ? 0 : 1) + '%'
+              : '<span class="poco" title="Con menos de ' + MIN_CIERRE + ' charlas el porcentaje es ruido">·</span>';
             return `<button class="top-r" data-p="${esc0(f.prov)}">
               <div class="top-n"><span class="fuera-d ${f.est.in?'in':''}"></span><em>${f.prov}</em></div>
-              <div class="top-t"><div class="top-f" style="width:${Math.max(3, v/topMax*100).toFixed(1)}%"></div></div>
-              <div class="top-v">${chico}</div></button>`;
+              <div class="top-t"><div class="top-f" style="width:${Math.max(3, f.ven/topMax*100).toFixed(1)}%"></div></div>
+              <div class="top-c fuerte">${f.ven || '—'}</div>
+              <div class="top-c">${f.esc || '—'}</div>
+              <div class="top-c">${cie}</div></button>`;
           }).join('');
       lista.querySelectorAll('.top-r').forEach(b => b.addEventListener('click', () => ir('geo')));
     }
@@ -2715,7 +2786,6 @@
     if(panelIniciado) return; panelIniciado = true;
     document.addEventListener('click', e => {
       const b = e.target.closest('#d-periodo button'); if(b) elegirPeriodo(b.dataset.per);
-      const m = e.target.closest('#d-mapa-seg button'); if(m) elegirMetricaMapa(m.dataset.met);
     });
     cargarNumeros();
     asegurarPedidos();

@@ -1902,6 +1902,14 @@
     if(p.enviado) return 'enviado';           // pagado, en camino
     return 'en_proceso';                       // pagado, en producción
   }
+  // En Clientes el pedido se agrupa por DONDE ESTA EL CHALECO, no por si pagaron:
+  // la deuda ya se ve en el chip "Debe $" de cada tarjeta. `estadoPedido` (deuda
+  // primero) sigue mandando en Inicio, que ordena por urgencia de cobro.
+  function grupoCliente(p){
+    if(p.entregado) return 'cerrado';
+    if(p.enviado)   return 'enviado';
+    return 'en_proceso';
+  }
   function limpiarClientes(){
     if(unsubPedidos)unsubPedidos(); if(unsubResenasCli)unsubResenasCli();
     unsubPedidos=unsubResenasCli=null; cliIniciado=false; PEDIDOS=null; RESENAS_MAP={};
@@ -2033,9 +2041,9 @@
     if(q) lista=lista.filter(p=>normCli(p.cliente).includes(q));
     if(!lista.length){ cont.innerHTML='<div class="cli-vacio">'+(q?'Sin resultados.':'Todavía no hay pedidos. Cargá una venta para empezar.')+'</div>'; return; }
     const porFecha=(a,b)=>(b.fecha?.seconds||0)-(a.fecha?.seconds||0);
-    const grupos=[['en_proceso','En proceso'],['enviado','Enviados'],['falta_cobrar','Falta cobrar'],['cerrado','Cerrados']];
+    const grupos=[['en_proceso','En proceso'],['enviado','Enviados'],['cerrado','Cerrados']];
     const html=grupos.map(([key,titulo])=>{
-      const ps=lista.filter(p=>estadoPedido(p)===key).sort(porFecha);
+      const ps=lista.filter(p=>grupoCliente(p)===key).sort(porFecha);
       if(!ps.length) return '';
       return `<div class="cli-grupo"><div class="cli-grupo-h">${titulo} <span class="cli-count">${ps.length}</span></div>`+ps.map(tarjetaCliente).join('')+`</div>`;
     }).join('');

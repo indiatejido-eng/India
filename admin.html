@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="India">
+<meta name="theme-color" content="#f3ece0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png">
+
 <title>India · Admin</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -2271,6 +2279,28 @@ async function borrarLana(id){
     showToast('Lana eliminada');
   } catch (err) { showToast('Error: ' + err.message, true); }
 }
+</script>
+
+<script>
+/* PWA en iOS: en modo standalone, tocar un link normal expulsa a Safari.
+   Interceptamos la navegacion interna para que la app no se salga.
+   Solo actua cuando corre instalada en la pantalla de inicio. */
+(function () {
+  if (!('standalone' in navigator) || !navigator.standalone) return;
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href) return;
+    if (a.target === '_blank') return;                       // se quiere abrir afuera a proposito
+    if (a.hasAttribute('download')) return;                  // descargas
+    if (href.charAt(0) === '#') return;                      // ancla interna
+    if (/^(tel:|mailto:|sms:|whatsapp:|geo:)/i.test(href)) return;
+    if (a.hostname && a.hostname !== location.hostname) return;  // dominio externo
+    e.preventDefault();
+    location.href = a.href;
+  }, false);
+})();
 </script>
 
 </body>

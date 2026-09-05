@@ -1,13 +1,13 @@
 {
-  "name": "India · Admin",
+  "name": "India · Panel",
   "short_name": "India",
-  "description": "Panel de administración de India Tejidos",
-  "start_url": "/admin.html",
+  "description": "Panel interno de India Tejidos",
+  "start_url": "/carga/#inicio",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f5f0e8",
-  "theme_color": "#f3ece0",
+  "background_color": "#14100D",
+  "theme_color": "#14100D",
   "lang": "es-AR",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },

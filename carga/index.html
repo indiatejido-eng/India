@@ -2478,8 +2478,8 @@
     cont.innerHTML = `
       <div class="kpi"><div class="kpi-l">Vendido</div>${money(d.vendido)}
         <div class="kpi-h">${plural(d.chalecos||0, 'chaleco', 'chalecos')} · ${d.periodo}</div></div>
-      <div class="kpi"><div class="kpi-l">Te quedó</div>${money(d.ganancia, 'green')}
-        <div class="kpi-h">margen <b>${d.margen||0}%</b></div></div>
+      <div class="kpi"><div class="kpi-l">${d.ganancia < 0 ? 'Perdiste' : 'Te quedó'}</div>${money(Math.abs(d.ganancia), d.ganancia < 0 ? 'terra' : 'green')}
+        <div class="kpi-h">${d.vendido > 0 ? `margen <b>${d.margen||0}%</b>` : 'sin ventas todavía este período'}</div></div>
       <div class="kpi"><div class="kpi-l">Falta cobrar</div>${cargando ? '<div class="kpi-v">—</div>' : money(porCobrar, porCobrar > 0 ? 'gold' : '')}
         <div class="kpi-h">${cargando ? 'Cargando…' : (impagos.length ? plural(impagos.length, 'cliente debe', 'clientes deben') : 'nadie debe nada')}</div></div>
       <div class="kpi"><div class="kpi-l">Hay en caja</div>${cargando ? '<div class="kpi-v">—</div>' : money(caja)}

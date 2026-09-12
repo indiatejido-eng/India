@@ -560,7 +560,8 @@
     /* Entre la portada y la primera foto va aire de verdad, no una rendija: 30px se leía como una costura */
     .ps{ padding-top: 56px; }
     .ps-grid{ grid-template-columns: 1fr; gap: 0; padding: 0; max-width:none; }
-    .ps-step{ aspect-ratio:auto; height: 74vh; height: 74dvh; min-height: 460px; }
+    /* 62dvh y no 74: con tres fotos, cada 12% de pantalla son media pantalla menos hasta los chalecos */
+    .ps-step{ aspect-ratio:auto; height: 62vh; height: 62dvh; min-height: 420px; }
     .ps-over{ padding: 0 24px 38px; }
     .ps-step h3{ font-size: 2.35rem; }
     .ps-btn{ margin-top:20px; }

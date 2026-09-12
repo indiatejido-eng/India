@@ -537,7 +537,8 @@
     .gallery-head{ margin-bottom: 36px; }
   }
 
-  /* A MEDIDA — tres fotos enteras, tres frases encima. Nada más. (2026-09-12) */
+  /* A MEDIDA — tres fotos enteras, tres frases encima. El botón va adentro de la tercera foto,
+     como en la portada: así la sección son tres fotos y nada más, y de la tercera se pasa a los chalecos. (2026-09-12) */
   .ps{ padding: 110px 0 0; }
   .ps-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1240px; margin:0 auto; padding: 0 24px; }
   .ps-step{ position:relative; aspect-ratio: 3/4; overflow:hidden; background:var(--bg-soft); }
@@ -545,24 +546,23 @@
   /* La foto del dibujo es horizontal y se recorta a lo alto: apenas corrida a la derecha, que asome el beige y se vea más el marrón */
   .ps-step img.dibujo{ object-position: 58% 50%; }
   /* La frase va sobre la foto, con un velo suave abajo — nunca en una franja de color que la tape */
-  .ps-step::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.72) 0%, rgba(28,22,14,.30) 32%, rgba(28,22,14,0) 58%); pointer-events:none; }
-  .ps-step h3{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 30px 34px; font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.7rem,2.3vw,2.3rem); line-height:1.1; letter-spacing:-.015em; color:var(--cream); }
+  .ps-step::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.74) 0%, rgba(28,22,14,.32) 34%, rgba(28,22,14,0) 60%); pointer-events:none; }
+  .ps-over{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 30px 34px; display:flex; flex-direction:column; align-items:flex-start; }
+  .ps-step h3{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.7rem,2.3vw,2.3rem); line-height:1.1; letter-spacing:-.015em; color:var(--cream); }
   .ps-step h3 em{ font-style:italic; font-weight:300; color:#e7d6b4; }
-  .ps-cta{ max-width: 1240px; margin:0 auto; padding: 90px 24px 40px; text-align:center; }
-  .ps-cta p{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.6rem,2.6vw,2.3rem); line-height:1.2; color:var(--ink); margin-bottom:34px; }
-  .ps-cta p em{ font-style:italic; font-weight:300; color:var(--accent); }
-  .ps-btn{ display:inline-flex; align-items:center; gap:12px; background:var(--wa); color:#fff; padding:18px 32px; border-radius:100px; font-weight:500; font-size:1rem; box-shadow:0 18px 40px -15px rgba(94,117,72,.55); transition:all .3s; }
-  .ps-btn:hover{ background:var(--wa-deep); transform:translateY(-2px); box-shadow:0 24px 50px -15px rgba(94,117,72,.65); }
+  .ps-btn{ display:inline-flex; align-items:center; gap:12px; margin-top:22px; background:var(--wa); color:#fff; padding:15px 26px; border-radius:100px; font-weight:500; font-size:.95rem; box-shadow:0 18px 40px -15px rgba(0,0,0,.6); transition:all .3s; }
+  .ps-btn:hover{ background:var(--wa-deep); transform:translateY(-2px); }
   .ps-btn svg{ width:20px; height:20px; fill:currentColor; flex-shrink:0; }
+  .ps-perk{ margin-top:12px; font-family:'Fraunces',serif; font-style:italic; font-size:.92rem; color:rgba(250,245,234,.85); letter-spacing:.01em; }
 
   /* Celular: cada foto de borde a borde, una debajo de la otra */
   @media(max-width:880px){
     .ps{ padding-top: 30px; }
     .ps-grid{ grid-template-columns: 1fr; gap: 0; padding: 0; max-width:none; }
     .ps-step{ aspect-ratio:auto; height: 74vh; height: 74dvh; min-height: 460px; }
-    .ps-step h3{ padding: 0 24px 38px; font-size: 2.35rem; }
-    .ps-cta{ padding: 70px 24px 20px; }
-    .ps-btn{ width:100%; justify-content:center; padding:16px 24px; }
+    .ps-over{ padding: 0 24px 38px; }
+    .ps-step h3{ font-size: 2.35rem; }
+    .ps-btn{ margin-top:20px; }
   }
 
   /* CARE */
@@ -1086,7 +1086,7 @@
     .ot-row + .ot-row{ margin-top: 52px; }
 
     /* A MEDIDA — en pantallas anchas la tira de tres fotos se alinea con la grilla */
-    .ps-grid, .ps-cta{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding-left: var(--gutter); padding-right: var(--gutter); }
+    .ps-grid{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding-left: var(--gutter); padding-right: var(--gutter); }
 
     /* CIERRE — más aire arriba y abajo */
     .final{ padding: 150px 24px; }
@@ -1152,9 +1152,9 @@
       </div>
     </a>
     <nav class="nav-links">
+      <a href="#a-medida">A medida</a>
       <a href="#chalecos">Disponibles</a>
       <a href="#anteriores">Anteriores</a>
-      <a href="#a-medida">A medida</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
     </nav>
   </div>
@@ -1181,25 +1181,25 @@
   <div class="ps-grid">
     <div class="ps-step">
       <img class="dibujo" src="/paso-dibujo.webp" alt="Cuatro chalecos con dibujos distintos: trenza, guarda pampa, liso y ochos" loading="lazy">
-      <h3>Elegís el <em>dibujo.</em></h3>
+      <div class="ps-over"><h3>Elegís el <em>dibujo.</em></h3></div>
     </div>
     <div class="ps-step">
       <img src="/paso-color.webp" alt="Tres madejas de lana hilada a mano: marrón, gris y crudo" loading="lazy">
-      <h3>Elegís el <em>color.</em></h3>
+      <div class="ps-over"><h3>Elegís el <em>color.</em></h3></div>
     </div>
     <div class="ps-step">
       <img src="/amedida.webp" alt="Cinta métrica sobre el tejido de lana con la etiqueta de cuero India" loading="lazy">
-      <h3>Nos pasás tus <em>medidas.</em></h3>
-    </div>
-  </div>
-  <div class="ps-cta">
-    <p>En diez días <em>lo tenés.</em></p>
-    <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20un%20chaleco%20a%20medida.%20Uso%20talle%20" target="_blank" rel="noopener" class="ps-btn">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <div class="ps-over">
+        <h3>Nos pasás tus <em>medidas.</em></h3>
+        <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20un%20chaleco%20a%20medida.%20Uso%20talle%20" target="_blank" rel="noopener" class="ps-btn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
         </svg>
-      Pedir el mío a medida
-    </a>
+          Pedir el mío a medida
+        </a>
+        <p class="ps-perk">En diez días lo tenés.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1276,8 +1276,8 @@
       <span class="foot-brand-text">India</span>
     </div>
     <div class="foot-nav">
-      <a href="#chalecos">Chalecos</a>
       <a href="#a-medida">A medida</a>
+      <a href="#chalecos">Chalecos</a>
     </div>
   </div>
   <div class="foot-bottom">
@@ -2061,8 +2061,16 @@
     waFloat.style.transform = 'scale(0.6)';
     waFloat.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(.2,.8,.2,1)';
     let shown = false;
+    // Si un botón de WhatsApp de la página está a la vista (el de A medida o el del cierre), el flotante sobra
+    let ctaVisible = 0;
+    const ioCta = new IntersectionObserver(es => {
+      es.forEach(e => { e.target._vis = e.isIntersecting; });
+      ctaVisible = document.querySelectorAll('.ps-btn, .wa-btn').length && [...document.querySelectorAll('.ps-btn, .wa-btn')].some(b => b._vis);
+      check();
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.ps-btn, .wa-btn').forEach(b => ioCta.observe(b));
     const check = () => {
-      const should = window.scrollY > 600;
+      const should = window.scrollY > 600 && !ctaVisible;
       if (should && !shown) {
         waFloat.style.opacity = '1';
         waFloat.style.pointerEvents = 'auto';

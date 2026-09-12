@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Los tres pasos (prueba) · India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  /* Mismos tokens que index.html — si esto pasa a la home, se pega tal cual */
+  :root{
+    --bg: #f3ece0;
+    --bg-soft: #ece2d1;
+    --ink: #221a13;
+    --ink-soft: #4a3a2a;
+    --muted: #8a7558;
+    --line: #c9b896;
+    --accent: #8b6535;
+    --cream: #faf5ea;
+    --wa: #5e7548;
+    --wa-deep: #4a5c39;
+    --maxw: 1340px;
+    --gutter: 48px;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box }
+  body{
+    background-color: var(--bg);
+    background-image: radial-gradient(130% 95% at 50% -12%, #f9f3e8 0%, var(--bg) 46%, #e7d9c1 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .tag{ position:fixed; top:0; left:0; right:0; z-index:20; background:var(--ink); color:var(--cream); font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; text-align:center; padding:6px; font-weight:600; }
+
+  /* ===== Cabecera de la sección ===== */
+  .ps-head{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 150px var(--gutter) 40px; }
+  .ps-eyebrow{ display:block; font-size:.72rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; }
+  .ps-title{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.35rem,4vw,3.55rem); line-height:1.08; letter-spacing:-.02em; color:var(--ink); }
+  .ps-title em{ font-style:italic; font-weight:300; color:var(--accent); }
+
+  /* ===== Los pasos: foto de un lado, tres palabras del otro ===== */
+  .ps-steps{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 40px var(--gutter) 60px; }
+  .ps-step{ display:grid; grid-template-columns: 1fr 1fr; align-items:center; gap: clamp(40px, 6vw, 110px); padding: 70px 0; }
+  .ps-step + .ps-step{ border-top:1px solid var(--line); }
+  .ps-step:nth-child(even) .ps-foto{ order:2; }   /* alterna: foto izq / foto der / foto izq */
+
+  .ps-foto{ position:relative; aspect-ratio: 4/3; overflow:hidden; background:var(--bg-soft); }
+  .ps-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .ps-foto.cuadrada{ aspect-ratio: 1/1; }
+
+  .ps-text{ max-width: 460px; }
+  .ps-num{ display:block; font-family:'Fraunces',serif; font-style:italic; font-weight:300; font-size:1.05rem; color:var(--accent); letter-spacing:.04em; margin-bottom:18px; }
+  .ps-text h3{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2rem,3.4vw,3rem); line-height:1.1; letter-spacing:-.02em; color:var(--ink); }
+  .ps-text h3 em{ font-style:italic; font-weight:300; color:var(--accent); }
+  .ps-text p{ margin-top:16px; font-size:1rem; line-height:1.65; color:var(--ink-soft); max-width:36ch; }
+
+  /* ===== Cierre: el botón ===== */
+  .ps-cta{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 20px var(--gutter) 160px; text-align:center; }
+  .ps-cta p{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.5rem,2.4vw,2.1rem); line-height:1.2; color:var(--ink-soft); margin-bottom:34px; }
+  .ps-cta p em{ font-style:italic; font-weight:300; color:var(--accent); }
+  .btn{ display:inline-flex; align-items:center; gap:12px; background:var(--wa); color:#fff; padding:18px 32px; border-radius:100px; font-weight:500; font-size:1rem; text-decoration:none; box-shadow:0 18px 40px -15px rgba(94,117,72,.55); transition:all .3s; }
+  .btn:hover{ background:var(--wa-deep); transform:translateY(-2px); }
+  .btn svg{ width:20px; height:20px; fill:currentColor; flex-shrink:0; }
+
+  /* ===== Celular: foto arriba, palabras abajo, siempre ===== */
+  @media(max-width:880px){
+    :root{ --gutter: 24px; }
+    .ps-head{ padding: 110px var(--gutter) 10px; }
+    .ps-steps{ padding: 10px var(--gutter) 30px; }
+    .ps-step{ grid-template-columns: 1fr; gap: 22px; padding: 44px 0; }
+    .ps-step:nth-child(even) .ps-foto{ order:0; }
+    .ps-text{ max-width:none; }
+    .ps-num{ margin-bottom:10px; }
+    .ps-text h3{ font-size:2.15rem; }
+    .ps-text p{ font-size:.97rem; margin-top:12px; }
+    .ps-cta{ padding: 10px var(--gutter) 110px; }
+    .btn{ width:100%; justify-content:center; padding:16px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">Prueba · los tres pasos · no está linkeada desde el sitio</div>
+
+<section class="ps-head">
+  <span class="ps-eyebrow">A medida</span>
+  <h2 class="ps-title">Así se <em>pide.</em></h2>
+</section>
+
+<section class="ps-steps">
+
+  <div class="ps-step">
+    <div class="ps-foto">
+      <img src="/prueba/img/paso-dibujo.webp" alt="Cuatro chalecos con dibujos distintos: trenza, guarda pampa, liso y ochos" loading="lazy">
+    </div>
+    <div class="ps-text">
+      <span class="ps-num">I.</span>
+      <h3>Elegís el <em>dibujo.</em></h3>
+      <p>Liso, trenza, ochos, guarda pampa.</p>
+    </div>
+  </div>
+
+  <div class="ps-step">
+    <div class="ps-foto">
+      <img src="/prueba/img/paso-color.webp" alt="Tres madejas de lana hilada a mano: marrón, gris y crudo" loading="lazy">
+    </div>
+    <div class="ps-text">
+      <span class="ps-num">II.</span>
+      <h3>Elegís el <em>color.</em></h3>
+      <p>Lana de oveja, sin teñir.</p>
+    </div>
+  </div>
+
+  <div class="ps-step">
+    <div class="ps-foto cuadrada">
+      <img src="/prueba/img/paso-medidas.webp" alt="Cómo tomar las medidas en una prenda: ancho de axila a axila y largo del hombro al borde" loading="lazy">
+    </div>
+    <div class="ps-text">
+      <span class="ps-num">III.</span>
+      <h3>Pasás tus <em>medidas.</em></h3>
+      <p>Ancho y largo de uno que uses.</p>
+    </div>
+  </div>
+
+</section>
+
+<section class="ps-cta">
+  <p>En diez días <em>lo tenés.</em></p>
+  <a href="https://wa.me/543456268401?text=Hola!%20Quiero%20un%20chaleco%20a%20medida.%20Uso%20talle%20" target="_blank" rel="noopener" class="btn">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+    Pedir el mío a medida
+  </a>
+</section>
+
+</body>
+</html>

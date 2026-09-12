@@ -41,6 +41,8 @@
 
   .ps-step{ position:relative; aspect-ratio: 3/4; overflow:hidden; background:var(--bg-soft); }
   .ps-step img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* La foto del dibujo es horizontal y se recorta a lo alto: corrida hacia el chaleco beige para que entren los ochos */
+  .ps-step img.dibujo{ object-position: 25% 50%; }
   /* La frase va sobre la foto, con un velo suave abajo — nunca en una franja de color que la tape */
   .ps-step::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.72) 0%, rgba(28,22,14,.30) 32%, rgba(28,22,14,0) 58%); pointer-events:none; }
   .ps-step h3{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 30px 34px; font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.7rem,2.3vw,2.3rem); line-height:1.1; letter-spacing:-.015em; color:var(--cream); }
@@ -72,7 +74,7 @@
   <div class="ps-grid">
 
     <div class="ps-step">
-      <img src="/prueba/img/paso-dibujo.webp" alt="Cuatro chalecos con dibujos distintos: trenza, guarda pampa, liso y ochos" loading="lazy">
+      <img class="dibujo" src="/prueba/img/paso-dibujo.webp" alt="Cuatro chalecos con dibujos distintos: trenza, guarda pampa, liso y ochos" loading="lazy">
       <h3>Elegís el <em>dibujo.</em></h3>
     </div>
 

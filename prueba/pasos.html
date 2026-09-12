@@ -16,7 +16,6 @@
     --ink: #221a13;
     --ink-soft: #4a3a2a;
     --muted: #8a7558;
-    --line: #c9b896;
     --accent: #8b6535;
     --cream: #faf5ea;
     --wa: #5e7548;
@@ -36,48 +35,32 @@
   }
   .tag{ position:fixed; top:0; left:0; right:0; z-index:20; background:var(--ink); color:var(--cream); font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; text-align:center; padding:6px; font-weight:600; }
 
-  /* ===== Cabecera de la sección ===== */
-  .ps-head{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 150px var(--gutter) 40px; }
-  .ps-eyebrow{ display:block; font-size:.72rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; }
-  .ps-title{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.35rem,4vw,3.55rem); line-height:1.08; letter-spacing:-.02em; color:var(--ink); }
-  .ps-title em{ font-style:italic; font-weight:300; color:var(--accent); }
+  /* ===== Tres fotos, tres frases. Nada más. ===== */
+  .ps{ padding: 120px 0 0; }
+  .ps-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 0 var(--gutter); }
 
-  /* ===== Los pasos: foto de un lado, tres palabras del otro ===== */
-  .ps-steps{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 40px var(--gutter) 60px; }
-  .ps-step{ display:grid; grid-template-columns: 1fr 1fr; align-items:center; gap: clamp(40px, 6vw, 110px); padding: 70px 0; }
-  .ps-step + .ps-step{ border-top:1px solid var(--line); }
-  .ps-step:nth-child(even) .ps-foto{ order:2; }   /* alterna: foto izq / foto der / foto izq */
+  .ps-step{ position:relative; aspect-ratio: 3/4; overflow:hidden; background:var(--bg-soft); }
+  .ps-step img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* La frase va sobre la foto, con un velo suave abajo — nunca en una franja de color que la tape */
+  .ps-step::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.72) 0%, rgba(28,22,14,.30) 32%, rgba(28,22,14,0) 58%); pointer-events:none; }
+  .ps-step h3{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 30px 34px; font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.7rem,2.3vw,2.3rem); line-height:1.1; letter-spacing:-.015em; color:var(--cream); }
+  .ps-step h3 em{ font-style:italic; font-weight:300; color:#e7d6b4; }
 
-  .ps-foto{ position:relative; aspect-ratio: 4/3; overflow:hidden; background:var(--bg-soft); }
-  .ps-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .ps-foto.cuadrada{ aspect-ratio: 1/1; }
-
-  .ps-text{ max-width: 460px; }
-  .ps-num{ display:block; font-family:'Fraunces',serif; font-style:italic; font-weight:300; font-size:1.05rem; color:var(--accent); letter-spacing:.04em; margin-bottom:18px; }
-  .ps-text h3{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2rem,3.4vw,3rem); line-height:1.1; letter-spacing:-.02em; color:var(--ink); }
-  .ps-text h3 em{ font-style:italic; font-weight:300; color:var(--accent); }
-  .ps-text p{ margin-top:16px; font-size:1rem; line-height:1.65; color:var(--ink-soft); max-width:36ch; }
-
-  /* ===== Cierre: el botón ===== */
-  .ps-cta{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 20px var(--gutter) 160px; text-align:center; }
-  .ps-cta p{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.5rem,2.4vw,2.1rem); line-height:1.2; color:var(--ink-soft); margin-bottom:34px; }
+  /* ===== Cierre ===== */
+  .ps-cta{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 90px var(--gutter) 160px; text-align:center; }
+  .ps-cta p{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.6rem,2.6vw,2.3rem); line-height:1.2; color:var(--ink); margin-bottom:34px; }
   .ps-cta p em{ font-style:italic; font-weight:300; color:var(--accent); }
   .btn{ display:inline-flex; align-items:center; gap:12px; background:var(--wa); color:#fff; padding:18px 32px; border-radius:100px; font-weight:500; font-size:1rem; text-decoration:none; box-shadow:0 18px 40px -15px rgba(94,117,72,.55); transition:all .3s; }
   .btn:hover{ background:var(--wa-deep); transform:translateY(-2px); }
   .btn svg{ width:20px; height:20px; fill:currentColor; flex-shrink:0; }
 
-  /* ===== Celular: foto arriba, palabras abajo, siempre ===== */
+  /* ===== Celular: cada foto de borde a borde, una debajo de la otra ===== */
   @media(max-width:880px){
-    :root{ --gutter: 24px; }
-    .ps-head{ padding: 110px var(--gutter) 10px; }
-    .ps-steps{ padding: 10px var(--gutter) 30px; }
-    .ps-step{ grid-template-columns: 1fr; gap: 22px; padding: 44px 0; }
-    .ps-step:nth-child(even) .ps-foto{ order:0; }
-    .ps-text{ max-width:none; }
-    .ps-num{ margin-bottom:10px; }
-    .ps-text h3{ font-size:2.15rem; }
-    .ps-text p{ font-size:.97rem; margin-top:12px; }
-    .ps-cta{ padding: 10px var(--gutter) 110px; }
+    .ps{ padding-top: 40px; }
+    .ps-grid{ grid-template-columns: 1fr; gap: 0; padding: 0; max-width:none; }
+    .ps-step{ aspect-ratio:auto; height: 74vh; height: 74dvh; min-height: 460px; }
+    .ps-step h3{ padding: 0 24px 38px; font-size: 2.35rem; }
+    .ps-cta{ padding: 70px 24px 110px; }
     .btn{ width:100%; justify-content:center; padding:16px 24px; }
   }
 </style>
@@ -85,46 +68,25 @@
 <body>
 <div class="tag">Prueba · los tres pasos · no está linkeada desde el sitio</div>
 
-<section class="ps-head">
-  <span class="ps-eyebrow">A medida</span>
-  <h2 class="ps-title">Así se <em>pide.</em></h2>
-</section>
+<section class="ps">
+  <div class="ps-grid">
 
-<section class="ps-steps">
-
-  <div class="ps-step">
-    <div class="ps-foto">
+    <div class="ps-step">
       <img src="/prueba/img/paso-dibujo.webp" alt="Cuatro chalecos con dibujos distintos: trenza, guarda pampa, liso y ochos" loading="lazy">
-    </div>
-    <div class="ps-text">
-      <span class="ps-num">I.</span>
       <h3>Elegís el <em>dibujo.</em></h3>
-      <p>Liso, trenza, ochos, guarda pampa.</p>
     </div>
-  </div>
 
-  <div class="ps-step">
-    <div class="ps-foto">
+    <div class="ps-step">
       <img src="/prueba/img/paso-color.webp" alt="Tres madejas de lana hilada a mano: marrón, gris y crudo" loading="lazy">
-    </div>
-    <div class="ps-text">
-      <span class="ps-num">II.</span>
       <h3>Elegís el <em>color.</em></h3>
-      <p>Lana de oveja, sin teñir.</p>
     </div>
-  </div>
 
-  <div class="ps-step">
-    <div class="ps-foto cuadrada">
-      <img src="/prueba/img/paso-medidas.webp" alt="Cómo tomar las medidas en una prenda: ancho de axila a axila y largo del hombro al borde" loading="lazy">
+    <div class="ps-step">
+      <img src="/amedida.webp" alt="Cinta métrica sobre el tejido de lana con la etiqueta de cuero India" loading="lazy">
+      <h3>Nos pasás tus <em>medidas.</em></h3>
     </div>
-    <div class="ps-text">
-      <span class="ps-num">III.</span>
-      <h3>Pasás tus <em>medidas.</em></h3>
-      <p>Ancho y largo de uno que uses.</p>
-    </div>
-  </div>
 
+  </div>
 </section>
 
 <section class="ps-cta">

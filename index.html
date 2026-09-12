@@ -557,7 +557,8 @@
 
   /* Celular: cada foto de borde a borde, una debajo de la otra */
   @media(max-width:880px){
-    .ps{ padding-top: 30px; }
+    /* Entre la portada y la primera foto va aire de verdad, no una rendija: 30px se leía como una costura */
+    .ps{ padding-top: 56px; }
     .ps-grid{ grid-template-columns: 1fr; gap: 0; padding: 0; max-width:none; }
     .ps-step{ aspect-ratio:auto; height: 74vh; height: 74dvh; min-height: 460px; }
     .ps-over{ padding: 0 24px 38px; }

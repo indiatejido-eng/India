@@ -2033,8 +2033,13 @@ $('btn-copy-msg').addEventListener('click', () => {
 let unsubResenas = null, unsubPub = null, unsubSug = null;
 let snapPend = null, snapPub = null, sugMap = {};
 const starsResena = n => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
-const ordenarDocs = snap => snap.docs.slice().sort((a, b) => (b.data().fecha?.seconds || 0) - (a.data().fecha?.seconds || 0));
-function tarjetaResena(d, acciones){
+// Mismo criterio que la web: `orden` manual si existe (de mejor a peor), después las nuevas primero.
+const ordenarDocs = snap => snap.docs.slice().sort((a, b) => {
+  const ra = a.data(), rb = b.data();
+  const oa = typeof ra.orden === 'number' ? ra.orden : Infinity, ob = typeof rb.orden === 'number' ? rb.orden : Infinity;
+  return oa !== ob ? oa - ob : (rb.fecha?.seconds || 0) - (ra.fecha?.seconds || 0);
+});
+function tarjetaResena(d, acciones, pos){
   const r = d.data();
   const id = escapeHtml(d.id);
   const nom = escapeHtml(r.nombre || '') + (r.apellido ? ' ' + escapeHtml(r.apellido) : '');
@@ -2047,20 +2052,25 @@ function tarjetaResena(d, acciones){
     ${foto}
     <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
     ${sugHtml}
-    <div class="rc-actions">${acciones(id)}</div>
+    <div class="rc-actions">${acciones(id, pos)}</div>
   </div>`;
 }
 function cablearAcciones(cont){
   cont.querySelectorAll('[data-aprobar]').forEach(b => b.addEventListener('click', () => aprobarResena(b.dataset.aprobar)));
   cont.querySelectorAll('[data-despublicar]').forEach(b => b.addEventListener('click', () => despublicarResena(b.dataset.despublicar)));
   cont.querySelectorAll('[data-borrar]').forEach(b => b.addEventListener('click', () => borrarResena(b.dataset.borrar)));
+  cont.querySelectorAll('[data-mover]').forEach(b => b.addEventListener('click', () => moverResena(b.dataset.id, b.dataset.mover)));
 }
 const accionesPend = id => `<button class="btn btn-sm" data-aprobar="${id}">Aprobar</button><button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`;
-const accionesPub = id => `<button class="btn btn-ghost btn-sm" data-despublicar="${id}">Despublicar</button><button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`;
+// En las publicadas, las flechas cambian el orden en la web: la primera es la que se ve arriba a la izquierda.
+const accionesPub = (id, pos) => `<button class="btn btn-ghost btn-sm btn-arrow" data-mover="up" data-id="${id}" title="Subir" aria-label="Subir"${pos.idx === 0 ? ' disabled' : ''}>↑</button>`
+  + `<button class="btn btn-ghost btn-sm btn-arrow" data-mover="down" data-id="${id}" title="Bajar" aria-label="Bajar"${pos.idx === pos.total - 1 ? ' disabled' : ''}>↓</button>`
+  + `<button class="btn btn-ghost btn-sm" data-despublicar="${id}">Despublicar</button><button class="btn btn-ghost btn-sm" data-borrar="${id}">Borrar</button>`;
 function pintarLista(snap, contId, vacio, acciones){
   const cont = $(contId);
   if (!snap || snap.empty) { cont.innerHTML = `<div class="resenas-empty">${vacio}</div>`; return; }
-  cont.innerHTML = ordenarDocs(snap).map(d => tarjetaResena(d, acciones)).join('');
+  const docs = ordenarDocs(snap);
+  cont.innerHTML = docs.map((d, idx) => tarjetaResena(d, acciones, { idx, total: docs.length })).join('');
   cablearAcciones(cont);
 }
 function renderResenas(){
@@ -2085,6 +2095,23 @@ function cargarResenas(){
     () => {});
 }
 
+// Subir/bajar una reseña publicada: reescribe `orden` como 0..n en un batch, igual que con los chalecos.
+let moviendoResena = false;
+async function moverResena(id, dir){
+  if (moviendoResena || !snapPub) return;
+  const lista = ordenarDocs(snapPub);
+  const i = lista.findIndex(d => d.id === id);
+  const j = dir === 'up' ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  moviendoResena = true;
+  try {
+    const batch = writeBatch(db);
+    lista.forEach((d, idx) => { if (d.data().orden !== idx) batch.update(doc(db, 'resenas', d.id), { orden: idx }); });
+    await batch.commit();
+  } catch (e) { showToast('Error: ' + e.message, true); }
+  finally { moviendoResena = false; }
+}
 async function aprobarResena(id){
   try { await updateDoc(doc(db, 'resenas', id), { estado: 'publicada' }); showToast('Reseña publicada'); }
   catch (e) { showToast('Error: ' + e.message, true); }

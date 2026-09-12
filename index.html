@@ -2010,8 +2010,12 @@
 
   const qOp = query(collection(db, 'resenas'), where('estado', '==', 'publicada'));
   onSnapshot(qOp, snap => {
+    // Orden manual desde el panel (`orden`, de mejor a peor). Las que no lo tienen van después, de la más nueva a la más vieja.
     const items = snap.docs.map(d => d.data())
-      .sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+      .sort((a, b) => {
+        const oa = typeof a.orden === 'number' ? a.orden : Infinity, ob = typeof b.orden === 'number' ? b.orden : Infinity;
+        return oa !== ob ? oa - ob : (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0);
+      });
     if (!items.length) { ocultarOp(); return; }
     opSection.style.display = '';
     if (opNav) opNav.style.display = '';

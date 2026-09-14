@@ -13,14 +13,15 @@
   :root{
     --bg: #f3ece0;
     --bg-soft: #ece2d1;
+    --bg-deep: #e3d6bf;
     --ink: #221a13;
     --ink-soft: #4a3a2a;
     --muted: #8a7558;
-    --line: #c9b896;
     --accent: #8b6535;
     --cream: #faf5ea;
     --maxw: 1340px;
     --gutter: 48px;
+    --panel: #e3d6bf;          /* el fondo de la banda — se cambia con los botones de prueba */
   }
   *{ margin:0; padding:0; box-sizing:border-box }
   body{
@@ -34,41 +35,62 @@
   }
   a{ color:inherit; text-decoration:none }
 
-  .tag{ position:fixed; top:0; left:0; right:0; z-index:30; background:var(--ink); color:var(--cream); font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:7px 10px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
-  .tag button{ font:inherit; letter-spacing:.14em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:3px 11px; cursor:pointer; }
+  .tag{ position:fixed; top:0; left:0; right:0; z-index:30; background:var(--ink); color:var(--cream); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; text-align:center; padding:6px 8px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
+  .tag button{ font:inherit; letter-spacing:.12em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:3px 10px; cursor:pointer; }
   .tag button[aria-pressed="true"]{ background:var(--cream); color:var(--ink); border-color:var(--cream); }
+  .tag i{ font-style:normal; opacity:.6 }
 
-  /* ===== Cabecera: centrada, poquísimo texto ===== */
-  .sec-head{ text-align:center; padding: 132px 24px 0; }
-  .label{ display:block; font-size:.68rem; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; }
+  /* ===== Cabecera ===== */
+  .sec-head{ padding: 120px var(--gutter) 0; }
+  .label{ display:block; font-size:.68rem; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); margin-bottom:20px; }
   .display{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.2rem,3.6vw,3.2rem); line-height:1.1; letter-spacing:-.02em; }
   .display .it{ font-style:italic; font-weight:300; color:var(--accent); }
 
-  /* ===== DESTACADAS — la pieza entera, flotando y centrada sobre el panel arena.
-     Es lo que hacen las marcas del rubro: la prenda nunca se recorta ni toca el borde. ===== */
-  .dest{ padding: 34px 0 0; }
-  .dest-item{ display:block; padding: 46px 0; }
-  .dest-panel{
-    position:relative;
-    width: min(78%, 620px);      /* el panel NO va de borde a borde: el aire de los costados es parte del diseño */
-    margin: 0 auto;
-    aspect-ratio: 4/5;
-    background: var(--bg-soft);
-    overflow:hidden;
+  /* ===== DESTACADAS — banda de borde a borde: la pieza grande a un costado,
+     el nombre escrito de abajo hacia arriba en el otro. ===== */
+  .dest{ padding: 44px 0 0; }
+  .dest-item{
+    display:grid;
+    grid-template-columns: minmax(0,1fr) 92px;   /* pieza + columna del nombre */
+    align-items:center;
+    background: var(--panel);
+    min-height: 62vh;
+    padding: 34px 0;
   }
-  /* `contain` + alto máximo: la pieza se ve ENTERA y centrada, nunca recortada ni gigante */
-  .dest-panel img{
-    position:absolute; inset:0; margin:auto;
-    width:auto; height:auto;
-    max-width:80%; max-height:80%;
-    object-fit:contain;
-    transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
-  }
-  .dest-item:hover .dest-panel img{ transform: scale(1.025); }
+  .dest-item + .dest-item{ margin-top: 30px; }
+  /* Alterna: la 2da lleva el nombre a la izquierda y la pieza a la derecha */
+  .dest-item:nth-of-type(even){ grid-template-columns: 92px minmax(0,1fr); }
+  .dest-item:nth-of-type(even) .dest-foto{ order:2; }
 
-  /* ===== LA TIRA — el resto, se desliza al costado. Mismo tratamiento, más chico ===== */
-  .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 96px var(--gutter) 150px; }
-  .tira .label{ text-align:center; margin-bottom:26px; }
+  /* La pieza: entera (contain), grande, sin recortar. Nunca `cover`: las fotos
+     vienen con el fondo removido y al ras del borde, así que cover las agranda y las corta. */
+  .dest-foto{ position:relative; height: 54vh; min-height: 330px; }
+  .dest-foto img{
+    position:absolute; inset:0; margin:auto;
+    width:auto; height:auto; max-width:94%; max-height:100%;
+    object-fit:contain;
+  }
+
+  /* El nombre, de abajo hacia arriba, como la etiqueta cosida al costado */
+  .dest-lado{ height:100%; display:flex; align-items:center; justify-content:center; }
+  .dest-nombre{
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family:'Fraunces',serif;
+    font-weight:400; font-style:italic;
+    line-height:1;
+    letter-spacing:-.01em;
+    color: var(--ink);
+    white-space:nowrap;
+    max-height:100%;
+  }
+  /* El tamaño lo decide el largo del nombre: uno de dos palabras se luce, uno larguísimo entra igual */
+  .dest-nombre[data-largo="corto"]{ font-size: clamp(2.1rem, 3.4vw, 3.2rem); }
+  .dest-nombre[data-largo="medio"]{ font-size: clamp(1.6rem, 2.6vw, 2.4rem); }
+  .dest-nombre[data-largo="largo"]{ font-size: clamp(1.05rem, 1.8vw, 1.5rem); }
+
+  /* ===== LA TIRA — el resto, se desliza al costado ===== */
+  .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 86px var(--gutter) 150px; }
   .ot-row{
     display:flex; gap:14px; overflow-x:auto; scroll-behavior:smooth;
     scrollbar-width:none; -ms-overflow-style:none; padding-bottom:4px;
@@ -77,8 +99,8 @@
             mask-image: linear-gradient(to right, transparent 0, #000 var(--ot-fade), #000 calc(100% - var(--ot-fade)), transparent 100%);
   }
   .ot-row::-webkit-scrollbar{ display:none }
-  .ot-pieza{ flex:0 0 auto; width: 168px; position:relative; aspect-ratio:4/5; background:var(--bg-soft); overflow:hidden; }
-  .ot-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:78%; max-height:78%; object-fit:contain; }
+  .ot-pieza{ flex:0 0 auto; width: 168px; position:relative; aspect-ratio:4/5; background:var(--panel); overflow:hidden; }
+  .ot-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; }
   .ot-hint{ display:block; text-align:center; margin-top:22px; color:var(--muted); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
 
   .vacio{ color:var(--muted); font-size:.95rem; text-align:center; padding:30px 0; }
@@ -86,19 +108,27 @@
   /* ===== CELULAR ===== */
   @media(max-width:880px){
     :root{ --gutter: 24px; }
-    .sec-head{ padding-top: 92px; }
-    .dest{ padding-top: 14px; }
-    .dest-item{ padding: 30px 0; }
-    .dest-panel{ width: 82%; }
-    .tira{ padding: 62px var(--gutter) 110px; }
-    .ot-pieza{ width: 140px; }
+    .sec-head{ padding-top: 88px; }
+    .dest{ padding-top: 22px; }
+    .dest-item{ grid-template-columns: minmax(0,1fr) 62px; min-height:0; padding: 26px 0; }
+    .dest-item:nth-of-type(even){ grid-template-columns: 62px minmax(0,1fr); }
+    .dest-foto{ height: 56vh; min-height: 300px; }
+    .dest-nombre[data-largo="corto"]{ font-size: 2rem; }
+    .dest-nombre[data-largo="medio"]{ font-size: 1.5rem; }
+    .dest-nombre[data-largo="largo"]{ font-size: 1rem; }
+    .tira{ padding: 60px var(--gutter) 110px; }
+    .ot-pieza{ width: 142px; }
   }
 </style>
 </head>
 <body>
 <div class="tag">
   <span>Prueba · las piezas</span>
-  <span>Destacadas:</span>
+  <i>Fondo:</i>
+  <button type="button" data-bg="#ece2d1" aria-pressed="false">1</button>
+  <button type="button" data-bg="#e3d6bf" aria-pressed="true">2</button>
+  <button type="button" data-bg="#d8c6a6" aria-pressed="false">3</button>
+  <i>Destacadas:</i>
   <button type="button" data-n="2" aria-pressed="true">2</button>
   <button type="button" data-n="3" aria-pressed="false">3</button>
 </div>
@@ -111,7 +141,6 @@
 <section class="dest" id="dest"><div class="vacio">Cargando…</div></section>
 
 <section class="tira">
-  <span class="label">Todas</span>
   <div class="ot-row" id="ot-1"></div>
   <span class="ot-hint">Deslizá →</span>
 </section>
@@ -123,32 +152,31 @@
 
   const db = getFirestore(initializeApp(firebaseConfig));
 
-  // Misma transformación de Cloudinary que usa la home: recorta el fondo y deja la pieza sola
   const fotoUrl = (url, w = 1100) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
     return url.replace('/image/upload/', `/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_${w},c_limit/`);
   };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const largoDe = n => n.length <= 14 ? 'corto' : (n.length <= 26 ? 'medio' : 'largo');
 
-  let piezas = [];
-  let cuantas = 2;
+  let piezas = [], cuantas = 2;
 
   const pintar = () => {
-    const dest = piezas.slice(0, cuantas);
-    const resto = piezas.slice(cuantas);
-    // Sin nombre, sin talle, sin precio, sin botón: la pieza sola. El nombre queda en el alt, para quien no ve la foto.
+    const dest = piezas.slice(0, cuantas), resto = piezas.slice(cuantas);
     document.getElementById('dest').innerHTML = dest.map(p => `
       <article class="dest-item">
-        <div class="dest-panel"><img src="${fotoUrl(p.foto, 1100)}" alt="${esc(p.nombre)}" loading="lazy"></div>
+        <div class="dest-foto"><img src="${fotoUrl(p.foto, 1100)}" alt="${esc(p.nombre)}" loading="lazy"></div>
+        <div class="dest-lado"><h3 class="dest-nombre" data-largo="${largoDe(p.nombre)}">${esc(p.nombre)}</h3></div>
       </article>`).join('') || '<div class="vacio">No hay piezas.</div>';
     document.getElementById('ot-1').innerHTML = resto.map(p => `
       <div class="ot-pieza"><img src="${fotoUrl(p.foto, 620)}" alt="${esc(p.nombre)}" loading="lazy"></div>`).join('');
   };
 
   document.querySelectorAll('.tag button').forEach(b => b.addEventListener('click', () => {
-    cuantas = Number(b.dataset.n);
-    document.querySelectorAll('.tag button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
-    pintar();
+    const grupo = b.dataset.bg ? '[data-bg]' : '[data-n]';
+    document.querySelectorAll('.tag ' + grupo).forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    if (b.dataset.bg) document.documentElement.style.setProperty('--panel', b.dataset.bg);
+    else { cuantas = Number(b.dataset.n); pintar(); }
   }));
 
   try {
@@ -158,8 +186,7 @@
     ]);
     const leer = s => s.docs.map(d => d.data())
       .map(r => ({ nombre: r.nombre || '', foto: r.foto || '', orden: r.orden ?? 0 }))
-      .filter(p => p.foto)
-      .sort((a, b) => a.orden - b.orden);
+      .filter(p => p.foto).sort((a, b) => a.orden - b.orden);
     piezas = [...leer(disp), ...leer(ant)];
     pintar();
   } catch (e) {

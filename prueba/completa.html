@@ -572,12 +572,14 @@
   /* ================= PRUEBA: la seccion de piezas nueva ================= */
   #chalecos, #anteriores, #opiniones{ display:none !important; }
 
-  .pz{ padding: 10px 0 0; }
-  .pz-head{ max-width: 1436px; margin:0 auto; padding: 0 24px 34px; }
+  .pz{ padding: 4px 0 0; }
+  /* El encabezado va centrado y pegado a las fotos, no arriba y al costado */
+  .pz-head{ text-align:center; padding: 54px 24px 26px; }
+  .pz-head .label{ margin-bottom:14px; }
   .pz-dest{ position:relative; height: 76vh; height: 76dvh; min-height: 440px; overflow:hidden; background:var(--bg-soft); }
   .pz-dest + .pz-dest{ margin-top: 10px; }
   .pz-dest img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-  .pz-dest img.alto{ object-position: 50% 26%; }
+  .pz-dest img.jinete{ object-position: 50% 42%; }
   .pz-dest::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.66) 0%, rgba(28,22,14,.22) 34%, rgba(28,22,14,0) 62%); pointer-events:none; transition:opacity .4s; }
   .pz-txt{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 24px 36px; }
   .pz-frase{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.9rem,3vw,2.6rem); line-height:1.08; letter-spacing:-.02em; color:var(--cream); }
@@ -585,23 +587,23 @@
   body.sin-texto .pz-txt{ display:none }
   body.sin-texto .pz-dest::after{ opacity:0 }
 
-  .pz-tira{ max-width: 1436px; margin:0 auto; padding: 76px 24px 40px; }
-  .pz-row{ display:flex; gap:14px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:4px;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 46px, #000 calc(100% - 46px), transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0, #000 46px, #000 calc(100% - 46px), transparent 100%); }
+  /* La tira: DOS filas, porque 17 piezas en una sola no se llegan a ver */
+  .pz-tira{ max-width: 1436px; margin:0 auto; padding: 70px 24px 40px; }
+  .pz-row{ display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:4px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 42px, #000 calc(100% - 42px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 42px, #000 calc(100% - 42px), transparent 100%); }
   .pz-row::-webkit-scrollbar{ display:none }
+  .pz-row + .pz-row{ margin-top: 12px; }
   .pz-pieza{ flex:0 0 auto; width: 142px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; }
   .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; }
   .pz-hint{ display:block; text-align:center; margin-top:20px; color:var(--muted); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
 
-  /* El bloque de la oveja, cuando se prueba fuera de la portada */
   .oveja-bloque{ position:relative; height: 62vh; height: 62dvh; min-height: 380px; overflow:hidden; }
   .oveja-bloque img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .oveja-bloque::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.6) 0%, rgba(28,22,14,0) 55%); }
 
-  /* Barra de prueba */
-  .tag{ position:fixed; top:0; left:0; right:0; z-index:999; background:#221a13; color:#faf5ea; font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; text-align:center; padding:5px 8px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
-  .tag button{ font:inherit; letter-spacing:.1em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:2px 9px; cursor:pointer; }
+  .tag{ position:fixed; top:0; left:0; right:0; z-index:999; background:#221a13; color:#faf5ea; font-size:.55rem; letter-spacing:.08em; text-transform:uppercase; text-align:center; padding:5px 6px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; }
+  .tag button{ font:inherit; letter-spacing:.08em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:2px 8px; cursor:pointer; }
   .tag button[aria-pressed="true"]{ background:#faf5ea; color:#221a13; border-color:#faf5ea; }
   .tag i{ font-style:normal; opacity:.55 }
 
@@ -1202,9 +1204,10 @@
 
 <!-- HERO -->
 <div class="tag">
-  <span>Prueba &middot; pagina completa</span>
-  <i>Texto:</i><button type="button" data-txt="si" aria-pressed="true">Si</button><button type="button" data-txt="no" aria-pressed="false">No</button>
-  <i>Oveja:</i><button type="button" data-ov="no" aria-pressed="true">No va</button><button type="button" data-ov="portada" aria-pressed="false">Portada</button><button type="button" data-ov="bloque" aria-pressed="false">Bloque</button>
+  <span>Prueba</span>
+  <i>Titulo:</i><button type="button" data-tit="a" aria-pressed="true">A</button><button type="button" data-tit="b" aria-pressed="false">B</button><button type="button" data-tit="c" aria-pressed="false">C</button>
+  <i>Proceso:</i><button type="button" data-pro="arriba" aria-pressed="true">Arriba</button><button type="button" data-pro="abajo" aria-pressed="false">Abajo</button>
+  <i>Oveja:</i><button type="button" data-ov="no" aria-pressed="true">No</button><button type="button" data-ov="portada" aria-pressed="false">Portada</button><button type="button" data-ov="bloque" aria-pressed="false">Bloque</button>
 </div>
 
 <section class="hero">
@@ -1253,12 +1256,12 @@
 <!-- PRUEBA: piezas nuevas -->
 <section class="pz" id="piezas">
   <div class="pz-head">
-    <span class="label">Las piezas</span>
-    <h2 class="display">Lo que <span class="it">tejemos.</span></h2>
+    <span class="label" id="pz-label">Chalecos</span>
+    <h2 class="display" id="pz-titulo">De las <span class="it">agujas.</span></h2>
   </div>
 
   <article class="pz-dest">
-    <img class="alto" src="/prueba/img/puesto-1.webp" alt="Chaleco marron puesto, a caballo en el campo" loading="lazy">
+    <img class="jinete" src="/prueba/img/puesto-4.webp" alt="Chaleco puesto, a caballo en el campo al atardecer" loading="lazy">
     <div class="pz-txt"><h3 class="pz-frase">100% lana <em>de oveja.</em></h3></div>
   </article>
   <article class="pz-dest">
@@ -1267,7 +1270,8 @@
   </article>
 
   <div class="pz-tira">
-    <div class="pz-row" id="pz-row"></div>
+    <div class="pz-row" id="pz-row-1"></div>
+    <div class="pz-row" id="pz-row-2"></div>
     <span class="pz-hint">Desliza &rarr;</span>
   </div>
 </section>
@@ -2195,38 +2199,56 @@
 })();
 </script>
 <script type="module">
-  // PRUEBA - pinta la tira con TODAS las piezas y maneja los botones de arriba
+  // PRUEBA - tira de dos filas + los botones de arriba
   import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
   import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
   import { firebaseConfig } from '/firebase-config.js';
   const app = getApps()[0] || initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const rec = (u, w) => (!u || !u.includes('/image/upload/')) ? u
-    : u.replace('/image/upload/', '/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_' + (w || 620) + ',c_limit/');
+  const rec = function(u, w){
+    if (!u || u.indexOf('/image/upload/') === -1) return u;
+    return u.replace('/image/upload/', '/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_' + (w || 620) + ',c_limit/');
+  };
   try {
     const snap = await getDocs(collection(db, 'chalecos'));
     const piezas = snap.docs.map(function(d){ return d.data(); })
       .filter(function(r){ return r.foto && (r.estado === 'disponible' || r.estado === 'anterior'); })
-      .sort(function(a,b){ return (a.orden || 0) - (b.orden || 0); });
-    document.getElementById('pz-row').innerHTML = piezas.map(function(p){
-      return '<div class="pz-pieza"><img src="' + rec(p.foto) + '" alt="" loading="lazy"></div>';
-    }).join('');
+      .sort(function(a, b){ return (a.orden || 0) - (b.orden || 0); });
+    const tarjeta = function(p){ return '<div class="pz-pieza"><img src="' + rec(p.foto) + '" alt="" loading="lazy"></div>'; };
+    const mitad = Math.ceil(piezas.length / 2);
+    document.getElementById('pz-row-1').innerHTML = piezas.slice(0, mitad).map(tarjeta).join('');
+    document.getElementById('pz-row-2').innerHTML = piezas.slice(mitad).map(tarjeta).join('');
   } catch (e) { console.warn('tira', e); }
 
   const heroEl = document.querySelector('.hero');
   const HERO_ORIG = getComputedStyle(heroEl).backgroundImage;
+  const proceso = document.getElementById('a-medida');
+  const piezasSec = document.getElementById('piezas');
+
   const bloque = document.createElement('section');
   bloque.className = 'oveja-bloque';
   bloque.hidden = true;
   bloque.innerHTML = '<img src="/prueba/img/oveja-1.webp" alt="Cordero en el campo"><div class="pz-txt"><h3 class="pz-frase">Empieza <em>en el campo.</em></h3></div>';
-  document.getElementById('a-medida').before(bloque);
+  proceso.before(bloque);
+
+  const TITULOS = {
+    a: ['Chalecos', 'De las <span class="it">agujas.</span>'],
+    b: ['Chalecos', 'Reci&eacute;n <span class="it">tejidos.</span>'],
+    c: ['Las piezas', 'Chalecos <span class="it">destacados.</span>']
+  };
 
   document.querySelectorAll('.tag button').forEach(function(b){
     b.addEventListener('click', function(){
-      const grupo = b.dataset.txt ? '[data-txt]' : '[data-ov]';
+      const grupo = b.dataset.tit ? '[data-tit]' : (b.dataset.pro ? '[data-pro]' : '[data-ov]');
       document.querySelectorAll('.tag ' + grupo).forEach(function(o){ o.setAttribute('aria-pressed', String(o === b)); });
-      if (b.dataset.txt) { document.body.classList.toggle('sin-texto', b.dataset.txt === 'no'); }
-      else {
+      if (b.dataset.tit) {
+        const t = TITULOS[b.dataset.tit];
+        document.getElementById('pz-label').textContent = t[0];
+        document.getElementById('pz-titulo').innerHTML = t[1];
+      } else if (b.dataset.pro) {
+        if (b.dataset.pro === 'abajo') piezasSec.after(proceso);
+        else bloque.after(proceso);
+      } else {
         const modo = b.dataset.ov;
         bloque.hidden = (modo !== 'bloque');
         heroEl.style.backgroundImage = (modo === 'portada') ? "url('/prueba/img/oveja-1.webp')" : HERO_ORIG;

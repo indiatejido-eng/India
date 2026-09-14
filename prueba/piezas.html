@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Las piezas (prueba) · India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+  /* Mismos tokens que index.html — si esto pasa a la home, se pega tal cual */
+  :root{
+    --bg: #f3ece0;
+    --bg-soft: #ece2d1;
+    --ink: #221a13;
+    --ink-soft: #4a3a2a;
+    --muted: #8a7558;
+    --line: #c9b896;
+    --accent: #8b6535;
+    --accent-deep: #5e4422;
+    --cream: #faf5ea;
+    --maxw: 1340px;
+    --gutter: 48px;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box }
+  body{
+    background-color: var(--bg);
+    background-image: radial-gradient(130% 95% at 50% -12%, #f9f3e8 0%, var(--bg) 46%, #e7d9c1 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color:inherit; text-decoration:none }
+  img{ display:block; max-width:100% }
+
+  .tag{ position:fixed; top:0; left:0; right:0; z-index:30; background:var(--ink); color:var(--cream); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:7px 10px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .tag button{ font:inherit; letter-spacing:.14em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:3px 11px; cursor:pointer; }
+  .tag button[aria-pressed="true"]{ background:var(--cream); color:var(--ink); border-color:var(--cream); }
+
+  /* ===== Cabecera de la sección ===== */
+  .sec-head{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 130px var(--gutter) 0; }
+  .label{ display:block; font-size:.72rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin-bottom:20px; }
+  .display{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.3rem,4vw,3.4rem); line-height:1.08; letter-spacing:-.02em; }
+  .display .it{ font-style:italic; font-weight:300; color:var(--accent); }
+  .sec-head p{ margin-top:16px; color:var(--ink-soft); font-size:1.02rem; max-width:44ch; }
+
+  /* ===== DESTACADOS — foto grande y el nombre de costado, como la etiqueta del chaleco ===== */
+  .dest{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 70px var(--gutter) 0; }
+  .dest-item{
+    display:grid;
+    grid-template-columns: minmax(0, 1fr) 132px;   /* foto + columna del nombre */
+    align-items:stretch;
+    gap: clamp(20px, 3vw, 46px);
+    padding: 56px 0;
+  }
+  /* Alterna: la 2da, la 4ta… llevan el nombre a la izquierda */
+  .dest-item:nth-child(even){ grid-template-columns: 132px minmax(0, 1fr); }
+  .dest-item:nth-child(even) .dest-foto{ order:2; }
+
+  .dest-foto{ position:relative; overflow:hidden; background:var(--bg-soft); aspect-ratio: 4/5; }
+  .dest-foto img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .dest-item:hover .dest-foto img{ transform:scale(1.03); }
+
+  /* El nombre, escrito de abajo hacia arriba */
+  .dest-lado{ display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; }
+  .dest-item:nth-child(even) .dest-lado{ align-items:flex-end; }
+  .dest-nombre{
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family:'Fraunces',serif;
+    font-weight:400;
+    font-style:italic;
+    font-size: clamp(2rem, 3.1vw, 3.1rem);
+    line-height:1;
+    letter-spacing:-.01em;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .dest-pie{ font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); writing-mode: vertical-rl; transform: rotate(180deg); margin-top:18px; }
+  .dest-num{ font-family:'Fraunces',serif; font-style:italic; font-size:.95rem; color:var(--accent); }
+
+  /* ===== LA TIRA — todo lo demás, se desliza al costado ===== */
+  .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 90px var(--gutter) 150px; }
+  .tira-head{ margin-bottom:26px; }
+  .ot-nav{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin:0 0 14px; min-height:42px; }
+  .ot-hint{ display:flex; align-items:center; gap:9px; color:var(--muted); font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; font-weight:500; }
+  .ot-row{
+    display:flex; gap:16px; overflow-x:auto; scroll-behavior:smooth;
+    scrollbar-width:none; -ms-overflow-style:none;
+    padding-bottom:4px;
+    --ot-fade: 56px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--ot-fade), #000 calc(100% - var(--ot-fade)), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 var(--ot-fade), #000 calc(100% - var(--ot-fade)), transparent 100%);
+  }
+  .ot-row::-webkit-scrollbar{ display:none }
+  .ot-row + .ot-row{ margin-top:22px; }
+  .ot-pieza{ flex:0 0 auto; width: 190px; }
+  .ot-pieza .foto{ position:relative; aspect-ratio:4/5; overflow:hidden; background:var(--bg-soft); }
+  .ot-pieza .foto img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .ot-pieza .n{ margin-top:11px; font-family:'Fraunces',serif; font-style:italic; font-size:1rem; color:var(--ink-soft); text-align:center; }
+
+  .vacio{ color:var(--muted); font-size:.95rem; padding:20px 0; }
+
+  /* ===== CELULAR ===== */
+  @media(max-width:880px){
+    :root{ --gutter: 24px; }
+    .sec-head{ padding-top: 96px; }
+    .dest{ padding: 34px var(--gutter) 0; }
+    .dest-item{ grid-template-columns: minmax(0,1fr) 74px; gap:16px; padding: 30px 0; }
+    .dest-item:nth-child(even){ grid-template-columns: 74px minmax(0,1fr); }
+    .dest-nombre{ font-size: 1.85rem; }
+    .dest-pie{ font-size:.66rem; letter-spacing:.16em; }
+    .tira{ padding: 60px var(--gutter) 110px; }
+    .ot-pieza{ width: 150px; }
+  }
+</style>
+</head>
+<body>
+<div class="tag">
+  <span>Prueba · las piezas · no está linkeada desde el sitio</span>
+  <span>Destacados:</span>
+  <button type="button" data-n="2" aria-pressed="true">2</button>
+  <button type="button" data-n="3" aria-pressed="false">3</button>
+</div>
+
+<section class="sec-head">
+  <span class="label">Las piezas</span>
+  <h2 class="display">Nuestros <span class="it">tejidos.</span></h2>
+  <p>Cada uno se teje de nuevo, con tus medidas.</p>
+</section>
+
+<section class="dest" id="dest"><div class="vacio">Cargando…</div></section>
+
+<section class="tira">
+  <div class="tira-head">
+    <span class="label">Todos</span>
+  </div>
+  <div class="ot-nav"><span class="ot-hint">Deslizá →</span></div>
+  <div class="ot-row" id="ot-1"></div>
+  <div class="ot-row" id="ot-2"></div>
+</section>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+  import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+  import { firebaseConfig } from '/firebase-config.js';   // ruta absoluta: la página vive en /prueba/
+
+  const db = getFirestore(initializeApp(firebaseConfig));
+
+  // Misma transformación de Cloudinary que usa la home (recorta el fondo)
+  const fotoUrl = (url, w = 1100) => {
+    if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
+    return url.replace('/image/upload/', `/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_${w},c_limit/`);
+  };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const porOrden = (a, b) => (a.orden ?? 0) - (b.orden ?? 0);
+
+  let piezas = [];
+  let cuantosDestacados = 2;
+
+  const pintar = () => {
+    const dest = piezas.slice(0, cuantosDestacados);
+    const resto = piezas.slice(cuantosDestacados);
+
+    document.getElementById('dest').innerHTML = dest.map((p, i) => `
+      <article class="dest-item">
+        <div class="dest-foto"><img src="${fotoUrl(p.foto, 1100)}" alt="${esc(p.nombre)}" loading="lazy"></div>
+        <div class="dest-lado">
+          <h3 class="dest-nombre">${esc(p.nombre)}</h3>
+          <span class="dest-pie"><span class="dest-num">0${i + 1}</span> &nbsp; ${esc(p.talle || 'a medida')}</span>
+        </div>
+      </article>`).join('') || '<div class="vacio">No hay piezas.</div>';
+
+    const tarjeta = p => `
+      <a class="ot-pieza" href="#">
+        <div class="foto"><img src="${fotoUrl(p.foto, 620)}" alt="${esc(p.nombre)}" loading="lazy"></div>
+        <div class="n">${esc(p.nombre)}</div>
+      </a>`;
+    const mitad = Math.ceil(resto.length / 2);
+    document.getElementById('ot-1').innerHTML = resto.slice(0, mitad).map(tarjeta).join('');
+    document.getElementById('ot-2').innerHTML = resto.slice(mitad).map(tarjeta).join('');
+  };
+
+  document.querySelectorAll('.tag button').forEach(b => b.addEventListener('click', () => {
+    cuantosDestacados = Number(b.dataset.n);
+    document.querySelectorAll('.tag button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    pintar();
+  }));
+
+  // Los disponibles primero (son los que hoy viven en "Disponibles"), después el archivo
+  try {
+    const [disp, ant] = await Promise.all([
+      getDocs(query(collection(db, 'chalecos'), where('estado', '==', 'disponible'))),
+      getDocs(query(collection(db, 'chalecos'), where('estado', '==', 'anterior')))
+    ]);
+    const leer = s => s.docs.map(d => {
+      const r = d.data();
+      // El talle es lo primero de la descripción, antes del primer "." o "|"
+      const talle = String(r.desc || '').split(/[.|]/)[0].trim();
+      return { nombre: r.nombre || '', foto: r.foto || '', orden: r.orden ?? 0, talle };
+    }).filter(p => p.foto).sort(porOrden);
+    piezas = [...leer(disp), ...leer(ant)];
+    pintar();
+  } catch (e) {
+    document.getElementById('dest').innerHTML = '<div class="vacio">No se pudieron cargar las piezas: ' + esc(e.message) + '</div>';
+  }
+</script>
+</body>
+</html>

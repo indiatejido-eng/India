@@ -13,7 +13,6 @@
   :root{
     --bg: #f3ece0;
     --bg-soft: #ece2d1;
-    --bg-deep: #e3d6bf;
     --ink: #221a13;
     --ink-soft: #4a3a2a;
     --muted: #8a7558;
@@ -21,7 +20,7 @@
     --cream: #faf5ea;
     --maxw: 1340px;
     --gutter: 48px;
-    --panel: #e3d6bf;          /* el fondo de la banda — se cambia con los botones de prueba */
+    --panel: #e3d6bf;
   }
   *{ margin:0; padding:0; box-sizing:border-box }
   body{
@@ -41,57 +40,29 @@
   .tag i{ font-style:normal; opacity:.6 }
 
   /* ===== Cabecera ===== */
-  .sec-head{ padding: 120px var(--gutter) 0; }
+  .sec-head{ padding: 118px var(--gutter) 0; }
   .label{ display:block; font-size:.68rem; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); margin-bottom:20px; }
   .display{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.2rem,3.6vw,3.2rem); line-height:1.1; letter-spacing:-.02em; }
   .display .it{ font-style:italic; font-weight:300; color:var(--accent); }
 
-  /* ===== DESTACADAS — banda de borde a borde: la pieza grande a un costado,
-     el nombre escrito de abajo hacia arriba en el otro. ===== */
-  .dest{ padding: 44px 0 0; }
-  .dest-item{
-    display:grid;
-    grid-template-columns: minmax(0,1fr) 92px;   /* pieza + columna del nombre */
-    align-items:center;
-    background: var(--panel);
-    min-height: 62vh;
-    padding: 40px 26px;   /* ni la pieza ni el nombre tocan el canto de la pantalla */
-  }
-  .dest-item + .dest-item{ margin-top: 54px; }
-  /* Alterna: la 2da lleva el nombre a la izquierda y la pieza a la derecha */
-  .dest-item:nth-of-type(even){ grid-template-columns: 92px minmax(0,1fr); }
-  .dest-item:nth-of-type(even) .dest-foto{ order:2; }
+  /* ===== DESTACADAS — la foto a sangre, de borde a borde, con el chaleco puesto.
+     Es lo que hacen Paul James y Douglas-Brown: la foto ocupa todo, sin marco ni panel. ===== */
+  .dest{ padding: 46px 0 0; }
+  .dest-item{ position:relative; height: 78vh; height: 78dvh; min-height: 480px; overflow:hidden; background:var(--bg-soft); }
+  .dest-item + .dest-item{ margin-top: 10px; }
+  .dest-item img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* Estas fotos NO vienen recortadas de Cloudinary: son escenas, así que acá `cover` es lo correcto */
+  .dest-item::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.66) 0%, rgba(28,22,14,.22) 34%, rgba(28,22,14,0) 62%); pointer-events:none; opacity:1; transition:opacity .4s; }
+  .dest-txt{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 var(--gutter) 40px; }
+  .dest-eyebrow{ display:block; font-size:.62rem; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:rgba(250,245,234,.8); margin-bottom:12px; }
+  .dest-frase{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.9rem,3vw,2.7rem); line-height:1.08; letter-spacing:-.02em; color:var(--cream); }
+  .dest-frase em{ font-style:italic; font-weight:300; color:#e7d6b4; }
+  /* Modo "sin texto": la foto sola, limpia */
+  body.sin-texto .dest-txt{ display:none; }
+  body.sin-texto .dest-item::after{ opacity:0; }
 
-  /* La pieza: entera (contain), grande, sin recortar. Nunca `cover`: las fotos
-     vienen con el fondo removido y al ras del borde, así que cover las agranda y las corta. */
-  .dest-foto{ position:relative; height: 54vh; min-height: 330px; }
-  .dest-foto img{
-    position:absolute; inset:0; margin:auto;
-    width:auto; height:auto; max-width:94%; max-height:100%;
-    object-fit:contain;
-  }
-
-  /* El nombre, de abajo hacia arriba, como la etiqueta cosida al costado */
-  .dest-lado{ height:100%; display:flex; align-items:center; justify-content:center; }
-  .dest-nombre{
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-family:'Fraunces',serif;
-    font-weight:400; font-style:italic;
-    line-height:1;
-    letter-spacing:-.01em;
-    color: var(--ink);
-    white-space:nowrap;
-    max-height:100%;
-  }
-  /* El tamaño lo decide el largo del nombre: uno de dos palabras se luce, uno larguísimo entra igual */
-  .dest-nombre[data-largo="corto"]{ font-size: clamp(2.1rem, 3.4vw, 3.2rem); }
-  .dest-nombre[data-largo="medio"]{ font-size: clamp(1.6rem, 2.6vw, 2.4rem); }
-  .dest-nombre[data-largo="largo"]{ font-size: clamp(1.05rem, 1.8vw, 1.5rem); }
-  .dest-lado{ overflow:hidden; }
-
-  /* ===== LA TIRA — el resto, se desliza al costado ===== */
-  .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 86px var(--gutter) 150px; }
+  /* ===== LA TIRA — el resto, se desliza al costado. Piezas recortadas sobre el panel arena ===== */
+  .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 84px var(--gutter) 150px; }
   .ot-row{
     display:flex; gap:14px; overflow-x:auto; scroll-behavior:smooth;
     scrollbar-width:none; -ms-overflow-style:none; padding-bottom:4px;
@@ -104,20 +75,15 @@
   .ot-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; }
   .ot-hint{ display:block; text-align:center; margin-top:22px; color:var(--muted); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
 
-  .vacio{ color:var(--muted); font-size:.95rem; text-align:center; padding:30px 0; }
-
   /* ===== CELULAR ===== */
   @media(max-width:880px){
     :root{ --gutter: 24px; }
     .sec-head{ padding-top: 88px; }
-    .dest{ padding-top: 22px; }
-    .dest-item{ grid-template-columns: minmax(0,1fr) 58px; min-height:0; padding: 30px 18px; }
-    .dest-item:nth-of-type(even){ grid-template-columns: 58px minmax(0,1fr); }
-    .dest-foto{ height: 56vh; min-height: 300px; }
-    .dest-nombre[data-largo="corto"]{ font-size: 2rem; }
-    .dest-nombre[data-largo="medio"]{ font-size: 1.5rem; }
-    .dest-nombre[data-largo="largo"]{ font-size: 1rem; }
-    .tira{ padding: 60px var(--gutter) 110px; }
+    .dest{ padding-top: 26px; }
+    .dest-item{ height: 76vh; height: 76dvh; min-height: 440px; }
+    .dest-txt{ padding: 0 24px 34px; }
+    .dest-frase{ font-size: 2.15rem; }
+    .tira{ padding: 58px var(--gutter) 110px; }
     .ot-pieza{ width: 142px; }
   }
 </style>
@@ -125,10 +91,9 @@
 <body>
 <div class="tag">
   <span>Prueba · las piezas</span>
-  <i>Fondo:</i>
-  <button type="button" data-bg="#ece2d1" aria-pressed="false">1</button>
-  <button type="button" data-bg="#e3d6bf" aria-pressed="true">2</button>
-  <button type="button" data-bg="#d8c6a6" aria-pressed="false">3</button>
+  <i>Texto:</i>
+  <button type="button" data-txt="si" aria-pressed="true">Sí</button>
+  <button type="button" data-txt="no" aria-pressed="false">No</button>
   <i>Destacadas:</i>
   <button type="button" data-n="2" aria-pressed="true">2</button>
   <button type="button" data-n="3" aria-pressed="false">3</button>
@@ -139,7 +104,29 @@
   <h2 class="display">Lo que <span class="it">tejemos.</span></h2>
 </section>
 
-<section class="dest" id="dest"><div class="vacio">Cargando…</div></section>
+<section class="dest" id="dest">
+  <article class="dest-item">
+    <img src="/prueba/img/puesto-1.webp" alt="Chaleco marrón puesto, a caballo en el campo" loading="lazy">
+    <div class="dest-txt">
+      <span class="dest-eyebrow">Tejido a mano</span>
+      <h3 class="dest-frase">Para <em>todos los días.</em></h3>
+    </div>
+  </article>
+  <article class="dest-item">
+    <img src="/prueba/img/puesto-2.webp" alt="Chaleco marrón con ochos puesto, sobre camisa" loading="lazy">
+    <div class="dest-txt">
+      <span class="dest-eyebrow">100% lana de oveja</span>
+      <h3 class="dest-frase">Abriga <em>de verdad.</em></h3>
+    </div>
+  </article>
+  <article class="dest-item tercera" hidden>
+    <img src="/prueba/img/puesto-3.webp" alt="Chaleco gris con trenzas puesto" loading="lazy">
+    <div class="dest-txt">
+      <span class="dest-eyebrow">Con tus medidas</span>
+      <h3 class="dest-frase">Te queda <em>a vos.</em></h3>
+    </div>
+  </article>
+</section>
 
 <section class="tira">
   <div class="ot-row" id="ot-1"></div>
@@ -152,34 +139,20 @@
   import { firebaseConfig } from '/firebase-config.js';   // ruta absoluta: la página vive en /prueba/
 
   const db = getFirestore(initializeApp(firebaseConfig));
-
-  const fotoUrl = (url, w = 1100) => {
+  const fotoUrl = (url, w = 620) => {
     if (!url || typeof url !== 'string' || !url.includes('/image/upload/')) return url;
     return url.replace('/image/upload/', `/image/upload/e_background_removal/e_trim/f_auto,q_auto,w_${w},c_limit/`);
   };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  const largoDe = n => n.length <= 14 ? 'corto' : (n.length <= 26 ? 'medio' : 'largo');
-
-  let piezas = [], cuantas = 2;
-
-  const pintar = () => {
-    const dest = piezas.slice(0, cuantas), resto = piezas.slice(cuantas);
-    document.getElementById('dest').innerHTML = dest.map(p => `
-      <article class="dest-item">
-        <div class="dest-foto"><img src="${fotoUrl(p.foto, 1100)}" alt="${esc(p.nombre)}" loading="lazy"></div>
-        <div class="dest-lado"><h3 class="dest-nombre" data-largo="${largoDe(p.nombre)}">${esc(p.nombre)}</h3></div>
-      </article>`).join('') || '<div class="vacio">No hay piezas.</div>';
-    document.getElementById('ot-1').innerHTML = resto.map(p => `
-      <div class="ot-pieza"><img src="${fotoUrl(p.foto, 620)}" alt="${esc(p.nombre)}" loading="lazy"></div>`).join('');
-  };
 
   document.querySelectorAll('.tag button').forEach(b => b.addEventListener('click', () => {
-    const grupo = b.dataset.bg ? '[data-bg]' : '[data-n]';
+    const grupo = b.dataset.txt ? '[data-txt]' : '[data-n]';
     document.querySelectorAll('.tag ' + grupo).forEach(o => o.setAttribute('aria-pressed', String(o === b)));
-    if (b.dataset.bg) document.documentElement.style.setProperty('--panel', b.dataset.bg);
-    else { cuantas = Number(b.dataset.n); pintar(); }
+    if (b.dataset.txt) document.body.classList.toggle('sin-texto', b.dataset.txt === 'no');
+    else document.querySelector('.tercera').hidden = (b.dataset.n === '2');
   }));
 
+  // La tira: todas las piezas del catálogo, recortadas sobre el panel
   try {
     const [disp, ant] = await Promise.all([
       getDocs(query(collection(db, 'chalecos'), where('estado', '==', 'disponible'))),
@@ -188,10 +161,10 @@
     const leer = s => s.docs.map(d => d.data())
       .map(r => ({ nombre: r.nombre || '', foto: r.foto || '', orden: r.orden ?? 0 }))
       .filter(p => p.foto).sort((a, b) => a.orden - b.orden);
-    piezas = [...leer(disp), ...leer(ant)];
-    pintar();
+    document.getElementById('ot-1').innerHTML = [...leer(disp), ...leer(ant)]
+      .map(p => `<div class="ot-pieza"><img src="${fotoUrl(p.foto)}" alt="${esc(p.nombre)}" loading="lazy"></div>`).join('');
   } catch (e) {
-    document.getElementById('dest').innerHTML = '<div class="vacio">No se pudieron cargar las piezas: ' + esc(e.message) + '</div>';
+    document.getElementById('ot-1').innerHTML = '<div style="color:var(--muted)">No se pudieron cargar las piezas.</div>';
   }
 </script>
 </body>

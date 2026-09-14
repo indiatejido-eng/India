@@ -51,6 +51,8 @@
   .dest-item{ position:relative; height: 78vh; height: 78dvh; min-height: 480px; overflow:hidden; background:var(--bg-soft); }
   .dest-item + .dest-item{ margin-top: 10px; }
   .dest-item img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* Encuadre por foto: la del caballo se centra arriba, donde está el chaleco puesto */
+  .dest-item img.alto{ object-position: 50% 26%; }
   /* Estas fotos NO vienen recortadas de Cloudinary: son escenas, así que acá `cover` es lo correcto */
   .dest-item::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.66) 0%, rgba(28,22,14,.22) 34%, rgba(28,22,14,0) 62%); pointer-events:none; opacity:1; transition:opacity .4s; }
   .dest-txt{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 var(--gutter) 40px; }
@@ -106,7 +108,7 @@
 
 <section class="dest" id="dest">
   <article class="dest-item">
-    <img src="/prueba/img/puesto-1.webp" alt="Chaleco marrón puesto, a caballo en el campo" loading="lazy">
+    <img class="alto" src="/prueba/img/puesto-1.webp" alt="Chaleco marrón puesto, a caballo en el campo" loading="lazy">
     <div class="dest-txt">
       <span class="dest-eyebrow">Tejido a mano</span>
       <h3 class="dest-frase">Para <em>todos los días.</em></h3>

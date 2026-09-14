@@ -55,9 +55,9 @@
     align-items:center;
     background: var(--panel);
     min-height: 62vh;
-    padding: 34px 0;
+    padding: 40px 26px;   /* ni la pieza ni el nombre tocan el canto de la pantalla */
   }
-  .dest-item + .dest-item{ margin-top: 30px; }
+  .dest-item + .dest-item{ margin-top: 54px; }
   /* Alterna: la 2da lleva el nombre a la izquierda y la pieza a la derecha */
   .dest-item:nth-of-type(even){ grid-template-columns: 92px minmax(0,1fr); }
   .dest-item:nth-of-type(even) .dest-foto{ order:2; }
@@ -88,6 +88,7 @@
   .dest-nombre[data-largo="corto"]{ font-size: clamp(2.1rem, 3.4vw, 3.2rem); }
   .dest-nombre[data-largo="medio"]{ font-size: clamp(1.6rem, 2.6vw, 2.4rem); }
   .dest-nombre[data-largo="largo"]{ font-size: clamp(1.05rem, 1.8vw, 1.5rem); }
+  .dest-lado{ overflow:hidden; }
 
   /* ===== LA TIRA — el resto, se desliza al costado ===== */
   .tira{ max-width: calc(var(--maxw) + var(--gutter) * 2); margin:0 auto; padding: 86px var(--gutter) 150px; }
@@ -110,8 +111,8 @@
     :root{ --gutter: 24px; }
     .sec-head{ padding-top: 88px; }
     .dest{ padding-top: 22px; }
-    .dest-item{ grid-template-columns: minmax(0,1fr) 62px; min-height:0; padding: 26px 0; }
-    .dest-item:nth-of-type(even){ grid-template-columns: 62px minmax(0,1fr); }
+    .dest-item{ grid-template-columns: minmax(0,1fr) 58px; min-height:0; padding: 30px 18px; }
+    .dest-item:nth-of-type(even){ grid-template-columns: 58px minmax(0,1fr); }
     .dest-foto{ height: 56vh; min-height: 300px; }
     .dest-nombre[data-largo="corto"]{ font-size: 2rem; }
     .dest-nombre[data-largo="medio"]{ font-size: 1.5rem; }

@@ -579,7 +579,7 @@
   .pz-dest{ position:relative; height: 76vh; height: 76dvh; min-height: 440px; overflow:hidden; background:var(--bg-soft); }
   .pz-dest + .pz-dest{ margin-top: 10px; }
   .pz-dest img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-  .pz-dest img.jinete{ object-position: 50% 56%; }
+  .pz-dest img.jinete{ object-position: 50% 50%; }
   .pz-dest::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.66) 0%, rgba(28,22,14,.22) 34%, rgba(28,22,14,0) 62%); pointer-events:none; transition:opacity .4s; }
   .pz-txt{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 24px 36px; }
   .pz-frase{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.9rem,3vw,2.6rem); line-height:1.08; letter-spacing:-.02em; color:var(--cream); }
@@ -594,7 +594,7 @@
             mask-image: linear-gradient(to right, transparent 0, #000 42px, #000 calc(100% - 42px), transparent 100%); }
   .pz-row::-webkit-scrollbar{ display:none }
   .pz-row + .pz-row{ margin-top: 12px; }
-  .pz-pieza{ flex:0 0 auto; width: 142px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; }
+  .pz-pieza{ flex:0 0 auto; width: 168px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; }
   .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; }
   .pz-hint{ display:block; text-align:center; margin-top:20px; color:var(--muted); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
 
@@ -1206,7 +1206,7 @@
 <div class="tag">
   <span>Prueba</span>
   <i>Titulo:</i><button type="button" data-tit="a" aria-pressed="true">A</button><button type="button" data-tit="b" aria-pressed="false">B</button><button type="button" data-tit="c" aria-pressed="false">C</button>
-  <i>Proceso:</i><button type="button" data-pro="arriba" aria-pressed="true">Arriba</button><button type="button" data-pro="abajo" aria-pressed="false">Abajo</button>
+  <i>Proceso:</i><button type="button" data-pro="arriba" aria-pressed="false">Arriba</button><button type="button" data-pro="abajo" aria-pressed="true">Abajo</button>
   <i>Oveja:</i><button type="button" data-ov="no" aria-pressed="true">No</button><button type="button" data-ov="portada" aria-pressed="false">Portada</button><button type="button" data-ov="bloque" aria-pressed="false">Bloque</button>
 </div>
 
@@ -2236,6 +2236,8 @@
     b: ['Chalecos', 'Reci&eacute;n <span class="it">tejidos.</span>'],
     c: ['Las piezas', 'Chalecos <span class="it">destacados.</span>']
   };
+
+  piezasSec.after(proceso);   // arranca con el proceso ABAJO
 
   document.querySelectorAll('.tag button').forEach(function(b){
     b.addEventListener('click', function(){

@@ -606,6 +606,9 @@
   .oveja-bloque img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .oveja-bloque::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.6) 0%, rgba(28,22,14,0) 55%); }
 
+  /* El wordmark como en la etiqueta de cuero: Fraunces italica 600, sin mayusculas ni tracking */
+  body.marca-min .brand-text{ text-transform:none; font-style:italic; font-weight:600; letter-spacing:0; font-size:1.7rem; font-variation-settings:'opsz' 144, 'WONK' 0; }
+  @media(max-width:900px){ body.marca-min .brand-text{ font-size:1.3rem; letter-spacing:0; } }
   .tag{ position:fixed; top:0; left:0; right:0; z-index:999; background:#221a13; color:#faf5ea; font-size:.55rem; letter-spacing:.08em; text-transform:uppercase; text-align:center; padding:5px 6px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; }
   .tag button{ font:inherit; letter-spacing:.08em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:2px 8px; cursor:pointer; }
   .tag button[aria-pressed="true"]{ background:#faf5ea; color:#221a13; border-color:#faf5ea; }
@@ -1211,6 +1214,7 @@
   <span>Prueba</span>
   <i>Titulo:</i><button type="button" data-tit="a" aria-pressed="true">A</button><button type="button" data-tit="b" aria-pressed="false">B</button><button type="button" data-tit="c" aria-pressed="false">C</button>
   <i>Proceso:</i><button type="button" data-pro="arriba" aria-pressed="false">Arriba</button><button type="button" data-pro="medio" aria-pressed="true">Medio</button><button type="button" data-pro="abajo" aria-pressed="false">Abajo</button>
+  <i>India:</i><button type="button" data-marca="may" aria-pressed="true">INDIA</button><button type="button" data-marca="min" aria-pressed="false">India</button>
   <i>Oveja:</i><button type="button" data-ov="no" aria-pressed="true">No</button><button type="button" data-ov="portada" aria-pressed="false">Portada</button><button type="button" data-ov="bloque" aria-pressed="false">Bloque</button>
 </div>
 
@@ -2219,14 +2223,17 @@
   };
   try {
     const snap = await getDocs(collection(db, 'chalecos'));
-    const piezas = snap.docs.map(function(d){ return d.data(); })
+    const piezas = snap.docs.map(function(d){ const r = d.data(); r.id = d.id; return r; })
       .filter(function(r){ return r.foto && (r.estado === 'disponible' || r.estado === 'anterior'); })
       .sort(function(a, b){ return (a.orden || 0) - (b.orden || 0); });
-    const tarjeta = function(p){ return '<div class="pz-pieza"><img src="' + rec(p.foto) + '" alt="" loading="lazy"></div>'; };
+    const tarjeta = function(p, i){ return '<div class="pz-pieza" data-i="' + i + '"><img src="' + rec(p.foto) + '" alt="" loading="lazy"></div>'; };
     const mitad = Math.ceil(piezas.length / 2);
     document.getElementById('pz-row-1').innerHTML = piezas.slice(0, mitad).map(tarjeta).join('');
     document.getElementById('pz-row-2').innerHTML = piezas.slice(mitad).map(tarjeta).join('');
     document.getElementById('pz-row-2').scrollLeft = 81;   // escalonada, como ladrillos
+    document.querySelectorAll('.pz-pieza').forEach(function(el){
+      el.addEventListener('click', function(){ const it = piezas[Number(el.dataset.i)]; if (it && window.openLightbox) window.openLightbox(it, { anterior: it.estado === 'anterior' }); });
+    });
   } catch (e) { console.warn('tira', e); }
 
   const heroEl = document.querySelector('.hero');
@@ -2251,9 +2258,11 @@
 
   document.querySelectorAll('.tag button').forEach(function(b){
     b.addEventListener('click', function(){
-      const grupo = b.dataset.tit ? '[data-tit]' : (b.dataset.pro ? '[data-pro]' : '[data-ov]');
+      const grupo = b.dataset.tit ? '[data-tit]' : (b.dataset.pro ? '[data-pro]' : (b.dataset.marca ? '[data-marca]' : '[data-ov]'));
       document.querySelectorAll('.tag ' + grupo).forEach(function(o){ o.setAttribute('aria-pressed', String(o === b)); });
-      if (b.dataset.tit) {
+      if (b.dataset.marca) {
+        document.body.classList.toggle('marca-min', b.dataset.marca === 'min');
+      } else if (b.dataset.tit) {
         const t = TITULOS[b.dataset.tit];
         document.getElementById('pz-label').textContent = t[0];
         document.getElementById('pz-titulo').innerHTML = t[1];

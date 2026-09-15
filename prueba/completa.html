@@ -587,17 +587,20 @@
   body.sin-texto .pz-txt{ display:none }
   body.sin-texto .pz-dest::after{ opacity:0 }
 
-  /* La tira: DOS filas, porque 17 piezas en una sola no se llegan a ver */
-  .pz-tira{ max-width: 1436px; margin:0 auto; padding: 64px 24px 40px; }
-  .pz-tira-label{ display:block; text-align:center; margin-bottom:22px; }
-  .pz-row{ display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:4px;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 42px, #000 calc(100% - 42px), transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0, #000 42px, #000 calc(100% - 42px), transparent 100%); }
+  /* La tira: DOS filas, porque 17 piezas en una sola no se llegan a ver.
+     Sin desvanecer el borde: la pieza cortada a seco a la derecha es lo que avisa que sigue (como Maren A&O). */
+  .pz-tira{ max-width: 1436px; margin:0 auto; padding: 64px 0 40px; }
+  .pz-tira-head{ display:flex; align-items:baseline; justify-content:space-between; padding: 0 24px; margin-bottom: 20px; }
+  .pz-tira-head .label{ margin:0; }
+  .pz-hint{ color:var(--muted); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
+  .pz-hint .ar{ display:inline-block; animation: pzNudge 1.6s ease-in-out infinite; }
+  @keyframes pzNudge{ 0%,100%{ transform:translateX(0) } 50%{ transform:translateX(5px) } }
+  .pz-row{ display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; padding: 0 24px 4px; }
   .pz-row::-webkit-scrollbar{ display:none }
   .pz-row + .pz-row{ margin-top: 12px; }
-  .pz-pieza{ flex:0 0 auto; width: 168px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; }
+  .pz-pieza{ flex:0 0 auto; width: 150px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; }
   .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; }
-  .pz-hint{ display:block; text-align:center; margin-top:20px; color:var(--muted); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
+  @media(min-width:881px){ .pz-tira{ padding-left:48px; padding-right:48px; } .pz-tira-head, .pz-row{ padding-left:0; padding-right:0; } .pz-pieza{ width:190px; } }
 
   .oveja-bloque{ position:relative; height: 62vh; height: 62dvh; min-height: 380px; overflow:hidden; }
   .oveja-bloque img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -1273,10 +1276,12 @@
 </section>
 
 <section class="pz-tira" id="tira">
-  <span class="label pz-tira-label">Los que ya tejimos</span>
+  <div class="pz-tira-head">
+    <span class="label">Los que ya tejimos</span>
+    <span class="pz-hint">Desliz&aacute; <span class="ar">&rarr;</span></span>
+  </div>
   <div class="pz-row" id="pz-row-1"></div>
   <div class="pz-row" id="pz-row-2"></div>
-  <span class="pz-hint">Desliza &rarr;</span>
 </section>
 
 <!-- GALERIA -->
@@ -2221,6 +2226,7 @@
     const mitad = Math.ceil(piezas.length / 2);
     document.getElementById('pz-row-1').innerHTML = piezas.slice(0, mitad).map(tarjeta).join('');
     document.getElementById('pz-row-2').innerHTML = piezas.slice(mitad).map(tarjeta).join('');
+    document.getElementById('pz-row-2').scrollLeft = 81;   // escalonada, como ladrillos
   } catch (e) { console.warn('tira', e); }
 
   const heroEl = document.querySelector('.hero');

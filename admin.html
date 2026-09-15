@@ -424,6 +424,19 @@
     background: rgba(34, 26, 19, 0.82); color: #f5f0e8;
     border-radius: 100px; font-size: 0.78rem; font-weight: 600;
   }
+  /* Pestana "Orden en la web": las dos filas de la tira, con arrastre */
+  .tira-bloque{ margin: 0 0 22px; }
+  .tira-titulo{ font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 8px; }
+  .tira-titulo span{ font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 6px; }
+  .tira-fila{ display:flex; flex-wrap:wrap; gap:10px; min-height: 140px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; background: rgba(255,255,255,.35); }
+  .tira-fila.sobre{ border-color: var(--accent); background: rgba(139,101,53,.06); }
+  .tira-item{ width: 92px; border-radius: 9px; overflow: hidden; background: var(--bg-soft); position: relative; box-shadow: 0 4px 14px -8px rgba(60,40,20,.35); user-select:none; -webkit-user-select:none; }
+  .tira-item img{ display:block; width:100%; aspect-ratio:4/5; object-fit:cover; pointer-events:none; }
+  .tira-item .tirador{ position:absolute; top:0; left:0; right:0; height:28px; display:flex; align-items:center; justify-content:center; background: rgba(34,26,19,.55); color:#fff; font-size:1.1rem; letter-spacing:.1em; cursor:grab; touch-action:none; }
+  .tira-item .tirador:active{ cursor:grabbing; }
+  .tira-item .nom{ font-size:.66rem; padding: 5px 6px; color: var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tira-item.arrastrando{ opacity: .35; outline: 2px dashed var(--accent); }
+  .tira-fantasma{ position:fixed; z-index:9999; pointer-events:none; width:92px; transform: scale(1.06) rotate(-2deg); box-shadow: 0 18px 40px -12px rgba(60,40,20,.6); opacity:.95; }
   .fila-sep{
     grid-column: 1 / -1;
     display: flex; align-items: center; gap: 10px;
@@ -707,6 +720,7 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
     <div class="tabs">
       <button class="tab active" data-tab="disponible">Disponibles <span class="tab-count" id="count-disp">0</span></button>
       <button class="tab" data-tab="anterior">Vendidos / Hechos <span class="tab-count" id="count-ant">0</span></button>
+      <button class="tab" data-tab="tira">Orden en la web</button>
       <button class="tab" data-tab="baja">Dados de baja <span class="tab-count" id="count-baja">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
       <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
@@ -866,16 +880,21 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
         <span style="font-size:0.9rem; color:var(--ink-soft)" id="precios-bar-txt"></span>
         <button class="btn btn-sm" id="btn-precios-talle">Poner los precios de la lista</button>
       </div>
-      <p class="panel-hint">El número de cada foto es el <strong>orden en la web</strong>: la 1 va arriba a la izquierda. En la compu entran 3 por fila; en el celu, 2. Las flechas ↑ ↓ lo cambian.</p>
+      <p class="panel-hint">Los que están listos para enviar. <strong>El orden en que salen en la web se arma en la pestaña "Orden en la web".</strong></p>
       <div class="grid-admin" id="grid-disponible"></div>
     </div>
     <div class="tab-panel" id="panel-anterior">
-      <p class="panel-hint">En la web estos van en <strong>dos filas que se deslizan al costado</strong> —la primera mitad arriba, el resto abajo—, igual en la compu que en el celu. El número de cada foto es el lugar que ocupa <strong>dentro de su fila</strong>; con las flechas ↑ ↓ lo cambiás, y si cruzás el separador el chaleco se pasa a la otra fila.</p>
+      <p class="panel-hint">Los que ya se entregaron. Salen en la web junto con los disponibles, en la tira de dos filas. <strong>El orden se arma en la pestaña "Orden en la web".</strong></p>
       <div class="grid-admin" id="grid-anterior"></div>
     </div>
     <div class="tab-panel" id="panel-baja">
       <p style="color:var(--muted); font-size:0.9rem; margin:0 0 14px;">Estos chalecos <strong>no aparecen en la web</strong>, pero quedan acá. Podés restaurarlos cuando quieras.</p>
       <div class="grid-admin" id="grid-baja"></div>
+    </div>
+    <div class="tab-panel" id="panel-tira">
+      <p class="panel-hint">Así salen los chalecos en la web, en <strong>dos filas que se deslizan al costado</strong>. Agarrá uno del <strong>tirador ⠿</strong> y arrastralo a donde quieras, dentro de su fila o a la otra. Se guarda solo al soltar.</p>
+      <div class="tira-bloque"><div class="tira-titulo">Fila 1 <span>la de arriba</span></div><div class="tira-fila" id="tira-fila-1"></div></div>
+      <div class="tira-bloque"><div class="tira-titulo">Fila 2 <span>la de abajo</span></div><div class="tira-fila" id="tira-fila-2"></div></div>
     </div>
     <div class="tab-panel" id="panel-resenas">
       <div class="resenas-gen">
@@ -1536,6 +1555,7 @@ function suscribir(){
     dataDisp = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('disponible', dataDisp);
+    renderTiraAdmin();
     actualizarBarraPrecios();
     $('count-disp').textContent = dataDisp.length;
     refrescarClicksChalecos();
@@ -1546,6 +1566,7 @@ function suscribir(){
     dataAnt = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     renderGrid('anterior', dataAnt);
+    renderTiraAdmin();
     $('count-ant').textContent = dataAnt.length;
     refrescarClicksChalecos();
   });
@@ -1642,7 +1663,7 @@ function renderGrid(estado, items){
     // "Otros tejidos" se parte en dos filas en la web: la primera mitad arriba y
     // el resto abajo. El corte tiene que ser EL MISMO que el de renderAnteriores()
     // en index.html (Math.ceil), o el panel muestra una fila que la web no arma.
-    const corte = estado === 'anterior' ? Math.ceil(items.length / 2) : 0;
+    const corte = 0;   // el orden de la web ya no sale de aca: vive en la pestana "Orden en la web"
     grid.innerHTML = items.map((it, idx) => {
       const sep = corte && (idx === 0 || idx === corte)
         ? `<div class="fila-sep">Fila ${idx === 0 ? '1' : '2'} <span>${idx === 0 ? 'la de arriba' : 'la de abajo'}</span></div>`
@@ -1658,16 +1679,14 @@ function renderGrid(estado, items){
         ? `<button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
               <button class="btn btn-ghost btn-sm" data-restaurar="${it.id}" data-prev="${it.estadoPrev || 'anterior'}">↻ Restaurar</button>
               <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>`
-        : `<button class="btn btn-ghost btn-sm btn-arrow" data-orden="up" data-id="${it.id}" data-estado="${estado}" title="Subir" aria-label="Subir"${idx === 0 ? ' disabled' : ''}>↑</button>
-              <button class="btn btn-ghost btn-sm btn-arrow" data-orden="down" data-id="${it.id}" data-estado="${estado}" title="Bajar" aria-label="Bajar"${idx === items.length - 1 ? ' disabled' : ''}>↓</button>
-              <button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
+        : `<button class="btn btn-ghost btn-sm" data-edit="${it.id}">Editar</button>
               <button class="btn btn-ghost btn-sm" data-move="${it.id}" data-to="${otroEstado}">${otroLabel}</button>
               <button class="btn btn-ghost btn-sm" data-baja="${it.id}" data-estado="${estado}">Dar de baja</button>
               <button class="btn btn-danger btn-sm" data-del="${it.id}" data-foto="${it.fotoPath || ''}">Borrar</button>`;
       return `${sep}
         <div class="card" data-id="${it.id}">
           <div class="card-img">
-            ${esBaja ? '' : `<span class="card-pos">${pos}</span>`}
+
             ${it.foto ? `<img src="${it.foto}" alt="${nombre}">` : `<span class="card-img-empty">Sin foto</span>`}
           </div>
           <div class="card-body">
@@ -1691,6 +1710,87 @@ function renderGrid(estado, items){
   grid.querySelectorAll('[data-orden]').forEach(b => b.addEventListener('click', () => reordenar(b.dataset.estado, b.dataset.id, b.dataset.orden)));
   grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => confirmarBorrado(b.dataset.del, b.dataset.foto)));
 }
+
+// ===== ORDEN EN LA WEB: las dos filas de la tira, con arrastre =====
+// Misma regla que index.html (filasDeLaTira): `fila` 1/2 y `tira` = posicion. Sin esos
+// campos, el chaleco cae al final de la fila 2. Al soltar se guardan los dos campos de TODOS.
+function filasDeLaTira(items){
+  const conFila = items.filter(it => it.fila === 1 || it.fila === 2);
+  if (!conFila.length) { const mid = Math.ceil(items.length / 2); return [items.slice(0, mid), items.slice(mid)]; }
+  const pos = it => (typeof it.tira === 'number' ? it.tira : 1e9) + (it.orden ?? 0) / 1e6;
+  const f = n => items.filter(it => (it.fila === 1 || it.fila === 2 ? it.fila : 2) === n).sort((a, b) => pos(a) - pos(b));
+  return [f(1), f(2)];
+}
+let tiraArrastrando = false;
+function renderTiraAdmin(){
+  if (tiraArrastrando) return;   // no pisar el DOM mientras Barbara esta arrastrando
+  const [f1, f2] = filasDeLaTira([...dataDisp, ...dataAnt]);
+  const item = it => `<div class="tira-item" data-id="${it.id}">
+      <img src="${it.foto || ''}" alt="">
+      <div class="tirador" title="Arrastrar">⠿</div>
+      <div class="nom">${escapeHtml(it.nombre || 'Sin nombre')}</div>
+    </div>`;
+  $('tira-fila-1').innerHTML = f1.map(item).join('');
+  $('tira-fila-2').innerHTML = f2.map(item).join('');
+}
+async function guardarTira(){
+  const batch = writeBatch(db);
+  let n = 0;
+  [1, 2].forEach(fila => {
+    $(`tira-fila-${fila}`).querySelectorAll('.tira-item').forEach((el, idx) => {
+      const it = [...dataDisp, ...dataAnt].find(x => x.id === el.dataset.id);
+      if (!it) return;
+      if (it.fila !== fila || it.tira !== idx) { batch.update(doc(db, 'chalecos', el.dataset.id), { fila, tira: idx }); n++; }
+    });
+  });
+  if (!n) return;
+  try { await batch.commit(); showToast('Orden guardado'); }
+  catch (e) { showToast('No se pudo guardar: ' + e.message, true); }
+}
+(function arrastreTira(){
+  let ghost = null, origen = null, offX = 0, offY = 0;
+  const filas = () => [$('tira-fila-1'), $('tira-fila-2')];
+  document.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.tirador'); if (!h) return;
+    origen = h.closest('.tira-item');
+    e.preventDefault();
+    const r = origen.getBoundingClientRect();
+    offX = e.clientX - r.left; offY = e.clientY - r.top;
+    ghost = origen.cloneNode(true); ghost.classList.add('tira-fantasma'); ghost.classList.remove('arrastrando');
+    ghost.style.left = r.left + 'px'; ghost.style.top = r.top + 'px';
+    document.body.appendChild(ghost);
+    origen.classList.add('arrastrando');
+    tiraArrastrando = true;
+    h.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!ghost) return;
+    ghost.style.left = (e.clientX - offX) + 'px'; ghost.style.top = (e.clientY - offY) + 'px';
+    const bajo = document.elementFromPoint(e.clientX, e.clientY);
+    if (!bajo) return;
+    filas().forEach(f => f.classList.remove('sobre'));
+    const sobreItem = bajo.closest('.tira-item');
+    const sobreFila = bajo.closest('.tira-fila');
+    if (sobreItem && sobreItem !== origen) {
+      const r = sobreItem.getBoundingClientRect();
+      const despues = e.clientX > r.left + r.width / 2;
+      sobreItem.parentNode.insertBefore(origen, despues ? sobreItem.nextSibling : sobreItem);
+    } else if (sobreFila && !sobreItem) {
+      sobreFila.classList.add('sobre');
+      if (!sobreFila.contains(origen)) sobreFila.appendChild(origen);
+    }
+  });
+  const soltar = () => {
+    if (!ghost) return;
+    ghost.remove(); ghost = null;
+    origen.classList.remove('arrastrando'); origen = null;
+    filas().forEach(f => f.classList.remove('sobre'));
+    tiraArrastrando = false;
+    guardarTira();
+  };
+  document.addEventListener('pointerup', soltar);
+  document.addEventListener('pointercancel', soltar);
+})();
 
 // ===== MODAL =====
 let editing = null; // { id?, estado, ... }

@@ -1617,18 +1617,28 @@
   }
   // ===== LA TIRA: todos los chalecos (disponibles + anteriores), dos filas escalonadas =====
   let itemsDisp = [], itemsAnt = [];
+  // Dos filas: cuales van en cada una y en que orden lo decide el panel (campos `fila` y `tira`,
+  // pestana "Orden en la web"). Un chaleco sin esos campos —recien cargado— cae al final de la
+  // fila 2. Si ninguno los tiene todavia, se parte por la mitad como antes.
+  function filasDeLaTira(items){
+    const conFila = items.filter(it => it.fila === 1 || it.fila === 2);
+    if (!conFila.length) { const mid = Math.ceil(items.length / 2); return [items.slice(0, mid), items.slice(mid)]; }
+    const pos = it => (typeof it.tira === 'number' ? it.tira : 1e9) + (it.orden ?? 0) / 1e6;
+    const f = n => items.filter(it => (it.fila === 1 || it.fila === 2 ? it.fila : 2) === n).sort((a, b) => pos(a) - pos(b));
+    return [f(1), f(2)];
+  }
   function renderTira(){
-    const items = [...itemsDisp, ...itemsAnt];
+    const [f1, f2] = filasDeLaTira([...itemsDisp, ...itemsAnt]);
+    const items = [...f1, ...f2];
     const r1 = document.getElementById('pz-row-1');
     const r2 = document.getElementById('pz-row-2');
     const section = document.getElementById('anteriores');
     if (!items.length) { section.style.display = 'none'; return; }
     section.style.display = '';
     const card = (it, i) => `<div class="pz-pieza" data-idx="${i}"><img src="${fotoUrl(it.foto, 620)}" alt="${escapeHtml(it.nombre || 'Chaleco')}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>`;
-    const mid = Math.ceil(items.length / 2);
     const s2 = r2.scrollLeft;   // si Barbara edita algo, la fila no vuelve a saltar
-    r1.innerHTML = items.slice(0, mid).map((it, i) => card(it, i)).join('');
-    r2.innerHTML = items.slice(mid).map((it, i) => card(it, mid + i)).join('');
+    r1.innerHTML = f1.map((it, i) => card(it, i)).join('');
+    r2.innerHTML = f2.map((it, i) => card(it, f1.length + i)).join('');
     r2.scrollLeft = s2 || 81;   // arranca corrida media pieza: escalonada, se ve que sigue
     [r1, r2].forEach(row => row.querySelectorAll('.pz-pieza').forEach(el => {
       el.addEventListener('click', () => {

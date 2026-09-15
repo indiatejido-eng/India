@@ -567,6 +567,39 @@
     .ps-btn{ margin-top:20px; }
   }
 
+
+  /* ===== LAS PIEZAS — dos chalecos puestos, a sangre, con la frase encima (2026-09-14) =====
+     Fotos de ESCENA (no recortadas): van con `cover`. Las del catalogo, recortadas por
+     Cloudinary, van con `contain` en la tira. Mezclar las dos reglas es lo que hacia que
+     una prenda saliera gigante y cortada. */
+  .pz{ padding: 4px 0 0; }
+  .pz-head{ text-align:center; padding: 54px 24px 26px; }
+  .pz-head .label{ margin-bottom:14px; }
+  .pz-dest{ position:relative; height: 76vh; height: 76dvh; min-height: 440px; overflow:hidden; background:var(--bg-soft); }
+  .pz-dest + .pz-dest{ margin-top: 10px; }
+  .pz-dest img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .pz-dest::after{ content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(28,22,14,.66) 0%, rgba(28,22,14,.22) 34%, rgba(28,22,14,0) 62%); pointer-events:none; }
+  .pz-txt{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding: 0 24px 36px; }
+  .pz-frase{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(1.9rem,3vw,2.6rem); line-height:1.08; letter-spacing:-.02em; color:var(--cream); }
+  .pz-frase em{ font-style:italic; font-weight:300; color:#e7d6b4; }
+
+  /* La tira: todos los chalecos, en dos filas escalonadas que se deslizan al costado.
+     Sin desvanecer el borde: la pieza cortada a seco a la derecha es lo que avisa que sigue. */
+  .pz-tira{ max-width: 1436px; margin:0 auto; padding: 64px 0 40px; }
+  .pz-tira-head{ display:flex; align-items:baseline; justify-content:space-between; padding: 0 24px; margin-bottom: 20px; }
+  .pz-tira-head .label{ margin:0; }
+  .pz-hint{ color:var(--muted); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
+  .pz-hint .ar{ display:inline-block; animation: pzNudge 1.6s ease-in-out infinite; }
+  @keyframes pzNudge{ 0%,100%{ transform:translateX(0) } 50%{ transform:translateX(5px) } }
+  .pz-row{ display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; padding: 0 24px 4px; cursor:grab; }
+  .pz-row.dragging{ cursor:grabbing; scroll-behavior:auto; }
+  .pz-row::-webkit-scrollbar{ display:none }
+  .pz-row + .pz-row{ margin-top: 12px; }
+  .pz-pieza{ flex:0 0 auto; width: 150px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; cursor:pointer; }
+  .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .pz-pieza:hover img{ transform: translateY(-4px); }
+  @media(min-width:881px){ .pz-tira{ padding-left:48px; padding-right:48px; } .pz-tira-head, .pz-row{ padding-left:0; padding-right:0; } .pz-pieza{ width:190px; } }
+
   /* CARE */
   .care{
     padding: 90px 24px;
@@ -1154,8 +1187,8 @@
       </div>
     </a>
     <nav class="nav-links">
+      <a href="#chalecos">Chalecos</a>
       <a href="#a-medida">A medida</a>
-      <a href="#chalecos">Disponibles</a>
       <a href="#anteriores">Anteriores</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
     </nav>
@@ -1176,6 +1209,22 @@
       <p class="hero-perk">Envío gratis a todo el país</p>
       </div>
     </div>
+</section>
+
+<!-- LAS PIEZAS — conserva el id "chalecos": el menu, el link de la bio de Instagram y las metricas lo usan -->
+<section class="pz" id="chalecos">
+  <div class="pz-head">
+    <span class="label">Chalecos</span>
+    <h2 class="display">De las <span class="it">agujas.</span></h2>
+  </div>
+  <article class="pz-dest">
+    <img src="/pieza-guarda.webp" alt="Chaleco guarda pampa tejido a mano, puesto sobre camisa blanca, en el medano" loading="lazy">
+    <div class="pz-txt"><h3 class="pz-frase">100% lana <em>de oveja.</em></h3></div>
+  </article>
+  <article class="pz-dest">
+    <img src="/pieza-ochos.webp" alt="Chaleco marron con ochos tejido a mano, puesto sobre camisa, entre naranjos" loading="lazy">
+    <div class="pz-txt"><h3 class="pz-frase">Tejido <em>a mano.</em></h3></div>
+  </article>
 </section>
 
 <!-- A MEDIDA — segundo a propósito: es el diferencial (ver bóveda, Sitio público §El A medida sube a segundo) -->
@@ -1205,43 +1254,16 @@
   </div>
 </section>
 
-
-<!-- GALERIA -->
-<section class="gallery" id="chalecos">
-  <div class="gallery-head">
-    <span class="label">Las piezas</span>
-    <h2 class="display">Chalecos <span class="it">disponibles.</span></h2>
-    <p>Listos para enviar. También se teje a tu medida.</p>
+<!-- TODOS LOS CHALECOS — conserva el id "anteriores" por el menu y las metricas -->
+<section class="pz-tira" id="anteriores">
+  <div class="pz-tira-head">
+    <span class="label">Los que ya tejimos</span>
+    <span class="pz-hint">Deslizá <span class="ar">→</span></span>
   </div>
-
-  <div class="grid" id="grid-disponibles">
-    <!-- Los chalecos disponibles se cargan acá automáticamente -->
-    <div class="loading">Cargando chalecos...</div>
-  </div>
+  <div class="pz-row" id="pz-row-1"></div>
+  <div class="pz-row" id="pz-row-2"></div>
 </section>
 
-<!-- TRABAJOS ANTERIORES -->
-<section class="gallery" id="anteriores">
-  <div class="gallery-head">
-    <span class="label">Trabajos anteriores</span>
-    <h2 class="display">Otros <span class="it">tejidos.</span></h2>
-    <p>Algunos chalecos que ya hicimos. Para que veas el estilo.</p>
-  </div>
-
-  <div class="ot-nav">
-    <span class="ot-hint">Deslizá <span class="ar">→</span></span>
-    <div class="ot-flechas">
-      <button class="ot-flecha" id="ot-prev" type="button" aria-label="Ver los chalecos anteriores" aria-controls="ot-row-1 ot-row-2">‹</button>
-      <button class="ot-flecha" id="ot-next" type="button" aria-label="Ver los chalecos siguientes" aria-controls="ot-row-1 ot-row-2">›</button>
-    </div>
-  </div>
-  <div class="ot-wrap grid-anteriores">
-    <div class="ot-row" id="ot-row-1"><!-- fila 1 --></div>
-    <div class="ot-row" id="ot-row-2"><!-- fila 2 --></div>
-  </div>
-</section>
-
-<!-- A MEDIDA -->
 <!-- OPINIONES -->
 <section class="gallery" id="opiniones" style="display:none;">
   <div class="op-head-c">
@@ -1593,92 +1615,35 @@
     if (n < 1) return '';
     return `<button class="ver-fotos" type="button" data-idx="${i}">Ver la pieza</button>`;
   }
-  function renderDisponibles(items){
-    const grid = document.getElementById('grid-disponibles');
-
-    if (items.length === 0) {
-      grid.className = 'grid';
-      grid.innerHTML = `<div class="empty">
-        <strong>Estamos tejiendo nuevas piezas.</strong>
-        Escribinos por WhatsApp y te avisamos cuando haya nuevos chalecos.
-      </div>`;
-      return;
-    }
-
-    grid.className = 'grid ' + gridSizeClass(items.length);
-    grid.innerHTML = items.map((it, i) => {
-      const nombre = escapeHtml(it.nombre || 'Chaleco tejido a mano');
-      const desc = escapeHtml(descCorta(it.desc));
-      const msg = `Hola! Me interesa el chaleco ${it.nombre || ''}.`.trim();
-      return `
-        <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
-          <div class="piece-info">
-            <h3><span class="it">${nombre}</span></h3>
-            ${desc ? `<div class="desc">${desc}</div>` : ''}
-            <div class="piece-foot">
-              ${precioTxt(it) ? `<div class="precio">${precioTxt(it)}</div><div class="envio">Envío incluido</div>` : ''}
-              <div class="piece-links">
-                ${verFotos(it, i)}
-                <a class="piece-encargar" href="${waLink(msg)}" target="_blank" rel="noopener">Encargar</a>
-              </div>
-            </div>
-          </div>
-        </article>`;
-    }).join('');
-
-    grid.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-      el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it); });
-    });
-
-    animatePieces();
-  }
-
-  function renderAnteriores(items){
+  // ===== LA TIRA: todos los chalecos (disponibles + anteriores), dos filas escalonadas =====
+  let itemsDisp = [], itemsAnt = [];
+  function renderTira(){
+    const items = [...itemsDisp, ...itemsAnt];
+    const r1 = document.getElementById('pz-row-1');
+    const r2 = document.getElementById('pz-row-2');
     const section = document.getElementById('anteriores');
-    const r1 = document.getElementById('ot-row-1');
-    const r2 = document.getElementById('ot-row-2');
-
-    if (items.length === 0) {
-      section.style.display = 'none';
-      return;
-    }
+    if (!items.length) { section.style.display = 'none'; return; }
     section.style.display = '';
-
-    const cardHtml = (it, i) => {
-      const nombre = escapeHtml(it.nombre || 'Chaleco');
-      return `
-        <article class="piece">
-          <div class="piece-img" data-idx="${i}"><img src="${fotoUrl(it.foto)}" alt="${nombre}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>
-          <div class="piece-info">
-            <h3><span class="it">${nombre}</span></h3>
-            <div class="piece-foot">${verFotos(it, i)}</div>
-          </div>
-        </article>`;
-    };
+    const card = (it, i) => `<div class="pz-pieza" data-idx="${i}"><img src="${fotoUrl(it.foto, 620)}" alt="${escapeHtml(it.nombre || 'Chaleco')}" loading="lazy" data-retries="0" onerror="retryImg(this)"></div>`;
     const mid = Math.ceil(items.length / 2);
-    r1.innerHTML = items.slice(0, mid).map((it, i) => cardHtml(it, i)).join('');
-    r2.innerHTML = items.slice(mid).map((it, i) => cardHtml(it, mid + i)).join('');
-
-    [r1, r2].forEach(row => {
-      row.querySelectorAll('.piece-img, .ver-fotos').forEach(el => {
-        el.addEventListener('click', () => { const it = items[parseInt(el.dataset.idx, 10)]; if (it && it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id); openLightbox(it, { anterior: true }); });
+    const s2 = r2.scrollLeft;   // si Barbara edita algo, la fila no vuelve a saltar
+    r1.innerHTML = items.slice(0, mid).map((it, i) => card(it, i)).join('');
+    r2.innerHTML = items.slice(mid).map((it, i) => card(it, mid + i)).join('');
+    r2.scrollLeft = s2 || 81;   // arranca corrida media pieza: escalonada, se ve que sigue
+    [r1, r2].forEach(row => row.querySelectorAll('.pz-pieza').forEach(el => {
+      el.addEventListener('click', () => {
+        const it = items[parseInt(el.dataset.idx, 10)];
+        if (!it) return;
+        if (it.id) bumpStat('chaleco_' + it.id, 'chaleco_' + it.id);
+        openLightbox(it, { anterior: it.estado === 'anterior' });
       });
-      row.querySelectorAll('.piece').forEach(p => { p.style.opacity = '1'; p.style.animation = 'none'; });
-    });
-    animatePieces();
-    if (window.otInicio) requestAnimationFrame(window.otInicio);
-    if (window.otUpdate) requestAnimationFrame(window.otUpdate);
+    }));
   }
 
-  // "Otros tejidos": 2 filas independientes — arrastre con el mouse en compu, swipe en celu
-  (function setupOtRows(){
-    const rows = ['ot-row-1', 'ot-row-2'].map(id => document.getElementById(id)).filter(Boolean);
-    const hint = document.querySelector('.ot-hint');
-    rows.forEach(el => {
+  // Arrastre con el mouse en compu (en el celu el swipe ya viene solo)
+  (function setupDrag(){
+    document.querySelectorAll('.pz-row').forEach(el => {
       let down = false, startX = 0, startL = 0, moved = false;
-      // En compu la fila es grilla (no scrollea): sin esta guarda, un click con
-      // el mouse apenas corrido contaba como arrastre y no abría el visor.
       el.addEventListener('mousedown', e => { if ((el.scrollWidth - el.clientWidth) <= 4) return; down = true; moved = false; startX = e.pageX; startL = el.scrollLeft; el.classList.add('dragging'); });
       const end = () => { down = false; el.classList.remove('dragging'); };
       window.addEventListener('mouseup', end);
@@ -1686,97 +1651,7 @@
       el.addEventListener('mousemove', e => { if (!down) return; const dx = e.pageX - startX; if (Math.abs(dx) > 4) moved = true; el.scrollLeft = startL - dx; });
       el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
     });
-    const wrap = document.querySelector('.ot-wrap');
-    const nav = document.querySelector('.ot-nav');
-    const prev = document.getElementById('ot-prev');
-    const next = document.getElementById('ot-next');
-
-    // Un paso es lo que ocupa una pieza con su espacio; la flecha mueve casi una
-    // pantalla —todo menos una pieza— para que quede una a la vista de referencia
-    // y no se pierda el hilo de dónde estaba.
-    const paso = row => {
-      const ps = row.querySelectorAll('.piece');
-      if (ps.length < 2) return row.clientWidth;
-      const unaPieza = ps[1].offsetLeft - ps[0].offsetLeft;
-      return unaPieza * Math.max(1, Math.floor(row.clientWidth / unaPieza) - 1);
-    };
-    // Las dos filas se mueven juntas: son una sola sección, aunque cada una
-    // scrollee por su cuenta cuando se arrastra con el dedo o con el mouse.
-    const mover = dir => rows.forEach(r => r.scrollBy({ left: dir * paso(r), behavior: 'smooth' }));
-    if (prev) prev.addEventListener('click', () => mover(-1));
-    if (next) next.addEventListener('click', () => mover(1));
-    const actualizarFlechas = () => {
-      if (!prev || !next) return;
-      // El umbral no es 0: la fila tiene 6px de padding y el scroll-snap deja el
-      // scrollLeft en 6 cuando está en la primera pieza. Con 0 la flecha de volver
-      // quedaba habilitada de entrada, apuntando a ningún lado.
-      prev.disabled = rows.every(r => r.scrollLeft <= 12);
-      next.disabled = rows.every(r => (r.scrollWidth - r.clientWidth - r.scrollLeft) <= 4);
-    };
-
-    // Mismo criterio que las flechas, pero para el desvanecido de cada punta.
-    const marcarBordes = el => {
-      el.classList.toggle('al-inicio', el.scrollLeft <= 12);
-      el.classList.toggle('al-final', (el.scrollWidth - el.clientWidth - el.scrollLeft) <= 4);
-    };
-    rows.forEach(el => { el.addEventListener('scroll', () => { marcarBordes(el); actualizarFlechas(); }, { passive: true }); });
-
-    // Las filas tienen que arrancar SIEMPRE por la primera pieza: es la que se
-    // eligió mostrar primero y la que más importa. El navegador se guarda el
-    // scroll horizontal de cada caja y lo restaura al recargar —y lo reintenta
-    // durante unos segundos, o sea despues de que Firestore pinta las piezas—,
-    // así que la sección aparecía empezada por el medio y las de la izquierda
-    // no se veían nunca. Mientras nadie la haya tocado, la volvemos al principio.
-    let tocada = false;
-    const marcarTocada = () => { tocada = true; };
-    rows.forEach(el => ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(ev => el.addEventListener(ev, marcarTocada, { passive: true })));
-    if (prev) prev.addEventListener('click', marcarTocada);
-    if (next) next.addEventListener('click', marcarTocada);
-    window.otInicio = () => {
-      if (tocada) return;
-      rows.forEach(r => {
-        if (r.scrollLeft <= 12) return;   // el snap deja 2px de padding: eso ya es el principio
-        const antes = r.style.scrollBehavior;
-        r.style.scrollBehavior = 'auto';   // si no, se ve el viaje de vuelta
-        r.scrollLeft = 0;
-        r.style.scrollBehavior = antes;
-        marcarBordes(r);
-      });
-      actualizarFlechas();
-    };
-    window.addEventListener('load', () => window.otInicio());
-    [300, 900, 2000].forEach(ms => setTimeout(() => window.otInicio(), ms));
-
-    window.otUpdate = () => {
-      const overflow = rows.some(r => (r.scrollWidth - r.clientWidth) > 4);
-      rows.forEach(marcarBordes);
-      actualizarFlechas();
-      if (nav) nav.classList.toggle('sin-desliz', !overflow);
-      if (hint) hint.style.visibility = overflow ? 'visible' : 'hidden';
-      // El velo del borde derecho también se va cuando no hay nada al costado:
-      // si queda, se lee como si las piezas estuvieran metidas en una caja.
-      if (wrap) wrap.classList.toggle('sin-desliz', !overflow);
-    };
-    window.addEventListener('resize', window.otUpdate);
-    window.otUpdate();
   })();
-
-  function animatePieces(){
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if(e.isIntersecting){
-          e.target.style.animation = 'fadeUp 1.2s cubic-bezier(.2,.8,.2,1) forwards';
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.piece').forEach(el => {
-      if (!el.style.animation) {
-        el.style.opacity = '0';
-        io.observe(el);
-      }
-    });
-  }
 
   // Scrollspy: marcar el link del nav según en qué sección está scrolleando el usuario.
   // El rootMargin define una "línea horizontal" en el centro-superior del viewport: cuando
@@ -1908,7 +1783,7 @@
     if (a.closest('.ps')) return 'amedida';
     if (a.closest('.final')) return 'cierre';
     if (a.closest('.lightbox')) return a.classList.contains('lb-medida') ? 'visor_amedida' : 'visor';
-    if (a.closest('.piece')) return 'pieza';
+    if (a.closest('.pz-pieza')) return 'pieza';
     return 'otro';
   };
 
@@ -1952,25 +1827,18 @@
     if (window.fbq) fbq('track', 'Contact');
   });
 
-  // Suscribirse a Firestore en tiempo real
+  // Suscribirse a Firestore en tiempo real: las dos listas alimentan la misma tira
   const qDisp = query(collection(db, 'chalecos'), where('estado', '==', 'disponible'));
   onSnapshot(qDisp, snap => {
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
-    renderDisponibles(items);
-  }, err => {
-    console.error('Error cargando disponibles:', err);
-    document.getElementById('grid-disponibles').innerHTML = `<div class="empty"><strong>Error al cargar.</strong>Recargá la página.</div>`;
-  });
+    itemsDisp = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    renderTira();
+  }, err => { console.error('Error cargando disponibles:', err); });
 
   const qAnt = query(collection(db, 'chalecos'), where('estado', '==', 'anterior'));
   onSnapshot(qAnt, snap => {
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
-    renderAnteriores(items);
-  }, err => {
-    console.error('Error cargando anteriores:', err);
-  });
+    itemsAnt = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    renderTira();
+  }, err => { console.error('Error cargando anteriores:', err); });
 
   // ===== OPINIONES (reseñas publicadas) =====
   const escR = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

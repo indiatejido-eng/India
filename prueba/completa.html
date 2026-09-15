@@ -862,12 +862,13 @@
     max-height: 66vh;
     max-height: 62dvh;
     object-fit: contain;
-    filter: drop-shadow(0 30px 40px rgba(60, 40, 20, 0.2));
+    /* Sin sombra: Safari en iPhone la pintaba como un rectangulo detras de la prenda ("una caja"),
+       y Norte estetico ya pedia producto flotando sin sombras. */
     transition: opacity 0.2s, transform 0.3s cubic-bezier(.2,.8,.2,1);
     cursor: zoom-in;
     touch-action: none;
   }
-  .lightbox-img.zoomed{ cursor: grab; filter: none; }
+  .lightbox-img.zoomed{ cursor: grab; }
   .lightbox-img.loading{ opacity: 0; }
   .lightbox-loader{
     position: absolute;
@@ -1051,7 +1052,7 @@
   .grid-anteriores .piece-info .desc{ font-size: 0.85rem; }
   /* ===== Opiniones ===== */
   /* offset para que el nav sticky no tape el título al saltar por ancla (#opiniones, etc.) */
-  #chalecos, #anteriores, #a-medida, #opiniones{ scroll-margin-top: 84px; }
+  #chalecos, #anteriores, #a-medida, #opiniones, #hablemos{ scroll-margin-top: 84px; }
   /* Opiniones — grid de tarjetas (fotos cuadradas, esquinas rectas) */
   .op-head-c{ text-align:center; margin-bottom:54px; }
   .op-head-c .display{ margin:0 0 18px; }
@@ -1217,6 +1218,7 @@
       <a href="#a-medida">A medida</a>
       <a href="#anteriores">Chalecos</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
+      <a href="#hablemos">Escribime</a>
     </nav>
   </div>
 </nav>
@@ -1309,7 +1311,7 @@
 </section>
 
 <!-- FINAL -->
-<section class="final">
+<section class="final" id="hablemos">
   <div class="final-inner">
     <span class="label">Hablemos</span>
     <h2 class="display">Tu próximo invierno <span class="it">empieza acá.</span></h2>

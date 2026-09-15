@@ -794,7 +794,9 @@
     position: fixed; inset: 0; z-index: 2000;
     height: 100vh;
     height: 100dvh;
-    background: rgba(245, 240, 232, 0.97);
+    /* Opaco: al 97% se transparentaba la tira de abajo y sus paneles arena formaban una "caja" detras de la prenda */
+    background: var(--bg);
+    background-image: radial-gradient(130% 95% at 50% -12%, #f9f3e8 0%, var(--bg) 46%, #e7d9c1 100%);
     display: none;
     align-items: flex-start; justify-content: center;
     padding: 36px 24px;

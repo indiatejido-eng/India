@@ -921,7 +921,9 @@
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     margin: -10px 0 -4px; text-align: center;
   }
+  .lightbox-precio .lb-nombre{ font-family:'Fraunces',serif; font-style:italic; font-weight:400; font-size:1.7rem; line-height:1.1; color:var(--ink); margin-bottom:6px; }
   .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
+  .lightbox-precio .d i{ font-style:normal; color:var(--line); margin:0 .45em; }
   /* Un respiro entre la ficha (medidas + material) y el precio */
   .lightbox-precio .n{ font-family: 'DM Sans', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--ink); margin-top: 8px; }
   /* Estado de una pieza ya entregada: es un hecho, va en el tono de la ficha (no en rojo
@@ -1172,6 +1174,7 @@
     .lightbox-precio{ align-items: flex-start; text-align: left; margin: 0; gap: 8px; }
     .lightbox-precio .d{ font-size: 0.98rem; line-height: 1.5; }
     .lightbox-precio .n{ font-size: 1.5rem; }
+    .lightbox-precio .lb-nombre{ font-size: 2.1rem; }
     /* Foto sola (las de las reseñas): no hay ficha, la foto se lleva todo el ancho */
     .lightbox.lb-solo .lb-side{ display: none; }
   }
@@ -1484,29 +1487,20 @@
     // Una pieza de "Otros tejidos" ya se entregó: no se puede encargar ESA. Adentro del visor
     // se pierde el contexto de la sección (misma ficha, mismo botón verde que un disponible),
     // así que acá se dice y el botón cambia: se pide UNO ASÍ, no ese.
-    const esAnterior = !!opts.anterior;
+    // Una sola ficha para todos (2026-09-14): el nombre, una linea con tres datos, y el boton.
+    // Sin talle, sin medidas, sin precio y sin "este ya se entrego": la vidriera dejo de ser
+    // e-commerce y el visor la acompana. Todo se pide a medida, tenga o no una pieza lista.
     if (opts.hideCta) { lbCta.style.display = 'none'; }
     else {
       lbCta.style.display = '';
-      lbCta.href = waLink(esAnterior
-        ? `Hola! Vi el chaleco ${item.nombre || ''} en los trabajos anteriores. ¿Me pueden tejer uno así?`.replace('  ', ' ')
-        : `Hola! Me interesa el chaleco ${item.nombre || ''}.`.trim());
-      lbCtaTxt.textContent = esAnterior ? 'Pedir uno así por WhatsApp' : 'Encargar por WhatsApp';
+      lbCta.href = waLink(`Hola! Vi el chaleco ${item.nombre || ''} en la página y quiero uno a mi medida.`.replace('  ', ' '));
+      lbCtaTxt.textContent = 'Pedir uno a mi medida';
     }
     // Foto sola (reseñas): sin ficha al costado, así en compu la foto usa todo el ancho.
     lightbox.classList.toggle('lb-solo', !!opts.hideCta);
-    // Acá va la ficha completa: medidas, material, precio y el recordatorio del a medida. Es
-    // el único momento en que la persona está mirando UNA pieza, con atención: es donde lee.
-    const pTxt = opts.hideCta ? '' : precioTxt(item);
-    const dTxt = opts.hideCta ? '' : escapeHtml(descLarga(item.desc));
-    const amMsg = `Hola! Me gusta el chaleco ${item.nombre || ''}. ¿Lo pueden hacer a mi medida?`.replace('  ', ' ');
     lbPrecio.innerHTML = !opts.hideCta
-      ? `${dTxt ? `<span class="d">${dTxt}</span>` : ''}`
-        + `<span class="d">${MATERIAL}</span>`
-        + (esAnterior
-            ? `<span class="entregado">Este ya se entregó. Se teje de nuevo a tu medida.</span>`
-            : `${pTxt ? `<span class="n">${pTxt}</span><span class="envio">Envío incluido</span>` : ''}`
-              + `<a class="lb-medida" href="${waLink(amMsg)}" target="_blank" rel="noopener">Pedilo a tu medida</a>`)
+      ? `<span class="lb-nombre">${escapeHtml(item.nombre || 'Chaleco')}</span>`
+        + `<span class="d">100% lana de oveja <i>|</i> Tejido a mano <i>|</i> Envío gratis</span>`
       : '';
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.

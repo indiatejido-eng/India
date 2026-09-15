@@ -127,10 +127,13 @@
     position: sticky; top: 0; z-index: 100;
     background: transparent;
     border-bottom: 1px solid transparent;
-    transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+    transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, transform 0.4s cubic-bezier(.2,.8,.2,1);
   }
+  /* El menu se esconde mientras bajas (la foto queda sola) y vuelve apenas subis un poco.
+     Y cuando esta sobre contenido, el fondo es mas liviano que antes: velo, no franja. */
+  nav.oculto{ transform: translateY(-100%); box-shadow:none; }
   nav.scrolled{
-    background: rgba(243, 236, 224, 0.96);
+    background: rgba(243, 236, 224, 0.82);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom-color: rgba(139, 101, 53, 0.12);
@@ -1688,7 +1691,16 @@
   const setNavH = () => { if (navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px'); };
   setNavH();
   window.addEventListener('resize', setNavH);
-  const onNavScroll = () => { if (navEl) navEl.classList.toggle('scrolled', window.scrollY > window.innerHeight - 90); };
+  let navUltimoY = 0;
+  const onNavScroll = () => {
+    if (!navEl) return;
+    const y = window.scrollY;
+    navEl.classList.toggle('scrolled', y > window.innerHeight - 90);
+    // Bajando y ya pasada la portada: se esconde. Subiendo (mas de 6px, para ignorar el temblor del dedo): vuelve.
+    if (y > navUltimoY + 6 && y > window.innerHeight - 90) navEl.classList.add('oculto');
+    else if (y < navUltimoY - 6 || y <= window.innerHeight - 90) navEl.classList.remove('oculto');
+    navUltimoY = y;
+  };
   window.addEventListener('scroll', onNavScroll, { passive: true });
   onNavScroll();
 

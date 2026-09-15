@@ -177,6 +177,17 @@
     line-height: 1;
     margin-top: 10px;
   }
+  .embudo{ margin-top: 16px; display: flex; flex-direction: column; gap: 9px; }
+  .embudo-fila{ display: grid; grid-template-columns: minmax(150px, 220px) 1fr 52px 46px; align-items: center; gap: 12px; font-size: 0.86rem; }
+  .embudo-fila .nom{ color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .embudo-fila .nom small{ display:block; color: var(--muted); font-size: 0.72rem; }
+  .embudo-fila .barra{ height: 14px; background: var(--bg-soft); border-radius: 100px; overflow: hidden; }
+  .embudo-fila .barra i{ display:block; height:100%; background: var(--accent); border-radius: 100px; transition: width .5s; }
+  .embudo-fila.base .barra i{ background: var(--ink); }
+  .embudo-fila .n{ text-align: right; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .embudo-fila .p{ text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .embudo-vacio{ color: var(--muted); font-size: 0.86rem; }
+  @media(max-width: 640px){ .embudo-fila{ grid-template-columns: 110px 1fr 42px 40px; gap: 8px; font-size: 0.8rem; } }
   .stat-hint{
     font-size: 0.78rem;
     color: #8a7558;
@@ -735,6 +746,7 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
       <span class="periodo-label">Mostrar:</span>
       <button type="button" class="periodo-b" data-periodo="hoy">Hoy</button>
       <button type="button" class="periodo-b" data-periodo="mes">Este mes</button>
+      <button type="button" class="periodo-b" data-periodo="redis">Desde el 14/9</button>
       <button type="button" class="periodo-b active" data-periodo="total">Total</button>
     </div>
     <div class="periodo-filtro">
@@ -759,6 +771,14 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
         <div class="stat-label">Visitantes únicos</div>
         <div class="stat-num" id="stat-unicos">—</div>
         <div class="stat-hint"><b id="stat-nuevos">—</b> nuevos · <b id="stat-recurrentes">—</b> recurrentes</div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Hasta donde bajan">
+      <div class="stat-card" style="grid-column: 1 / -1;">
+        <div class="stat-label">Hasta dónde bajan</div>
+        <div class="stat-hint" style="margin-top:6px">De cada 100 que entran, cuántos llegan a cada parte de la página, en el orden en que están. Aproximado: la visita se cuenta por hora y la sección una vez por teléfono. Se mide desde el 28/8; el orden nuevo es del 14/9 (botón "Desde el 14/9").</div>
+        <div class="embudo" id="embudo-scroll"><div class="embudo-vacio">Sin datos todavía.</div></div>
       </div>
     </section>
 
@@ -1205,7 +1225,8 @@ const claveMes = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const fmtClave = k => { const p = k.split('-'); return p.length === 3 ? p[2]+'/'+p[1] : MESES[parseInt(p[1],10)-1]+' '+p[0].slice(2); };
 // Contadores totales en vivo (public read) → se guardan; las tarjetas se pintan según el período elegido.
-[['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones'], ['entrada_instagram','entrada_instagram'], ['entrada_facebook','entrada_facebook']].forEach(([docId, key]) => {
+[['scroll_chalecos','scroll_chalecos'], ['scroll_amedida','scroll_amedida'], ['scroll_anteriores','scroll_anteriores'], ['scroll_opiniones','scroll_opiniones'], ['scroll_cierre','scroll_cierre'],
+ ['visitas','visitas'], ['clicks_whatsapp','clicks_whatsapp'], ['entrada_chalecos','entrada_chalecos'], ['entrada_opiniones','entrada_opiniones'], ['entrada_instagram','entrada_instagram'], ['entrada_facebook','entrada_facebook']].forEach(([docId, key]) => {
   onSnapshot(doc(db, 'stats', docId), snap => { STATS_TOTAL[key] = snap.data()?.count ?? 0; refrescarTarjetas(); }, () => { refrescarTarjetas(); });
 });
 
@@ -1365,6 +1386,7 @@ async function cargarAnalytics() {
 function fechaEnPeriodo(k){
   if (PERIODO === 'hoy') return k === claveDia(new Date());
   if (PERIODO === 'mes') return k.startsWith(claveMes(new Date()));
+  if (PERIODO === 'redis') return k >= '2026-09-14';   // el orden nuevo de la home (dos fotos > proceso > tira)
   return true;
 }
 function sumaMetrica(dia){
@@ -1386,6 +1408,7 @@ function refrescarTarjetas(){
   // Clicks y entradas: total = contador; período = suma de docs por día (el detalle por fecha arranca hoy)
   if ($('stat-wa')) $('stat-wa').textContent = fmtNum(esTotal ? (STATS_TOTAL['clicks_whatsapp'] ?? 0) : sumaMetrica('clicks'));
   renderFuentes(esTotal);
+  pintarEmbudo(esTotal);
   if ($('stat-unicos')) $('stat-unicos').textContent = fmtNum(vis.length);
   if ($('stat-nuevos')) $('stat-nuevos').textContent = fmtNum(nuevos);
   if ($('stat-recurrentes')) $('stat-recurrentes').textContent = fmtNum(rec);
@@ -1394,6 +1417,32 @@ function refrescarTarjetas(){
     ? 'Total acumulado desde que arrancó el sitio. Los contadores solo suman: nada se borra ni se reinicia.'
     : 'Ojo: el desglose por fecha se guarda desde el 31/7 (Instagram y Facebook, desde el 4/8), así que en Hoy y Este mes los números arrancan de ahí. El Total tiene todo el historial.';
   refrescarClicksChalecos();
+}
+
+// "Hasta donde bajan": una fila por seccion de la home, en el orden en que estan, sobre las visitas del periodo.
+// Los nombres van entre parentesis porque las secciones todavia no tienen nombre definitivo (2026-09-14).
+const SECCIONES_EMBUDO = [
+  ['scroll_chalecos',   'Chalecos',           'las dos fotos'],
+  ['scroll_amedida',    'A medida',           'el proceso'],
+  ['scroll_anteriores', 'Los que ya tejimos', 'la tira'],
+  ['scroll_opiniones',  'Opiniones',          ''],
+  ['scroll_cierre',     'Cierre',             'escribime por WhatsApp'],
+];
+function pintarEmbudo(esTotal){
+  const el = $('embudo-scroll'); if (!el) return;
+  const val = k => esTotal ? (STATS_TOTAL[k] ?? 0) : sumaMetrica(k);
+  const visitas = esTotal ? (STATS_TOTAL['visitas'] ?? 0) : sumaMetrica('visitas');
+  const filas = SECCIONES_EMBUDO.map(([k, nom, sub]) => [nom, sub, val(k)]);
+  if (!visitas && !filas.some(f => f[2])) { el.innerHTML = '<div class="embudo-vacio">Sin datos todavía en este período.</div>'; return; }
+  const max = Math.max(visitas, ...filas.map(f => f[2]), 1);
+  const fila = (nom, sub, n, base) => `<div class="embudo-fila${base ? ' base' : ''}">
+      <div class="nom">${nom}${sub ? `<small>${sub}</small>` : ''}</div>
+      <div class="barra"><i style="width:${Math.round(n / max * 100)}%"></i></div>
+      <div class="n">${fmtNum(n)}</div>
+      <div class="p">${esTotal ? '' : (base ? '100%' : (visitas ? Math.round(n / visitas * 100) + '%' : '—'))}</div>
+    </div>`;
+  el.innerHTML = fila('Entran a la página', 'visitas', visitas, true) + filas.map(f => fila(f[0], f[1], f[2], false)).join('')
+    + (esTotal ? '<div class="embudo-vacio" style="margin-top:8px">En Total no hay porcentaje: las visitas se cuentan desde julio y el scroll recién desde el 28/8. Para comparar, usá "Este mes" o "Desde el 14/9".</div>' : '');
 }
 
 // Lista "Clicks por chaleco": cruza los contadores stats/chaleco_{id} con el catálogo (nombres) y respeta el período.

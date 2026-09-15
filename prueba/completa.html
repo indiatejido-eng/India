@@ -921,7 +921,11 @@
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     margin: -10px 0 -4px; text-align: center;
   }
-  .lightbox-precio .lb-nombre{ font-family:'Fraunces',serif; font-style:italic; font-weight:400; font-size:1.7rem; line-height:1.1; color:var(--ink); margin-bottom:6px; }
+  /* El nombre chico, como en la grilla de antes: nombre grande se lee como listado ([[Norte estetico]]) */
+  .lightbox-precio .lb-nombre{ font-family:'Fraunces',serif; font-style:italic; font-weight:400; font-size:1.3rem; line-height:1.15; color:var(--ink); margin-bottom:4px; }
+  /* El envio, aparte y con el tick de la portada: destaca apenas, sin vender */
+  .lightbox-precio .lb-envio{ font-family:'Fraunces',serif; font-style:italic; font-size:.92rem; color:var(--muted); margin-top:10px; letter-spacing:.01em; }
+  .lightbox-precio .lb-envio::before{ content:"¹3 "; color:var(--wa); font-style:normal; font-weight:600; }
   .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
   .lightbox-precio .d i{ font-style:normal; color:var(--line); margin:0 .45em; }
   /* Un respiro entre la ficha (medidas + material) y el precio */
@@ -1174,7 +1178,7 @@
     .lightbox-precio{ align-items: flex-start; text-align: left; margin: 0; gap: 8px; }
     .lightbox-precio .d{ font-size: 0.98rem; line-height: 1.5; }
     .lightbox-precio .n{ font-size: 1.5rem; }
-    .lightbox-precio .lb-nombre{ font-size: 2.1rem; }
+    .lightbox-precio .lb-nombre{ font-size: 1.5rem; }
     /* Foto sola (las de las reseñas): no hay ficha, la foto se lleva todo el ancho */
     .lightbox.lb-solo .lb-side{ display: none; }
   }
@@ -1205,9 +1209,8 @@
       </div>
     </a>
     <nav class="nav-links">
-      <a href="#chalecos">Chalecos</a>
       <a href="#a-medida">A medida</a>
-      <a href="#anteriores">Anteriores</a>
+      <a href="#anteriores">Chalecos</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
     </nav>
   </div>
@@ -1238,7 +1241,6 @@
 <!-- LAS PIEZAS — conserva el id "chalecos": el menu, el link de la bio de Instagram y las metricas lo usan -->
 <section class="pz" id="chalecos">
   <div class="pz-head">
-    <span class="label">Chalecos</span>
     <h2 class="display">De las <span class="it">agujas.</span></h2>
   </div>
   <article class="pz-dest">
@@ -1281,7 +1283,7 @@
 <!-- TODOS LOS CHALECOS — conserva el id "anteriores" por el menu y las metricas -->
 <section class="pz-tira" id="anteriores">
   <div class="pz-tira-head">
-    <span class="label">Los que ya tejimos</span>
+    <span class="label">Chalecos</span>
     <span class="pz-hint">Deslizá <span class="ar">→</span></span>
   </div>
   <div class="pz-row" id="pz-row-1"></div>
@@ -1325,7 +1327,7 @@
     </div>
     <div class="foot-nav">
       <a href="#a-medida">A medida</a>
-      <a href="#chalecos">Chalecos</a>
+      <a href="#anteriores">Chalecos</a>
     </div>
   </div>
   <div class="foot-bottom">
@@ -1500,7 +1502,8 @@
     lightbox.classList.toggle('lb-solo', !!opts.hideCta);
     lbPrecio.innerHTML = !opts.hideCta
       ? `<span class="lb-nombre">${escapeHtml(item.nombre || 'Chaleco')}</span>`
-        + `<span class="d">100% lana de oveja <i>|</i> Tejido a mano <i>|</i> Envío gratis</span>`
+        + `<span class="d">100% lana de oveja <i>|</i> Tejido e hilado a mano</span>`
+        + `<span class="lb-envio">Envío gratis a todo el país</span>`
       : '';
     // Precarga: arranca la descarga de TODAS las fotos transformadas en paralelo.
     // Cuando el usuario cambie de foto, ya van a estar en cache.

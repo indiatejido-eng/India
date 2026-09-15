@@ -873,15 +873,16 @@
   .lightbox-arrow{
     position: absolute;
     top: 50%; transform: translateY(-50%);
-    background: rgba(58, 46, 31, 0.1);
+    background: transparent;
     border: 0; color: #3a2e1f;
     width: 48px; height: 48px;
     border-radius: 50%;
+    opacity: .55; transition: opacity .25s, background .25s;
     font-size: 1.8rem; line-height: 1;
     cursor: pointer;
     transition: background 0.2s;
   }
-  .lightbox-arrow:hover{ background: rgba(58, 46, 31, 0.22); }
+  .lightbox-arrow:hover{ opacity: 1; background: rgba(58, 46, 31, 0.08); }
   .lightbox-prev{ left: -64px; }
   .lightbox-next{ right: -64px; }
   .lightbox-thumbs{
@@ -914,7 +915,7 @@
   .lightbox-precio .lb-nombre{ font-family:'Fraunces',serif; font-style:italic; font-weight:400; font-size:1.3rem; line-height:1.15; color:var(--ink); margin-bottom:4px; }
   /* El envio, aparte y con el tick de la portada: destaca apenas, sin vender */
   .lightbox-precio .lb-envio{ font-family:'Fraunces',serif; font-style:italic; font-size:.92rem; color:var(--muted); margin-top:10px; letter-spacing:.01em; }
-  .lightbox-precio .lb-envio::before{ content:"¹3 "; color:var(--wa); font-style:normal; font-weight:600; }
+  .lightbox-precio .lb-envio::before{ content:"✓ "; color:var(--wa); font-style:normal; font-weight:600; }
   .lightbox-precio .d{ font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--muted); }
   .lightbox-precio .d i{ font-style:normal; color:var(--line); margin:0 .45em; }
   /* Un respiro entre la ficha (medidas + material) y el precio */
@@ -963,7 +964,9 @@
     .lightbox-close{ top: 10px; right: 10px; width: 36px; height: 36px; font-size: 1.3rem; }
     .lightbox-prev{ left: 4px; }
     .lightbox-next{ right: 4px; }
-    .lightbox-arrow{ width: 36px; height: 36px; font-size: 1.3rem; background: rgba(58, 46, 31, 0.15); }
+    /* En el celu no hay flechas (Maren, Colhay's tampoco): se pasa de foto deslizando y con las miniaturas.
+       El swipe ya estaba; solo se esconden los circulos, que encima tapaban la prenda. */
+    .lightbox-arrow{ display: none; }
     /* La foto cede alto para que la ficha y el botón entren en una pantalla de celu */
     .lightbox-img{ max-height: 50vh; max-height: 46dvh; }
     /* Thumbs scrolleables horizontalmente cuando son más de los que entran */

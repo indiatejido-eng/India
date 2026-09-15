@@ -602,7 +602,23 @@
   .pz-pieza{ flex:0 0 auto; width: 150px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; cursor:pointer; }
   .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
   .pz-pieza:hover img{ transform: translateY(-4px); }
-  @media(min-width:881px){ .pz-tira{ padding-left:48px; padding-right:48px; } .pz-tira-head, .pz-row{ padding-left:0; padding-right:0; } .pz-pieza{ width:190px; } }
+  .pz-flechas{ display:none; }
+  @media(min-width:881px){
+    /* Compu: las dos fotos son verticales; a pantalla ancha y a sangre se veia un pedazo gigante.
+       Lado a lado, alineadas con la grilla, se ven enteras. */
+    .pz{ display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width: calc(var(--maxw, 1340px) + 96px); margin:0 auto; padding: 0 48px; }
+    .pz-head{ grid-column: 1 / -1; padding: 90px 24px 34px; }
+    .pz-dest{ height: 84vh; min-height: 560px; }
+    .pz-dest + .pz-dest{ margin-top: 0; }
+    .pz-txt{ padding: 0 34px 38px; }
+    .pz-tira{ padding-left:48px; padding-right:48px; }
+    .pz-tira-head, .pz-row{ padding-left:0; padding-right:0; }
+    .pz-pieza{ width:190px; }
+    /* Con mouse, arrastrar no se le ocurre a nadie: flechas al lado del aviso */
+    .pz-flechas{ display:inline-flex; gap:8px; margin-left:14px; vertical-align:middle; }
+    .pz-flecha{ width:34px; height:34px; border-radius:100px; border:1px solid var(--line); background:transparent; color:var(--accent-deep); font-family:'Fraunces',serif; font-size:1.25rem; line-height:0; padding:0 0 3px; cursor:pointer; transition: border-color .2s, color .2s; }
+    .pz-flecha:hover{ border-color:var(--accent); color:var(--accent); }
+  }
 
   /* CARE */
   .care{
@@ -1274,7 +1290,7 @@
 <section class="pz-tira" id="anteriores">
   <div class="pz-tira-head">
     <span class="label">Chalecos</span>
-    <span class="pz-hint">Deslizá <span class="ar">→</span></span>
+    <span class="pz-hint">Deslizá <span class="ar">→</span><span class="pz-flechas"><button class="pz-flecha" type="button" id="pz-prev" aria-label="Anteriores">‹</button><button class="pz-flecha" type="button" id="pz-next" aria-label="Siguientes">›</button></span></span>
   </div>
   <div class="pz-row" id="pz-row-1"></div>
   <div class="pz-row" id="pz-row-2"></div>
@@ -1657,6 +1673,16 @@
       });
     }));
   }
+
+  // Flechas de la tira (compu): mueven las dos filas casi una pantalla, dejando una pieza de referencia
+  (function setupFlechas(){
+    const rows = () => ['pz-row-1', 'pz-row-2'].map(id => document.getElementById(id)).filter(Boolean);
+    const paso = row => Math.max(row.clientWidth - 202, 202);
+    const mover = dir => rows().forEach(r => r.scrollBy({ left: dir * paso(r), behavior: 'smooth' }));
+    const prev = document.getElementById('pz-prev'), next = document.getElementById('pz-next');
+    if (prev) prev.addEventListener('click', () => mover(-1));
+    if (next) next.addEventListener('click', () => mover(1));
+  })();
 
   // Arrastre con el mouse en compu (en el celu el swipe ya viene solo)
   (function setupDrag(){

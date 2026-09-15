@@ -1671,25 +1671,25 @@
     });
   })();
 
-  // Scrollspy: marcar el link del nav según en qué sección está scrolleando el usuario.
-  // El rootMargin define una "línea horizontal" en el centro-superior del viewport: cuando
-  // una sección la cruza, ese link se activa.
+  // Scrollspy: marcar el link del nav segun que seccion tiene el usuario adelante. Se calcula en
+  // cada scroll (la ultima seccion que ya paso el tercio superior de la pantalla), no por cruce:
+  // con cruce, al subir rapido quedaba marcado el link de donde venias (p. ej. "Opiniones").
   const navLinks = document.querySelectorAll('.nav-links a');
   const linkById = new Map();
   navLinks.forEach(a => linkById.set(a.getAttribute('href').slice(1), a));
-  const spy = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        navLinks.forEach(a => a.classList.remove('active'));
-        const link = linkById.get(e.target.id);
-        if (link) link.classList.add('active');
-      }
-    });
-  }, { rootMargin: '-30% 0px -65% 0px' });
-  ['chalecos', 'anteriores', 'a-medida', 'opiniones'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) spy.observe(el);
-  });
+  const spySecciones = ['chalecos', 'a-medida', 'anteriores', 'opiniones', 'hablemos']
+    .map(id => document.getElementById(id)).filter(Boolean);
+  const spyUpdate = () => {
+    const linea = window.scrollY + window.innerHeight * 0.35;
+    let actual = null;
+    spySecciones.forEach(el => { if (el.offsetParent !== null && el.offsetTop <= linea) actual = el; });
+    navLinks.forEach(a => a.classList.remove('active'));
+    // En la portada (ninguna seccion paso la linea) no se marca nada
+    if (actual) { const link = linkById.get(actual.id); if (link) link.classList.add('active'); }
+  };
+  window.addEventListener('scroll', spyUpdate, { passive: true });
+  window.addEventListener('resize', spyUpdate);
+  spyUpdate();
 
   // Barra: transparente sobre el hero, sólida al bajar; la foto sube por detrás (--nav-h = alto real de la barra)
   const navEl = document.querySelector('nav');

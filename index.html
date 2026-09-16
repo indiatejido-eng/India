@@ -1223,7 +1223,6 @@
       <a href="#a-medida">A medida</a>
       <a href="#anteriores">Chalecos</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
-      <a href="#hablemos">Escribime</a>
     </nav>
   </div>
 </nav>
@@ -1247,7 +1246,7 @@
 <!-- LAS PIEZAS — conserva el id "chalecos": el menu, el link de la bio de Instagram y las metricas lo usan -->
 <section class="pz" id="chalecos">
   <div class="pz-head">
-    <h2 class="display">De las <span class="it">agujas.</span></h2>
+    <h2 class="display">Así <span class="it">quedan.</span></h2>
   </div>
   <article class="pz-dest">
     <img src="/pieza-guarda.webp" alt="Chaleco guarda pampa tejido a mano, puesto sobre camisa blanca, en el medano" loading="lazy">
@@ -1703,7 +1702,7 @@
   const navLinks = document.querySelectorAll('.nav-links a');
   const linkById = new Map();
   navLinks.forEach(a => linkById.set(a.getAttribute('href').slice(1), a));
-  const spySecciones = ['chalecos', 'a-medida', 'anteriores', 'opiniones', 'hablemos']
+  const spySecciones = ['chalecos', 'a-medida', 'anteriores', 'opiniones']
     .map(id => document.getElementById(id)).filter(Boolean);
   const spyUpdate = () => {
     const linea = window.scrollY + window.innerHeight * 0.35;

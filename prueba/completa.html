@@ -623,13 +623,40 @@
 
 
   /* ===== PRUEBA ===== */
-  /* El wordmark como en la etiqueta de cuero: Fraunces italica 600, sin mayusculas ni tracking */
-  body.marca-min .brand-text{ text-transform:none; font-style:italic; font-weight:600; letter-spacing:0; font-size:1.7rem; font-variation-settings:'opsz' 144, 'WONK' 0; }
-  @media(max-width:900px){ body.marca-min .brand-text{ font-size:1.3rem; letter-spacing:0; } }
-  .tag{ position:fixed; bottom:0; left:0; right:0; z-index:999; background:#221a13; color:#faf5ea; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; text-align:center; padding:7px 8px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
-  .tag button{ font:inherit; letter-spacing:.1em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:3px 10px; cursor:pointer; }
+  .tag{ position:fixed; bottom:0; left:0; right:0; z-index:999; background:#221a13; color:#faf5ea; font-size:.58rem; letter-spacing:.08em; text-transform:uppercase; text-align:center; padding:6px 8px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
+  .tag button{ font:inherit; letter-spacing:.08em; text-transform:uppercase; background:transparent; border:1px solid rgba(250,245,234,.4); color:inherit; border-radius:100px; padding:3px 9px; cursor:pointer; }
   .tag button[aria-pressed="true"]{ background:#faf5ea; color:#221a13; border-color:#faf5ea; }
-  .wa-float{ bottom: 64px !important; }
+  .tag i{ font-style:normal; opacity:.55; margin-left:6px; }
+  .wa-float{ bottom: 70px !important; }
+
+  /* Portada de compu: se cambia por boton (solo en pantallas anchas) */
+  @media(min-width: 901px){
+    body.hero-5 .hero{ background-image: url('/prueba/img/hero-5.jpg') !important; background-position: center 55%; }
+    body.hero-4 .hero{ background-image: url('/prueba/img/hero-4.jpg') !important; background-position: center 50%; }
+  }
+
+  /* Tira B: una sola fila, piezas grandes */
+  body.tira-b #pz-row-2{ display:none; }
+  body.tira-b .pz-pieza{ width: 62vw; max-width: 300px; }
+  @media(min-width:881px){ body.tira-b .pz-pieza{ width: 300px; } }
+
+  /* Tira C: grilla curada (la fila 1 del panel) y el resto detras de "Ver todos" */
+  body.tira-c .pz-row{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px; overflow: visible; padding: 0 24px; cursor: default; }
+  body.tira-c .pz-pieza{ width:auto; }
+  body.tira-c #pz-row-2{ display:none; margin-top:12px; }
+  body.tira-c.tira-c-todo #pz-row-2{ display:grid; }
+  body.tira-c .pz-hint{ display:none; }
+  body.tira-c .pz-vertodos{ display:block; }
+  .pz-vertodos{ display:none; margin: 26px auto 0; font-family:'Fraunces',serif; font-style:italic; font-size:1.05rem; color:var(--accent); background:transparent; border:0; border-bottom:1px solid var(--line); padding: 0 0 3px; cursor:pointer; }
+  body.tira-c.tira-c-todo .pz-vertodos{ display:none; }
+  @media(min-width:881px){ body.tira-c .pz-row{ grid-template-columns: repeat(4, 1fr); gap:16px; padding:0; } }
+
+  /* A medida a sangre en compu: las tres fotos pegadas, de borde a borde, distinto de las dos cajas de arriba */
+  @media(min-width:881px){
+    body.am-sangre .ps-grid{ max-width:none; padding:0; gap:0; }
+    body.am-sangre .ps-step{ aspect-ratio:auto; height: 86vh; }
+    body.am-sangre .ps{ padding-top: 70px; }
+  }
 
   /* CARE */
   .care{
@@ -1234,16 +1261,15 @@
       <a href="#a-medida">A medida</a>
       <a href="#anteriores">Chalecos</a>
       <a href="#opiniones" id="op-navlink" style="display:none;">Opiniones</a>
-      <a href="#hablemos">Escribime</a>
     </nav>
   </div>
 </nav>
 
 <!-- HERO -->
 <div class="tag">
-  <span>Prueba &middot; el nombre de arriba:</span>
-  <button type="button" data-marca="may" aria-pressed="true">INDIA</button>
-  <button type="button" data-marca="min" aria-pressed="false">India</button>
+  <i>Portada compu:</i><button type="button" data-hero="" aria-pressed="true">Actual</button><button type="button" data-hero="hero-5" aria-pressed="false">5 chalecos</button><button type="button" data-hero="hero-4" aria-pressed="false">4 chalecos</button>
+  <i>Chalecos:</i><button type="button" data-tira="" aria-pressed="true">2 filas</button><button type="button" data-tira="tira-b" aria-pressed="false">1 fila grande</button><button type="button" data-tira="tira-c" aria-pressed="false">Grilla + ver todos</button>
+  <i>A medida compu:</i><button type="button" data-am="" aria-pressed="true">Cajas</button><button type="button" data-am="am-sangre" aria-pressed="false">A sangre</button>
 </div>
 
 <section class="hero">
@@ -1264,7 +1290,7 @@
 <!-- LAS PIEZAS — conserva el id "chalecos": el menu, el link de la bio de Instagram y las metricas lo usan -->
 <section class="pz" id="chalecos">
   <div class="pz-head">
-    <h2 class="display">De las <span class="it">agujas.</span></h2>
+    <h2 class="display"><span class="it">Puestos.</span></h2>
   </div>
   <article class="pz-dest">
     <img src="/pieza-guarda.webp" alt="Chaleco guarda pampa tejido a mano, puesto sobre camisa blanca, en el medano" loading="lazy">
@@ -1311,6 +1337,7 @@
   </div>
   <div class="pz-row" id="pz-row-1"></div>
   <div class="pz-row" id="pz-row-2"></div>
+  <button type="button" class="pz-vertodos" id="pz-vertodos">Ver todos los chalecos</button>
 </section>
 
 <!-- OPINIONES -->
@@ -1720,7 +1747,7 @@
   const navLinks = document.querySelectorAll('.nav-links a');
   const linkById = new Map();
   navLinks.forEach(a => linkById.set(a.getAttribute('href').slice(1), a));
-  const spySecciones = ['chalecos', 'a-medida', 'anteriores', 'opiniones', 'hablemos']
+  const spySecciones = ['chalecos', 'a-medida', 'anteriores', 'opiniones']
     .map(id => document.getElementById(id)).filter(Boolean);
   const spyUpdate = () => {
     const linea = window.scrollY + window.innerHeight * 0.35;
@@ -2067,12 +2094,17 @@
 })();
 </script>
 <script>
+  var grupos = { hero: ['hero-5','hero-4'], tira: ['tira-b','tira-c','tira-c-todo'], am: ['am-sangre'] };
   document.querySelectorAll('.tag button').forEach(function(b){
     b.addEventListener('click', function(){
-      document.querySelectorAll('.tag button').forEach(function(o){ o.setAttribute('aria-pressed', String(o === b)); });
-      document.body.classList.toggle('marca-min', b.dataset.marca === 'min');
+      var g = b.dataset.hero !== undefined ? 'hero' : (b.dataset.tira !== undefined ? 'tira' : 'am');
+      var val = b.dataset[g];
+      document.querySelectorAll('.tag button').forEach(function(o){ if (o.dataset[g] !== undefined) o.setAttribute('aria-pressed', String(o === b)); });
+      grupos[g].forEach(function(c){ document.body.classList.remove(c); });
+      if (val) document.body.classList.add(val);
     });
   });
+  document.getElementById('pz-vertodos').addEventListener('click', function(){ document.body.classList.add('tira-c-todo'); });
 </script>
 </body>
 </html>

@@ -241,8 +241,8 @@
     margin: calc(-1 * var(--nav-h, 86px)) 0 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
-    background-image: url('/hero-desktop.jpg?v=2');
-    background-size: cover; background-position: center 50%;
+    background-image: url('/hero-desktop.jpg?v=3');   /* v3 (2026-09-16): los cinco chalecos apilados, horizontal; la anterior era vertical y a pantalla ancha se veia estirada */
+    background-size: cover; background-position: center 55%;
   }
   .hero::after{
     content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
@@ -599,11 +599,15 @@
   .pz-row.dragging{ cursor:grabbing; scroll-behavior:auto; }
   .pz-row::-webkit-scrollbar{ display:none }
   .pz-row + .pz-row{ margin-top: 12px; }
-  .pz-pieza{ flex:0 0 auto; width: 150px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; cursor:pointer; }
+  .pz-pieza{ flex:0 0 auto; width: 62vw; max-width: 300px; position:relative; aspect-ratio:4/5; background:#e3d6bf; overflow:hidden; cursor:pointer; }
   .pz-pieza img{ position:absolute; inset:0; margin:auto; width:auto; height:auto; max-width:82%; max-height:82%; object-fit:contain; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
   .pz-pieza:hover img{ transform: translateY(-4px); }
   .pz-flechas{ display:none; }
   @media(min-width:881px){
+    /* A MEDIDA — en compu las tres fotos a sangre, pegadas de borde a borde (decision de Justo 2026-09-16; antes iban en cajas alineadas con la grilla) */
+    .ps{ padding-top: 70px; }
+    .ps-grid{ max-width: none; padding: 0; gap: 0; }
+    .ps-step{ aspect-ratio: auto; height: 86vh; }
     /* Compu: las dos fotos son verticales; a pantalla ancha y a sangre se veia un pedazo gigante.
        Lado a lado, alineadas con la grilla, se ven enteras. */
     .pz{ display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width: calc(var(--maxw, 1340px) + 96px); margin:0 auto; padding: 0 48px; }
@@ -613,7 +617,7 @@
     .pz-txt{ padding: 0 34px 38px; }
     .pz-tira{ padding-left:48px; padding-right:48px; }
     .pz-tira-head, .pz-row{ padding-left:0; padding-right:0; }
-    .pz-pieza{ width:190px; }
+    .pz-pieza{ width:300px; }
     /* Con mouse, arrastrar no se le ocurre a nadie: flechas al lado del aviso */
     .pz-flechas{ display:inline-flex; gap:8px; margin-left:14px; vertical-align:middle; }
     .pz-flecha{ width:34px; height:34px; border-radius:100px; border:1px solid var(--line); background:transparent; color:var(--accent-deep); font-family:'Fraunces',serif; font-size:1.25rem; line-height:0; padding:0 0 3px; cursor:pointer; transition: border-color .2s, color .2s; }
@@ -1152,8 +1156,6 @@
     }
     .ot-row + .ot-row{ margin-top: 52px; }
 
-    /* A MEDIDA — en pantallas anchas la tira de tres fotos se alinea con la grilla */
-    .ps-grid{ max-width: calc(var(--maxw) + var(--gutter) * 2); padding-left: var(--gutter); padding-right: var(--gutter); }
 
     /* CIERRE — más aire arriba y abajo */
     .final{ padding: 150px 24px; }
@@ -1662,7 +1664,7 @@
     const s2 = r2.scrollLeft;   // si Barbara edita algo, la fila no vuelve a saltar
     r1.innerHTML = f1.map((it, i) => card(it, i)).join('');
     r2.innerHTML = f2.map((it, i) => card(it, f1.length + i)).join('');
-    r2.scrollLeft = s2 || 81;   // arranca corrida media pieza: escalonada, se ve que sigue
+    r2.scrollLeft = s2 || Math.round((r2.firstElementChild?.offsetWidth || 300) / 2 + 6);   // arranca corrida media pieza: escalonada, se ve que sigue
     [r1, r2].forEach(row => row.querySelectorAll('.pz-pieza').forEach(el => {
       el.addEventListener('click', () => {
         const it = items[parseInt(el.dataset.idx, 10)];

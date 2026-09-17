@@ -645,6 +645,7 @@
   body.tira-c .pz-pieza{ width:auto; }
   body.tira-c #pz-row-2{ display:none; margin-top:12px; }
   body.tira-c.tira-c-todo #pz-row-2{ display:grid; }
+  body.tira-c:not(.tira-c-todo) #pz-row-1 .pz-pieza:nth-child(n+9){ display:none; }  /* 8 en la grilla curada: 2 filas de 4 en compu, 4 de 2 en celu */
   body.tira-c .pz-hint{ display:none; }
   body.tira-c .pz-vertodos{ display:block; }
   .pz-vertodos{ display:none; margin: 26px auto 0; font-family:'Fraunces',serif; font-style:italic; font-size:1.05rem; color:var(--accent); background:transparent; border:0; border-bottom:1px solid var(--line); padding: 0 0 3px; cursor:pointer; }

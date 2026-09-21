@@ -2065,7 +2065,7 @@
     if(!p){ cont.innerHTML = '<div class="vacio">No se encontró el cliente.</div>'; return; }
 
     const saldo = Math.max(0, (Number(p.total)||0) - (Number(p.sena)||0));
-    const tel = String(p.telefono || '').replace(/\D/g, '');
+    const tel = telWa(p.telefono);
     const rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : resenaPorNombre(p.cliente);
     const cm = (v, u) => Number(v) > 0 ? Number(v) + (u || '') : null;
     const est = estadoDe(p);
@@ -2117,7 +2117,7 @@
           <div class="h-sub">${escCli(p.queCompro || '')}${p.telefono ? ' · ' + escCli(p.telefono) : ''}</div>
         </div>
         <div class="fic-acc">
-          ${tel ? `<a class="cli-btn" href="https://wa.me/${tel}" target="_blank" rel="noopener">Escribirle por WhatsApp ↗</a>` : ''}
+          ${tel ? `<a class="cli-btn" href="${linkWa(p.telefono, esperaEnSucursal(p) ? mensajeSucursal(p.cliente) : '')}" target="_blank" rel="noopener">Escribirle por WhatsApp ↗</a>` : ''}
           <button class="cli-btn" data-fic="editar">Corregir datos</button>
         </div>
       </div>
@@ -2156,6 +2156,10 @@
     // Solo mientras el chaleco esté en la casa: una vez que salió ya no se puede pesar
     // y el aviso pasa a ser un reproche inútil.
     if(!(Number(p.peso)>0) && !p.enviado && !p.entregado) chips.push(`<span class="cli-chip warn">Sin pesar</span>`);
+    // Correo lo dejo en la sucursal y hay pocos dias para retirarlo: es el momento
+    // de avisarle. El mismo aviso llega por ntfy; aca queda a mano por si se paso.
+    const enSucursal = esperaEnSucursal(p);
+    if(enSucursal) chips.push(`<span class="cli-chip warn">En sucursal</span>`);
     let rev = p.tokenResena ? RESENAS_MAP[p.tokenResena] : null;
     if(!rev) rev = resenaPorNombre(p.cliente);   // cruce por nombre (reseñas de links sueltos / importados)
     const yaSalio = !!(p.enviado || p.entregado);   // antes de que salga no hay reseña que pedir
@@ -2170,6 +2174,11 @@
     if(!p.saldoCobrado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="cobrar">Cobré el saldo</button>`);
     if(!p.enviado && !p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="enviar">Marcar enviado</button>`);
     if(!p.entregado) btns.push(`<button class="cli-btn" data-id="${id}" data-accion="entregar">Marcar entregado</button>`);
+    if(enSucursal){
+      const wa = linkWa(p.telefono, mensajeSucursal(p.cliente));
+      if(wa) btns.push(`<a class="cli-btn pri" href="${wa}" target="_blank" rel="noopener">Avisarle por WhatsApp ↗</a>`);
+      btns.push(`<button class="cli-btn${wa?'':' pri'}" data-id="${id}" data-accion="sucursal-copiar">Copiar aviso de sucursal</button>`);
+    }
     // Marcar es un solo toque, y hasta 2026-09-05 no tenía vuelta atrás: un toque sin
     // querer dejaba el pedido cerrado para siempre. Se deshace de a un paso.
     if(p.entregado)    btns.push(`<button class="cli-btn" data-id="${id}" data-accion="deshacer-entregado">↩ No estaba entregado</button>`);
@@ -2327,6 +2336,11 @@
         } finally { generandoResena.delete(id); }
       }
       else if(accion==='resena-copiar') copiarMensajeResena(p.cliente, p.tokenResena, p.entregado);
+      else if(accion==='sucursal-copiar'){
+        const m=mensajeSucursal(p.cliente);
+        if(navigator.clipboard) navigator.clipboard.writeText(m).then(()=>alert('Mensaje copiado ✓ Pegalo en el WhatsApp del cliente.')).catch(()=>prompt('Copiá el mensaje:',m));
+        else prompt('Copiá el mensaje:',m);
+      }
       // Guarda la decisión explícita (sí o no), así corrige a la detección en los
       // dos sentidos y no vuelve a "sin opinión" sin querer.
       else if(accion==='recontacto') await window.FB.actualizarPedido(id,{porRecontacto:!esRecontacto(p)});
@@ -2355,6 +2369,29 @@
     return limpio;
   }
 
+
+  // "EN ESPERA EN SUCURSAL" lo escribe el workflow de n8n en estadoCorreo (sin acentos,
+  // en mayuscula). "ENTREGA EN SUCURSAL" es que ya lo retiro y viene con entregado=true.
+  function esperaEnSucursal(p){
+    return !!(p.enviado && !p.entregado && /ESPERA.*SUCURSAL/.test(String(p.estadoCorreo||'').toUpperCase()));
+  }
+  // El mismo texto que manda n8n en el push: si se cambia uno, cambiar el otro.
+  function mensajeSucursal(nombre){
+    const n = nombre ? String(nombre).trim().split(/\s+/)[0] : '';
+    return `¡Hola${n?' '+n:''}! Tu chaleco ya está en la sucursal del Correo para retirarlo. Tenés 5 días hábiles y hay que llevar el DNI. ¡Gracias!`;
+  }
+  // wa.me quiere el numero internacional. Barbara carga "3454 123456": se le pone 549.
+  function telWa(t){
+    let d = String(t||'').replace(/\D/g,'').replace(/^0+/,'');
+    if(!d) return '';
+    if(!d.startsWith('54')) d = '549' + d;
+    else if(!d.startsWith('549') && d.length === 12) d = '549' + d.slice(2);
+    return d;
+  }
+  function linkWa(tel, texto){
+    const d = telWa(tel); if(!d) return '';
+    return 'https://wa.me/' + d + (texto ? '?text=' + encodeURIComponent(texto) : '');
+  }
 
   function copiarMensajeResena(nombre, token, llego){
     const link=`${location.origin}/resena?token=${token}`;

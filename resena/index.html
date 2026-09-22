@@ -250,8 +250,12 @@
       let fotoURL = '';
       if (file) { if (!fotoSubida) fotoSubida = await subirFoto(file); fotoURL = fotoSubida; }
       const batch = writeBatch(db);
+      // OJO, parche temporal: la regla `resenaValida` publicada en Firestore todavia exige
+      // texto.size() > 0, asi que una resena de foto sola rebotaria. Mientras tanto viaja un
+      // espacio. La web, el admin y el bloque de ejemplos hacen .trim(), asi que la tratan
+      // como vacia igual. Cuando se publique la regla nueva, volver a mandar `texto` pelado.
       batch.set(doc(db, 'resenas', token), {
-        nombre, apellido, ciudad, estrellas: rating, texto, fotoURL,
+        nombre, apellido, ciudad, estrellas: rating, texto: texto || ' ', fotoURL,
         estado: 'pendiente', fecha: serverTimestamp(), token
       });
       batch.update(invRef, { usado: true });

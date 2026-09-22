@@ -100,8 +100,9 @@ service cloud.firestore {
         && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 80
         && d.apellido is string && d.apellido.size() <= 80
         && d.ciudad is string && d.ciudad.size() > 0 && d.ciudad.size() <= 80
-        && d.texto is string && d.texto.size() > 0 && d.texto.size() <= 1500
+        && d.texto is string && d.texto.size() <= 1500
         && d.fotoURL is string && (d.fotoURL == '' || d.fotoURL.matches('https://res\\.cloudinary\\.com/dgl2mizsf/image/upload/.*'))
+        && (d.texto.size() > 0 || d.fotoURL != '')   // el texto es opcional, pero no se acepta vacia del todo
         && d.fecha == request.time
         && exists(inv) && get(inv).data.usado == false
         && getAfter(inv).data.usado == true;   // consume la invitación en la MISMA transacción

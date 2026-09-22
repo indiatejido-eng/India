@@ -645,6 +645,7 @@
   .resena-card{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
   .resena-card .rc-stars{ color: #C2873E; letter-spacing: 2px; font-size: 1rem; }
   .resena-card .rc-text{ font-size: 0.95rem; color: var(--ink-soft); margin: 8px 0 10px; white-space: pre-wrap; }
+  .resena-card .rc-sintexto{ color: var(--muted); font-style: italic; }
   .resena-card .rc-meta{ font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
   .resena-card .rc-meta b{ color: var(--ink); font-weight: 600; }
   .resena-card .rc-foto{ width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 12px; display: block; }
@@ -2197,7 +2198,7 @@ function tarjetaResena(d, acciones, pos){
   const sugHtml = sug ? `<div class="rc-sug"><span class="rc-sug-lbl">Sugerencia privada (no se publica)</span>${escapeHtml(sug)}</div>` : '';
   return `<div class="resena-card">
     <div class="rc-stars">${starsResena(Number(r.estrellas) || 0)}</div>
-    <div class="rc-text">${escapeHtml(r.texto || '')}</div>
+    ${(r.texto || '').trim() ? `<div class="rc-text">${escapeHtml(r.texto)}</div>` : '<div class="rc-text rc-sintexto">Mandó solo la foto, sin escribir opinión.</div>'}
     ${foto}
     <div class="rc-meta"><b>${nom}</b> · ${escapeHtml(r.ciudad || '')}</div>
     ${sugHtml}

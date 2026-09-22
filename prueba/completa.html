@@ -1113,6 +1113,7 @@
   .op-cstars{ color:#c2873e; letter-spacing:3px; font-size:.9rem; margin-bottom:16px; }
   .op-ctext{ font-family:'Fraunces', serif; font-style:normal; font-weight:400; font-size:1.06rem; line-height:1.56; color:var(--ink); margin:0 0 22px; white-space:pre-wrap; }
   .op-cwho{ margin-top:auto; font-size:.8rem; color:var(--muted); }
+  .op-card.op-sin-texto .op-cstars{ margin-bottom:22px; }
   .op-cwho b{ font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:.98rem; color:var(--ink); }
 
   @media(max-width:860px){
@@ -1995,10 +1996,12 @@
     gridEl.innerHTML = items.map(r => {
       const c = escR(r.ciudad || '');
       const foto = r.fotoURL ? `<img class="op-cfoto" src="${fotoPlain(r.fotoURL, 640)}" data-full="${escR(r.fotoURL)}" alt="" loading="lazy">` : '';
-      return `<div class="op-card">`
+      // La opinion escrita es opcional: si mando solo la foto, la tarjeta va sin parrafo.
+      const txt = String(r.texto || '').trim();
+      return `<div class="op-card${txt ? '' : ' op-sin-texto'}">`
         + foto
         + `<div class="op-cstars">${starsR(Number(r.estrellas) || 0)}</div>`
-        + `<p class="op-ctext">${escR(r.texto || '')}</p>`
+        + (txt ? `<p class="op-ctext">${escR(txt)}</p>` : '')
         + `<div class="op-cwho"><b>${nomOf(r)}</b>${c ? ' · ' + c : ''}</div></div>`;
     }).join('');
     gridEl.querySelectorAll('.op-cfoto').forEach(img => {

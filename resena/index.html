@@ -94,7 +94,7 @@
       <div class="field"><label>Apellido <span class="opt">(opcional)</span></label><input type="text" id="apellido" placeholder="Tu apellido"></div>
     </div>
     <div class="field"><label>Ciudad o provincia</label><input type="text" id="ciudad" placeholder="Ej: Neuquén"></div>
-    <div class="field"><label>Tu opinión</label><textarea id="texto" placeholder="¿Cómo te quedó? ¿Qué te pareció la lana, la atención, el envío?"></textarea></div>
+    <div class="field"><label>Tu opinión <span class="opt">(opcional si mandás foto)</span></label><textarea id="texto" placeholder="¿Cómo te quedó? ¿Qué te pareció la lana, la atención, el envío?"></textarea></div>
     <div class="field">
       <label>Foto con o del chaleco <span class="opt">(opcional, suma un montón)</span></label>
       <div class="file">
@@ -170,7 +170,8 @@
     try {
       const qs = await getDocs(query(collection(db, 'resenas'), where('estado', '==', 'publicada')));
       const items = [];
-      qs.forEach(d => items.push(d.data()));
+      // Este bloque es el ejemplo de que escribir, asi que las que vinieron solo con foto no sirven aca.
+      qs.forEach(d => { const r = d.data(); if ((r.texto || '').trim()) items.push(r); });
       // Este bloque es el ejemplo de que mandar: primero las que tienen foto,
       // y entre esas la que mas cuenta. La mitad de las resenas no trae foto.
       items.sort((a, b) => {
@@ -183,7 +184,7 @@
       $('mini').innerHTML = top.map(r => {
         const nom = esc(r.nombre) + (r.apellido ? ' ' + esc(r.apellido) : '');
         const av = r.fotoURL ? `<img class="av" src="${esc(thumb(r.fotoURL))}" alt="" loading="lazy">` : '';
-        return `<div class="mini"><div class="stars">${starStr(Number(r.estrellas) || 0)}</div><p>${esc(r.texto)}</p>`
+        return `<div class="mini"><div class="stars">${starStr(Number(r.estrellas) || 0)}</div><p>${esc(r.texto || '')}</p>`
           + `<div class="who">${av}<div><span class="nm">${nom}</span> · <span class="loc">${esc(r.ciudad)}</span></div></div></div>`;
       }).join('');
     } catch (e) {
@@ -235,8 +236,9 @@
     if (!rating) { alert('Elegí cuántas estrellas le ponés.'); return; }
     if (!nombre) { alert('Escribí tu nombre.'); return; }
     if (!ciudad) { alert('Escribí tu ciudad o provincia.'); return; }
-    if (!texto) { alert('Escribí tu opinión.'); return; }
     const file = foto.files[0];
+    // El texto es opcional: alcanza con mandar la foto sola. Lo unico que no se acepta es venir sin nada.
+    if (!texto && !file) { alert('Escribí tu opinión o elegí una foto.'); return; }
     if (file && (!file.type.startsWith('image/') || file.size > 6 * 1024 * 1024)) {
       alert('La foto tiene que ser una imagen de menos de 6 MB.'); return;
     }

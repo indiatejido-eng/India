@@ -459,6 +459,16 @@
   .fila-sep::after{ content: ''; flex: 1; height: 1px; background: var(--line); }
   .panel-hint{ color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin: 0 0 16px; }
   .panel-hint strong{ color: var(--ink-soft, var(--ink)); font-weight: 600; }
+  .video-drop{ display: block; max-width: 520px; }
+  .video-lista{ display: grid; gap: 10px; margin-top: 18px; max-width: 520px; }
+  .video-item{ background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .video-item .nom{ font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .video-item .est{ font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .video-item .barra{ height: 6px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+  .video-item .barra i{ display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+  .video-item.ok .barra i{ background: var(--ok); }
+  .video-item.mal .est{ color: var(--danger); }
+  .video-item button{ margin-top: 8px; }
 
   /* AGREGAR */
   .add-card{
@@ -736,6 +746,7 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
       <button class="tab" data-tab="baja">Dados de baja <span class="tab-count" id="count-baja">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
       <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
+      <button class="tab" data-tab="videos">Videos</button>
     </div>
 
     <div class="tab-panel" id="panel-stats">
@@ -939,6 +950,18 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
 
     <div class="tab-panel" id="panel-lanas">
       <div class="grid-admin" id="grid-lanas"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-videos">
+      <p class="panel-hint">Los videos que subas acá le llegan a Justo <strong>con la calidad original</strong>, sin achicarse. Podés elegir varios a la vez. No cierres esta página hasta que digan "Subido".</p>
+      <label class="file-drop video-drop">
+        <input type="file" id="video-input" accept="video/*" multiple>
+        <div class="file-drop-text">
+          <strong>Elegir videos</strong>
+          <span>Si se corta el wifi, sigue solo cuando vuelve.</span>
+        </div>
+      </label>
+      <div id="video-lista" class="video-lista"></div>
     </div>
   </div>
 </div>
@@ -2126,6 +2149,167 @@ $('confirm-yes').addEventListener('click', async () => {
 function confirmarBorrado(id, fotoPath){
   borrarPendiente = { id, fotoPath };
   confirmModal.classList.add('show');
+}
+
+// ===== VIDEOS A DRIVE =====
+// Bárbara sube videos que le llegan a Justo a su Drive, con la calidad original. El servidor
+// (india-videos.vercel.app, en la cuenta de Justo) verifica su sesión y abre una subida en Drive;
+// el archivo va directo del celular a Google en pedazos de 8 MB. Si se corta la señal, le pregunta
+// a Drive cuánto llegó y sigue desde ahí. Mismo motor que la app de English Club.
+const VIDEOS_API = 'https://india-videos.vercel.app/api/subir';
+const PEDAZO = 8 * 1024 * 1024;   // múltiplo de 256 KB, como pide Drive
+const COLGADA = 45000;            // 45 s sin avanzar: la conexión se da por muerta y se retoma
+let vidK = 0, vidActivos = 0, vidCola = [], vidSubidos = 0, vidDespierta = null;
+const vidEnVuelo = new Set();
+
+async function videosApi(datos){
+  let r;
+  try {
+    r = await fetch(VIDEOS_API, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + await auth.currentUser.getIdToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+  } catch { const e = new Error('sin conexión'); e.sinRed = true; throw e; }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Algo falló');
+  return d;
+}
+
+function mimeVideo(f){
+  if (/^video\//.test(f.type)) return f.type;
+  const ext = (f.name.split('.').pop() || '').toLowerCase();
+  return { mov:'video/quicktime', m4v:'video/x-m4v', '3gp':'video/3gpp', webm:'video/webm', mkv:'video/x-matroska' }[ext] || 'video/mp4';
+}
+const mbs = (n) => n >= 1024 ** 3 ? (n / 1024 ** 3).toFixed(1).replace('.', ',') + ' GB' : Math.round(n / 1024 ** 2) + ' MB';
+
+$('video-input').addEventListener('change', (ev) => {
+  const fs = [...ev.target.files]; ev.target.value = '';
+  fs.forEach(f => {
+    const s = { k: ++vidK, file: f, url: null, empezada: false };
+    const el = document.createElement('div');
+    el.className = 'video-item'; el.id = 'vid-' + s.k;
+    el.innerHTML = `<div class="nom"></div><div class="barra"><i></i></div><div class="est">En espera…</div>`;
+    el.querySelector('.nom').textContent = f.name;
+    $('video-lista').prepend(el);
+    vidCola.push(s);
+  });
+  vidSiguiente();
+});
+
+function vidSiguiente(){
+  while (vidActivos < 2 && vidCola.length){ vidActivos++; vidSubirUno(vidCola.shift()).finally(() => { vidActivos--; vidSiguiente(); }); }
+  vidMantenerDespierta(vidActivos > 0);
+  if (!vidActivos && !vidCola.length && vidSubidos){   // terminó la tanda: un aviso a Justo
+    const n = vidSubidos; vidSubidos = 0;
+    videosApi({ listo: true, cantidad: n }).catch(() => {});
+    showToast(n === 1 ? 'Video subido ✓' : `${n} videos subidos ✓`);
+  }
+}
+async function vidMantenerDespierta(si){
+  try {
+    if (si && !vidDespierta && 'wakeLock' in navigator) vidDespierta = await navigator.wakeLock.request('screen');
+    if (!si && vidDespierta){ await vidDespierta.release(); vidDespierta = null; }
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (vidActivos){ vidDespierta = null; vidMantenerDespierta(true); }
+  vidEnVuelo.forEach(x => { if (Date.now() - x.ultimo > 8000) x.abort(); });
+});
+window.addEventListener('beforeunload', e => { if (vidActivos || vidCola.length){ e.preventDefault(); e.returnValue = ''; } });
+
+async function vidSubirUno(s){
+  const el = $('vid-' + s.k);
+  const pintar = (txt, pct) => {
+    el.querySelector('.est').textContent = txt;
+    if (pct != null) el.querySelector('.barra i').style.width = pct + '%';
+  };
+  el.classList.remove('mal'); el.querySelector('button')?.remove();
+  try {
+    for (let vez = 0; ; vez++){
+      if (!s.url){
+        pintar('Preparando…');
+        s.url = (await vidConRed(() => videosApi({ nombre: s.file.name, mime: mimeVideo(s.file), tam: s.file.size }), pintar)).url;
+        s.empezada = false;
+      }
+      try { await vidADrive(s, pintar); break; }
+      catch(e){ if (e.message !== 'VENCIDA' || vez) throw e; s.url = null; }   // la subida venció en Drive: se arranca otra
+    }
+    el.classList.add('ok'); pintar('Subido ✓ — ya le llegó a Justo', 100);
+    vidSubidos++;
+  } catch(e){
+    el.classList.add('mal');
+    pintar(`No se pudo subir (${e.message === 'VENCIDA' ? 'Drive cortó la subida' : e.message}).`);
+    const b = document.createElement('button');
+    b.className = 'btn btn-sm'; b.textContent = 'Seguir subiendo';
+    b.onclick = () => { vidCola.push(s); vidSiguiente(); };
+    el.appendChild(b);
+  }
+}
+
+async function vidADrive(s, pintar){
+  const { file, url } = s, total = file.size;
+  const avance = (n) => { const p = Math.min(99, Math.floor(n / total * 100)); pintar(`Subiendo… ${p}% de ${mbs(total)}`, p); };
+  let ini = 0, fallas = 0;
+  if (s.empezada){                        // reintento: Drive dice dónde quedó
+    const r = await vidEnviar(url, null, `bytes */${total}`);
+    if (r === 'listo') return;
+    if (typeof r === 'number') ini = r;
+  }
+  s.empezada = true;
+  while (ini < total){
+    const fin = Math.min(ini + PEDAZO, total);
+    avance(ini);
+    const r = await vidEnviar(url, file.slice(ini, fin), `bytes ${ini}-${fin - 1}/${total}`, n => avance(ini + n));
+    if (r === 'listo') return;
+    if (typeof r === 'number' && r > ini){ ini = r; fallas = 0; continue; }
+    if (typeof r === 'number') ini = r;
+    if (++fallas > 40) throw new Error('se cortó la conexión');
+    pintar(navigator.onLine === false ? 'Sin señal. Sigue solo cuando vuelva…' : 'Se cortó un momento, retomando…');
+    await vidEsperarRed(Math.min(30000, 1000 * 2 ** Math.min(fallas, 5)));
+    const h = await vidEnviar(url, null, `bytes */${total}`);
+    if (h === 'listo') return;
+    if (typeof h === 'number') ini = h;
+  }
+  if (await vidEnviar(url, null, `bytes */${total}`) !== 'listo') throw new Error('Drive no confirmó el archivo');
+}
+// Un PUT a Drive: 'listo', el byte desde donde seguir (308), o null si no hubo respuesta útil.
+function vidEnviar(url, cuerpo, rango, progreso){
+  return new Promise((ok, mal) => {
+    const x = new XMLHttpRequest();
+    let vigia;
+    const vigilar = () => { x.ultimo = Date.now(); clearTimeout(vigia); vigia = setTimeout(() => x.abort(), cuerpo ? COLGADA : 20000); };
+    const fin = (v, error) => { clearTimeout(vigia); vidEnVuelo.delete(x); error ? mal(error) : ok(v); };
+    x.open('PUT', url);
+    x.setRequestHeader('Content-Range', rango);
+    if (progreso) x.upload.onprogress = e => { vigilar(); progreso(e.loaded); };
+    x.onload = () => {
+      if (x.status === 200 || x.status === 201) return fin('listo');
+      if (x.status === 308){ const m = /bytes=0-(\d+)/.exec(x.getResponseHeader('Range') || ''); return fin(m ? Number(m[1]) + 1 : 0); }
+      if (x.status === 404 || x.status === 410) return fin(null, new Error('VENCIDA'));
+      if (x.status >= 500 || x.status === 408 || x.status === 429) return fin(null);
+      fin(null, new Error('Drive respondió ' + x.status));
+    };
+    x.onerror = x.onabort = x.ontimeout = () => fin(null);
+    vidEnVuelo.add(x); vigilar();
+    x.send(cuerpo);
+  });
+}
+function vidEsperarRed(ms){
+  return new Promise(ok => {
+    let t;
+    const listo = () => { clearTimeout(t); removeEventListener('online', listo); document.removeEventListener('visibilitychange', alVolver); ok(); };
+    const alVolver = () => { if (document.visibilityState === 'visible') listo(); };
+    const reloj = () => { t = setTimeout(() => navigator.onLine === false ? reloj() : listo(), ms); };
+    addEventListener('online', listo); document.addEventListener('visibilitychange', alVolver); reloj();
+  });
+}
+async function vidConRed(fn, pintar){
+  for (let i = 0; ; i++){
+    try { return await fn(); }
+    catch(e){ if (!e.sinRed || i >= 40) throw e; pintar('Sin señal. Sigue solo cuando vuelva…'); await vidEsperarRed(Math.min(30000, 2000 * (i + 1))); }
+  }
 }
 
 // ===== TOAST =====

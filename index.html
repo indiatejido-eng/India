@@ -10,6 +10,10 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 <meta name="description" content="Chalecos tejidos a mano. Cada pieza es única. Hechos a tu medida.">
 <link rel="canonical" href="https://india-tejidos.vercel.app/">
+<!-- Precarga de la imagen de portada (la de celu o la de compu segun el ancho) -->
+<link rel="preload" as="image" href="/hero-portada-1000.webp?v=1" media="(max-width: 800px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-desktop-1700.webp?v=1" media="(min-width: 801px)" fetchpriority="high">
+
 
 <!-- Vista previa al compartir el link (WhatsApp, Instagram, Facebook) -->
 <meta property="og:type" content="website">
@@ -241,7 +245,7 @@
     margin: calc(-1 * var(--nav-h, 86px)) 0 0; max-width: none; padding: 0;
     display: flex; align-items: flex-end;
     overflow: hidden; isolation: isolate;
-    background-image: url('/hero-desktop.jpg?v=3');   /* v3 (2026-09-16): los cinco chalecos apilados, horizontal; la anterior era vertical y a pantalla ancha se veia estirada */
+    background-image: url('/hero-desktop-1700.webp?v=1');   /* v3 (2026-09-16): los cinco chalecos apilados, horizontal; la anterior era vertical y a pantalla ancha se veia estirada */
     background-size: cover; background-position: center 55%;
   }
   .hero::after{
@@ -326,7 +330,7 @@
   .hero-img:hover img{ transform: scale(1.03) rotate(-1deg); }
   /* círculo decorativo detrás */
   @media(max-width: 800px){
-    .hero{ background-image: url('/hero-portada.jpg?v=2'); background-position: center 42%; }
+    .hero{ background-image: url('/hero-portada-1000.webp?v=1'); background-position: center 42%; }
     .hero-content{ max-width: none; padding: 0 22px 24px; }
     .hero-content .hero-lead{ max-width: none; }
     .hero h1{ font-size: clamp(2.4rem, 9.5vw, 3.1rem); margin: 0 0 18px; }
@@ -1077,7 +1081,7 @@
   .op-cfoto:hover{ filter:brightness(1.04); }
   .op-cstars{ color:#c2873e; letter-spacing:3px; font-size:.9rem; margin-bottom:16px; }
   .op-ctext{ font-family:'Fraunces', serif; font-style:normal; font-weight:400; font-size:1.06rem; line-height:1.56; color:var(--ink); margin:0 0 22px; white-space:pre-wrap; }
-  .op-cwho{ margin-top:auto; font-size:.8rem; color:var(--muted); }
+  .op-cwho{ margin-top:auto; font-size:.8rem; color:#755f43; }   /* un tono mas oscuro que --muted: contraste AA (4.9:1) sobre la tarjeta */
   .op-card.op-sin-texto .op-cstars{ margin-bottom:22px; }
   .op-cwho b{ font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:.98rem; color:var(--ink); }
 
@@ -1216,7 +1220,7 @@
 <nav>
   <div class="nav-inner">
     <a href="#" class="brand">
-      <img class="brand-logo" src="/logo-ovillo.png" alt="India" loading="eager" data-retries="0" onerror="retryImg(this)">
+      <img class="brand-logo" src="/logo-ovillo-200.webp" width="136" height="200" alt="India" loading="eager" data-retries="0" onerror="retryImg(this)">
       <div>
         <span class="brand-text">India</span>
         <span class="brand-tag">tejido a mano</span>
@@ -1230,6 +1234,7 @@
   </div>
 </nav>
 
+<main>
 <!-- HERO -->
 <section class="hero">
   <div class="hero-content reveal d1">
@@ -1252,11 +1257,11 @@
     <h2 class="display"><span class="it">Puestos.</span></h2>
   </div>
   <article class="pz-dest">
-    <img src="/pieza-guarda.webp" alt="Chaleco guarda pampa tejido a mano, puesto sobre camisa blanca, en el medano" loading="lazy">
+    <img src="/pieza-guarda-900.webp" srcset="/pieza-guarda-900.webp 900w, /pieza-guarda-1300.webp 1275w" sizes="(min-width: 881px) 50vw, 100vw" width="900" height="1200" alt="Chaleco guarda pampa tejido a mano, puesto sobre camisa blanca, en el medano" loading="lazy">
     <div class="pz-txt"><h3 class="pz-frase">100% lana <em>de oveja.</em></h3></div>
   </article>
   <article class="pz-dest">
-    <img src="/pieza-ochos.webp" alt="Chaleco marron con ochos tejido a mano, puesto sobre camisa, entre naranjos" loading="lazy">
+    <img src="/pieza-ochos-900.webp" srcset="/pieza-ochos-900.webp 900w, /pieza-ochos-1300.webp 1300w" sizes="(min-width: 881px) 50vw, 100vw" width="900" height="1200" alt="Chaleco marron con ochos tejido a mano, puesto sobre camisa, entre naranjos" loading="lazy">
     <div class="pz-txt"><h3 class="pz-frase">Tejido <em>a mano.</em></h3></div>
   </article>
 </section>
@@ -1325,12 +1330,13 @@
     </a>
   </div>
 </section>
+</main>
 
 <!-- FOOTER -->
 <footer>
   <div class="foot-inner">
     <div class="foot-brand">
-      <img class="foot-logo" src="/logo-ovillo.png" alt="India" loading="lazy" data-retries="0" onerror="retryImg(this)">
+      <img class="foot-logo" src="/logo-ovillo-200.webp" width="136" height="200" alt="India" loading="lazy" data-retries="0" onerror="retryImg(this)">
       <span class="foot-brand-text">India</span>
     </div>
     <div class="foot-nav">

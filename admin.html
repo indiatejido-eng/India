@@ -2153,10 +2153,10 @@ function confirmarBorrado(id, fotoPath){
 
 // ===== VIDEOS A DRIVE =====
 // Bárbara sube videos que le llegan a Justo a su Drive, con la calidad original. El servidor
-// (india-videos.vercel.app, en la cuenta de Justo) verifica su sesión y abre una subida en Drive;
+// (videos.indiatejidos.com, proyecto india-videos en la cuenta de India; código en server/india-videos) verifica su sesión y abre una subida en Drive;
 // el archivo va directo del celular a Google en pedazos de 8 MB. Si se corta la señal, le pregunta
 // a Drive cuánto llegó y sigue desde ahí. Mismo motor que la app de English Club.
-const VIDEOS_API = 'https://india-videos.vercel.app/api/subir';
+const VIDEOS_API = 'https://videos.indiatejidos.com/api/subir';
 const PEDAZO = 8 * 1024 * 1024;   // múltiplo de 256 KB, como pide Drive
 const COLGADA = 45000;            // 45 s sin avanzar: la conexión se da por muerta y se retoma
 let vidK = 0, vidActivos = 0, vidCola = [], vidSubidos = 0, vidDespierta = null;

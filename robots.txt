@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /carga
 Disallow: /resena
+
+Sitemap: https://indiatejidos.com/sitemap.xml

@@ -122,6 +122,20 @@ def main():
                                                     e.read().decode('utf-8', 'replace')[:200]))
     print('\nGuardados %d de %d anuncios en Firestore.' % (ok, len(docs)))
 
+    # Lo que gasto la cuenta cada dia, en anuncios/_gasto. Es el costo real de la
+    # publicidad desde que Meta cobra a ARQ (ver gastoArq en carga/index.html).
+    hoy = datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d')
+    dias = {f['date_start']: round(float(f.get('spend') or 0), 2)
+            for f in graph('/%s/insights' % cuenta, level='account', fields='spend', time_increment=1,
+                           time_range=json.dumps({'since': '2026-10-01', 'until': hoy}),
+                           limit=1000).get('data', [])}
+    cuerpo = {'fields': {
+        'dias': {'mapValue': {'fields': {d: {'doubleValue': v} for d, v in dias.items()}}},
+        'actualizado': {'timestampValue': ahora},
+    }}
+    post(base + '_gasto', cuerpo, {'Authorization': 'Bearer ' + tok}, 'PATCH')
+    print('Gasto por dia: %d dias, $%s en total.' % (len(dias), format(int(sum(dias.values())), ',d').replace(',', '.')))
+
 
 if __name__ == '__main__':
     sys.exit(main())

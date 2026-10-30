@@ -812,7 +812,8 @@
   <div class="screen col" id="s-gasto">
     <h1 class="ttl">Anoté un gasto</h1>
     <div class="field"><label>Fecha</label><input type="date" id="g-fecha"></div>
-    <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Tejedora</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
+    <div class="field"><label>Tipo</label><div class="chips" id="g-tipo" data-val="Lana" onclick="kg()"><div class="chip sel" onclick="pick(this)">Lana</div><div class="chip" onclick="pick(this)">Tejedora</div><div class="chip" onclick="pick(this)">Envío</div><div class="chip" onclick="pick(this)">Transporte</div><div class="chip" onclick="pick(this)">Publicidad</div><div class="chip" onclick="pick(this)">Saldo Meta</div><div class="chip" onclick="pick(this)">Retiro</div><div class="chip" onclick="pick(this)">Otro</div></div></div>
+    <div class="stat-period" id="g-saldohint" style="display:none;margin:-6px 0 12px">Lo que pasás a ARQ para Meta. Sale de la caja pero no es gasto todavía: lo que Meta gasta lo trae el panel solo. Lo que Meta cobra directo en Ualá va como Publicidad.</div>
     <div class="field" id="g-kgwrap"><label>Kilos de lana</label><input type="text" id="g-kg" inputmode="decimal" placeholder="1,6" oninput="soloDecimal(this)"></div>
     <div class="field" id="g-tejwrap" style="display:none"><label>¿Cuántos chalecos le pagás?</label>
       <div class="tej">
@@ -1074,6 +1075,7 @@
   function kg(){setTimeout(()=>{
     const t=$('g-tipo').dataset.val, esTej=t==='Tejedora';
     $('g-kgwrap').style.display=t==='Lana'?'block':'none';
+    $('g-saldohint').style.display=t==='Saldo Meta'?'block':'none';
     $('g-tejwrap').style.display=esTej?'block':'none';
     if(esTej){
       $('g-tej-nino-lbl').textContent='Niño · '+pesos(TARIFA_TEJEDORA.nino)+' c/u';
@@ -1146,6 +1148,22 @@
   const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   function etiquetaMes(m){if(!m)return 'Este mes';const p=String(m).split('-');return (MESES[(+p[1])-1]||'')+' '+(p[0]||'')}
 
+  // ── Lo que Meta gastó con la tarjeta de ARQ ─────────────────────────────
+  // Desde el 26/10 Meta cobra a ARQ, que se carga de antes (Saldo Meta). Ese gasto
+  // no pasa por la planilla: lo trae n8n por día a `anuncios/_gasto` y acá se le
+  // suma el impuesto de la tarjeta. Antes de esa fecha, Meta cobraba directo en
+  // Ualá y lo cargado como Publicidad ya es el costo, con impuestos.
+  const ARQ_DESDE='2026-10-26', IMPUESTO_ARQ=1.09;
+  let META_DIAS=null;   // {'YYYY-MM-DD': gasto en Meta}
+  function gastoArq(mes){
+    if(!META_DIAS) return 0;
+    let s=0;
+    Object.keys(META_DIAS).forEach(dia=>{
+      if(dia>=ARQ_DESDE && (!mes||dia.slice(0,7)===mes)) s+=Number(META_DIAS[dia])||0;
+    });
+    return Math.round(s*IMPUESTO_ARQ);
+  }
+
   // Toma las filas crudas del Sheet (india-numeros) y calcula los totales del mes mas reciente.
   function calcular(rows, periodoSel){
     if(!Array.isArray(rows))rows=[];
@@ -1159,8 +1177,16 @@
     const vendido=ventas.reduce((a,r)=>a+numero(r['Precio ($)']),0);
     const chalecos=ventas.length;
     const esRetiro=r=>String(r.Tipo).toLowerCase()==='retiro';
-    const costosRows=gastos.filter(r=>!esRetiro(r));
-    const costos=costosRows.reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    // "Saldo Meta" es la plata que se pasa a ARQ para que Meta cobre de ahí. Sale de
+    // la caja, pero todavía no es gasto: se vuelve gasto a medida que Meta la usa.
+    // Antes se cargaba como Publicidad y octubre daba 121.986 de pauta contra 31.260
+    // que gastó Meta de verdad.
+    const esSaldoMeta=r=>/^saldo meta/i.test(String(r.Tipo||'').trim());
+    const costosRows=gastos.filter(r=>!esRetiro(r)&&!esSaldoMeta(r));
+    const saldoMeta=gastos.filter(esSaldoMeta).reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const pubArq=gastoArq(mes);
+    const costosCaja=costosRows.reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    const costos=costosCaja+pubArq;
     const retiros=gastos.filter(esRetiro).reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const ganancia=vendido-costos;
     const lanaRows=gastos.filter(r=>String(r.Tipo).toLowerCase()==='lana');
@@ -1168,7 +1194,8 @@
     const lanaMonto=lanaRows.reduce((a,r)=>a+numero(r['Monto ($)']),0);
     const contar=(arr,key)=>{const m={};arr.forEach(r=>{const k=r[key]||'Otro';m[k]=(m[k]||0)+1});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
     const sumarTipo=arr=>{const m={};arr.forEach(r=>{const k=r.Tipo||'Otro';m[k]=(m[k]||0)+numero(r['Monto ($)'])});return Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1])};
-    const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0);
+    // Publicidad = lo cobrado directo (Ualá, con impuestos) + lo que Meta gastó con ARQ.
+    const pub=costosRows.filter(r=>String(r.Tipo).toLowerCase()==='publicidad').reduce((a,r)=>a+numero(r['Monto ($)']),0)+pubArq;
     const esDeAnuncio=r=>['sí','si'].includes(String(r.Anuncio).toLowerCase());
     const anuncios=ventas.filter(esDeAnuncio).length;
     // Lo facturado SOLO por las ventas marcadas como venidas de un anuncio. El retorno
@@ -1238,11 +1265,17 @@
       locales, lanaStock, lanaStockKg:Math.round(lanaStockKg*100)/100, tallesVendidos,
       pesoBase, pesadas,
       periodo: mes?etiquetaMes(mes):'Todo el año', mes, mesesDisponibles:meses,
-      vendido,gastos:costos,ganancia,caja:ganancia-retiros,
+      // La caja va por la plata que salió de Ualá: lo que Meta gasta con ARQ ya salió
+      // antes, como Saldo Meta.
+      vendido,gastos:costos,ganancia,caja:vendido-costosCaja-saldoMeta-retiros,
       margen:vendido>0?Math.round(ganancia/vendido*100):0,
       chalecos,
       lanaPorKg:lanaKg>0?Math.round(lanaMonto/lanaKg):null,
-      gastosPorTipo:sumarTipo(costosRows).map(([tipo,monto])=>({tipo,monto})),
+      gastosPorTipo:(()=>{
+        const t=sumarTipo(costosRows), p=t.find(x=>String(x[0]).toLowerCase()==='publicidad');
+        if(pubArq){ if(p) p[1]+=pubArq; else t.push(['Publicidad',pubArq]); t.sort((a,b)=>b[1]-a[1]); }
+        return t.map(([tipo,monto])=>({tipo,monto}));
+      })(),
       publicidad:{gasto:pub,ventas:vendidoAnuncios,ventasTotal:vendido},
       modelos:contar(ventas,'Modelo').map(([modelo,cantidad])=>({modelo,cantidad})),
       canales:contar(ventas,'Canal').map(([canal,cantidad])=>({canal,cantidad})),
@@ -1290,6 +1323,7 @@
     $('n-anuncios').textContent=txtAn;
     const ritmo=ritmoMensual(d);
     $('n-pub-pie').innerHTML=
+      '<b>Gastado</b>: lo que Meta gastó de verdad, con impuestos. La plata que pasás a ARQ y todavía no se usó no cuenta.<br>'+
       '<b>Cada venta te salió</b>: lo gastado en publicidad dividido por las '+(an||0)+' ventas que vinieron de un anuncio.<br>'+
       '<b>Podés gastar por mes</b>: '+pesos(techoSano(d))+' por venta × <b>'+(Math.round(ritmo*10)/10)+' chalecos por mes</b> que venís vendiendo. <b>Cuanto más vendas, más sube.</b><br>'+
       'De dónde salen los '+pesos(techoSano(d))+' por venta: el chaleco deja <b>'+pesos(techoPublicidad(d))+'</b> antes de publicidad y sale '+pesos(Number(d.ticket)||0)+' en promedio. Para que te quede el <b>'+Math.round(MARGEN_OBJ*100)+'%</b> ('+pesos(Math.round(MARGEN_OBJ*(Number(d.ticket)||0)))+'), podés pagar hasta la diferencia. Pagando los '+pesos(techoPublicidad(d))+' enteros se gana cero.<br>'+
@@ -2452,7 +2486,18 @@
     if(window.FB && window.FB.escucharAjustes)
       window.FB.escucharAjustes(a => { RECON_VIEJOS = Number((a||{}).recontactosViejos) || 0; renderEmbudo(); });
     if(window.FB && window.FB.escucharAnuncios)
-      unsubAnuncios = window.FB.escucharAnuncios(l => { ANUNCIOS = l || []; renderInicio(); renderAnuncios(); });
+      unsubAnuncios = window.FB.escucharAnuncios(l => {
+        // `_gasto` no es un anuncio: es lo que gastó la cuenta por día. De ahí sale
+        // el costo real de la publicidad (ver calcular).
+        const g = (l || []).find(a => a.id === '_gasto');
+        ANUNCIOS = (l || []).filter(a => a.id !== '_gasto');
+        const antes = JSON.stringify(META_DIAS);
+        META_DIAS = g && g.dias ? g.dias : META_DIAS;
+        if(ULTIMO_ROWS && JSON.stringify(META_DIAS) !== antes){
+          ULTIMO_NUM = calcular(ULTIMO_ROWS, PERIODO_SEL); renderNumeros(ULTIMO_NUM); renderCaja();
+        }
+        renderInicio(); renderAnuncios();
+      });
     else ANUNCIOS = [];
   }
 
@@ -2732,7 +2777,9 @@
     const nombre = viva ? esc0(viva.nombre || 'Anuncio sin nombre')
       : ultimo ? esc0(ultimo.nombre || 'Anuncio sin nombre') + ' <span style="color:var(--muted);font-family:var(--body);font-size:13px">· parado</span>'
       : (pub > 0 ? 'Lo que se pagó de publicidad' : 'Todavía no cargaste publicidad');
-    const gastado = viva && viva.gasto != null ? Number(viva.gasto) : pub;
+    // El mismo gasto que se divide en "cada venta salió": antes era el del anuncio
+    // prendido en 30 días y los dos números no tenían nada que ver.
+    const gastado = pub;
     const nadaPrendido = !viva && frescos.length;
     const dato = (l, v, cls) => `<div><div class="ad-l">${l}</div><div class="ad-v ${cls||''}">${v}</div></div>`;
     const money = n => `<span class="cur">$</span>${Math.round(Number(n)||0).toLocaleString('es-AR')}`;

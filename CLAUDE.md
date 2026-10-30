@@ -39,7 +39,7 @@ Si la conversación fue puramente de código y no salió nada del negocio, alcan
 
 - **Hosting:** Vercel, autodeploy en cada push a `main`. ~30s para republicar.
 - **Repo:** https://github.com/indiatejido-eng/India
-- **URL pública:** https://india-tejidos.vercel.app
+- **URL pública:** https://indiatejidos.com (dominio propio desde 2026-10-29, en Cloudflare de India; india-tejidos.vercel.app redirige)
 - **Auth:** Firebase Authentication. Usuario único `barbara123@india-admin.local`. La UI acepta `barbara123` y concatena el dominio internamente.
 - **DB:** Firestore, proyecto `india-tejidos`, región `southamerica-east1`, colección `chalecos`.
 - **Storage imágenes:** Cloudinary (NO Firebase Storage). Cloud `dgl2mizsf`, upload preset unsigned `india_unsigned`. Subida directa desde el navegador.

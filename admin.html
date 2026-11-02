@@ -746,7 +746,7 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
       <button class="tab" data-tab="baja">Dados de baja <span class="tab-count" id="count-baja">0</span></button>
       <button class="tab" data-tab="resenas">Reseñas <span class="tab-count" id="count-resenas">0</span></button>
       <button class="tab" data-tab="lanas">Lanas <span class="tab-count" id="count-lanas">0</span></button>
-      <button class="tab" data-tab="videos">Videos</button>
+      <button class="tab" data-tab="videos">Fotos y videos</button>
     </div>
 
     <div class="tab-panel" id="panel-stats">
@@ -953,11 +953,11 @@ if (new URLSearchParams(location.search).get('embed') === '1' || window.top !== 
     </div>
 
     <div class="tab-panel" id="panel-videos">
-      <p class="panel-hint">Los videos que subas acá le llegan a Justo <strong>con la calidad original</strong>, sin achicarse. Podés elegir varios a la vez. No cierres esta página hasta que digan "Subido".</p>
+      <p class="panel-hint">Las fotos y videos que subas acá le llegan a Justo <strong>con la calidad original</strong>, sin achicarse. Podés elegir varios a la vez. No cierres esta página hasta que digan "Subido".</p>
       <label class="file-drop video-drop">
-        <input type="file" id="video-input" accept="video/*" multiple>
+        <input type="file" id="video-input" accept="image/*,video/*" multiple>
         <div class="file-drop-text">
-          <strong>Elegir videos</strong>
+          <strong>Elegir fotos o videos</strong>
           <span>Si se corta el wifi, sigue solo cuando vuelve.</span>
         </div>
       </label>
@@ -2177,9 +2177,9 @@ async function videosApi(datos){
 }
 
 function mimeVideo(f){
-  if (/^video\//.test(f.type)) return f.type;
+  if (/^(video|image)\//.test(f.type)) return f.type;
   const ext = (f.name.split('.').pop() || '').toLowerCase();
-  return { mov:'video/quicktime', m4v:'video/x-m4v', '3gp':'video/3gpp', webm:'video/webm', mkv:'video/x-matroska' }[ext] || 'video/mp4';
+  return { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', heic:'image/heic', heif:'image/heif', webp:'image/webp', mov:'video/quicktime', m4v:'video/x-m4v', '3gp':'video/3gpp', webm:'video/webm', mkv:'video/x-matroska' }[ext] || 'video/mp4';
 }
 const mbs = (n) => n >= 1024 ** 3 ? (n / 1024 ** 3).toFixed(1).replace('.', ',') + ' GB' : Math.round(n / 1024 ** 2) + ' MB';
 
@@ -2203,7 +2203,7 @@ function vidSiguiente(){
   if (!vidActivos && !vidCola.length && vidSubidos){   // terminó la tanda: un aviso a Justo
     const n = vidSubidos; vidSubidos = 0;
     videosApi({ listo: true, cantidad: n }).catch(() => {});
-    showToast(n === 1 ? 'Video subido ✓' : `${n} videos subidos ✓`);
+    showToast(n === 1 ? 'Subido ✓' : `${n} archivos subidos ✓`);
   }
 }
 async function vidMantenerDespierta(si){

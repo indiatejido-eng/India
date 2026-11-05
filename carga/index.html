@@ -2320,7 +2320,8 @@
   async function accionCliente(id, accion){
     const p=(PEDIDOS||[]).find(x=>x.id===id); if(!p) return;
     try{
-      if(accion==='cobrar') await window.FB.actualizarPedido(id,{saldoCobrado:true});
+      // La fecha del cobro hace falta para el gráfico: el saldo cuenta en el mes en que entró.
+      if(accion==='cobrar') await window.FB.actualizarPedido(id,{saldoCobrado:true, saldoCobradoEn:new Date().toISOString()});
       else if(accion==='enviar'){
         // Marcar enviado es la última pantalla donde el chaleco todavía está en la casa.
         // Si sale sin pesar, ese dato no se recupera nunca: no se avisa antes ni después.
@@ -2572,19 +2573,25 @@
   // Barra = lo que entró ese mes. Abajo en verde lo que quedó, arriba en
   // terracota lo que se fue en costos. Si un mes dio pérdida, la barra es
   // toda terracota y el globito lo dice.
-  // Lo que de verdad te pagaron por las ventas de ese mes: la seña si todavía
-  // debe el resto, el total si ya pagó todo. "Vendiste" es el precio entero y no
-  // es plata que entró (05/11: noviembre decía "Entró $150.000" con solo la seña cobrada).
-  function cobradoDelMes(mes){
+  // La plata en el mes en que ENTRÓ, y punto (Justo, 05/11). La seña cuenta en el mes
+  // de la venta; el saldo, en el mes en que se cobró (`saldoCobradoEn`, que se guarda
+  // al tocar "Cobré el saldo"). Lo que todavía se debe no cuenta en ningún mes.
+  // Los chalecos sí van en el mes en que se vendieron.
+  // Ventas sin ficha o cobradas antes de que existiera la fecha: entera en el mes de venta.
+  function entradasPorMes(){
     if(PEDIDOS===null || !ULTIMO_ROWS) return null;
     const porId = {}; PEDIDOS.forEach(p => { if(p.idVenta) porId[p.idVenta] = p; });
     const mesDe = r => { const f=String(r.Fecha||'').trim(); if(/^\d{4}-\d{2}/.test(f)) return f.slice(0,7);
       const p=f.split('/'); return p.length===3 ? p[2]+'-'+String(p[1]).padStart(2,'0') : String(r.Mes||''); };
-    return ULTIMO_ROWS.filter(r => r.Info==='Ventas' && mesDe(r)===mes).reduce((a, r) => {
-      const p = porId[r.ID];
-      if(!p) return a + numero(r['Precio ($)']);   // ventas viejas sin ficha: se cobraron enteras
-      return a + (p.saldoCobrado ? (Number(p.total)||0) : (Number(p.sena)||0));
-    }, 0);
+    const out = {}, sumar = (m, v) => { if(m && v > 0) out[m] = (out[m]||0) + v; };
+    ULTIMO_ROWS.filter(r => r.Info==='Ventas').forEach(r => {
+      const m = mesDe(r), p = porId[r.ID];
+      if(!p){ sumar(m, numero(r['Precio ($)'])); return; }
+      const total = Number(p.total)||0, sena = Math.min(Number(p.sena)||0, total);
+      sumar(m, sena);
+      if(p.saldoCobrado) sumar(p.saldoCobradoEn ? String(p.saldoCobradoEn).slice(0,7) : m, total - sena);
+    });
+    return out;
   }
 
   function renderPlata(){
@@ -2593,9 +2600,12 @@
     const meses = ((ULTIMO_NUM && ULTIMO_NUM.mesesDisponibles) || []).slice(0, 8).reverse();
     if(!meses.length){ cont.innerHTML = '<div class="vacio">Todavía no hay meses cargados.</div>'; return; }
 
+    // Mientras cargan las fichas se muestra lo vendido; al llegar, se repinta con lo que entró.
+    const entradas = entradasPorMes();
     const datos = meses.map(m => {
       const c = calcular(ULTIMO_ROWS, m);
-      return { mes:m, etiq:etiquetaMes(m), vendido:c.vendido, gastos:c.gastos, ganancia:c.ganancia, chalecos:c.chalecos, cobrado:cobradoDelMes(m) };
+      const entro = entradas ? (entradas[m]||0) : c.vendido;
+      return { mes:m, etiq:etiquetaMes(m), vendido:entro, gastos:c.gastos, ganancia:entro - c.gastos, chalecos:c.chalecos };
     });
     // El eje va en números redondos ($200k, $500k, $1M): partir el máximo en cuatro
     // daba renglones como "$739k", que no ayudan a leer nada.
@@ -2658,8 +2668,7 @@
       const d = datos[i];
       const fila = (c, t, v) => `<div class="r"><span><i style="background:${c}"></i>${t}</span><em>${pesos(v)}</em></div>`;
       return `<b>${d.etiq}</b>
-        ${fila('var(--c-1)', 'Vendiste', d.vendido)}
-        ${d.cobrado != null && d.cobrado < d.vendido ? `<div class="r"><span>Te pagaron</span><em>${pesos(d.cobrado)}</em></div>` : ''}
+        ${fila('var(--c-1)', 'Entró', d.vendido)}
         ${fila('var(--c-2)', d.ganancia < 0 ? 'Perdiste' : 'Te quedó', Math.abs(d.ganancia))}
         <div class="r"><span>Costos</span><em>${pesos(d.gastos)}</em></div>
         <div class="r"><span>Chalecos</span><em>${d.chalecos}</em></div>`;
